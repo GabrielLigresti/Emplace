@@ -23,6 +23,7 @@ registrarRegistroVisitas(busEventos, cuentaMesaRepository);
 const tareas = [
   iniciarTareaPeriodica('vencer reservas', () => reservaService.vencerPendientes()),
   iniciarTareaPeriodica('vencer pagos', () => pagoService.vencerPendientes(new Date())),
+  iniciarTareaPeriodica('cerrar mesas', () => reservaService.cerrarMesasAlCierre()),
 ];
 
 httpServer.listen(env.PORT, () => {

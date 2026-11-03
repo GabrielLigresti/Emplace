@@ -29,6 +29,13 @@ export function iniciosDelDia(fecha: string, apertura: string, cierre: string): 
   return inicios;
 }
 
+// Instante de cierre de una fecha (AAAA-MM-DD), en UTC. Un cierre a 00:00 es la
+// medianoche que termina ese día.
+export function cierreDelDia(fecha: string, cierre: string): Date {
+  const [anio, mes, dia] = partes(fecha);
+  return new Date(Date.UTC(anio, mes - 1, dia, DESFASE_ARGENTINA_H, minutosFin(cierre)));
+}
+
 // Fecha de Argentina de un instante (AAAA-MM-DD).
 export function fechaDe(instante: Date): string {
   return hoyArgentina(instante);

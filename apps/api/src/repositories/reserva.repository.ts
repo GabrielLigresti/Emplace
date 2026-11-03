@@ -102,6 +102,9 @@ export interface ReservaRepository {
   // CU-21: PENDIENTE ya empezadas, con la tolerancia de su sucursal. Incluye
   // las de sucursales dadas de baja, para que no queden pendientes para siempre.
   pendientesIniciadas(ahora: Date): Promise<FilaReserva[]>;
+  // Cierre automático: ACTIVA ya empezadas, con el horario de cierre de su
+  // sucursal. Incluye las de sucursales dadas de baja, por lo mismo.
+  activasIniciadas(ahora: Date): Promise<FilaReservaAbierta[]>;
 }
 
 export type ResultadoActivacion = 'ACTIVADA' | 'CAMBIO' | 'OTRA_MESA_ABIERTA';
@@ -117,6 +120,12 @@ export type AlcanceReserva =
   { comensalId: string } | { restauranteId: string; sucursalId: string } | { sistema: true };
 
 const VIGENTES: EstadoReserva[] = ['PENDIENTE', 'ACTIVA'];
+
+// Una reserva activa con lo que hace falta para cerrarla desde una tarea de sistema.
+export interface FilaReservaAbierta extends FilaReserva {
+  restauranteId: string;
+  horarioCierre: string;
+}
 
 export const seleccionReserva = {
   id: true,
@@ -353,5 +362,23 @@ export const reservaRepository: ReservaRepository = {
       select: seleccionReserva,
     });
     return filas.map(aFilaReserva);
+  },
+
+  // Tarea de sistema: recorre todos los restaurantes, por eso no filtra por tenant.
+  async activasIniciadas(ahora) {
+    const filas = await prisma.reserva.findMany({
+      where: { estado: 'ACTIVA', inicio: { lt: ahora } },
+      select: {
+        ...seleccionReserva,
+        sucursal: {
+          select: { ...seleccionReserva.sucursal.select, restauranteId: true, horarioCierre: true },
+        },
+      },
+    });
+    return filas.map((fila) => ({
+      ...aFilaReserva(fila),
+      restauranteId: fila.sucursal.restauranteId,
+      horarioCierre: aHora(fila.sucursal.horarioCierre),
+    }));
   },
 };

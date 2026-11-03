@@ -60,6 +60,36 @@ describe('cuentaMesaRepository', () => {
   });
 });
 
+describe('reservaRepository.activasIniciadas', () => {
+  const unaHoraDespues = () => new Date(Date.now() + 3_600_000);
+
+  it('trae las activas ya empezadas con su restaurante y su horario de cierre', async () => {
+    expect(await reservaRepository.activasIniciadas(unaHoraDespues())).toEqual([
+      expect.objectContaining({
+        id: e.reservaId,
+        estado: 'ACTIVA',
+        restauranteId: e.restauranteId,
+        sucursalId: e.sucursalId,
+        horarioCierre: '00:00',
+      }),
+    ]);
+  });
+
+  it('incluye las de una sucursal dada de baja, para que no queden abiertas', async () => {
+    await prisma.sucursal.update({ where: { id: e.sucursalId }, data: { activa: false } });
+
+    expect(await reservaRepository.activasIniciadas(unaHoraDespues())).toHaveLength(1);
+  });
+
+  it('no trae las que todavía no empezaron ni las ya finalizadas', async () => {
+    const reserva = await prisma.reserva.findUniqueOrThrow({ where: { id: e.reservaId } });
+    expect(await reservaRepository.activasIniciadas(reserva.inicio)).toEqual([]);
+
+    await prisma.reserva.update({ where: { id: e.reservaId }, data: { estado: 'FINALIZADA' } });
+    expect(await reservaRepository.activasIniciadas(unaHoraDespues())).toEqual([]);
+  });
+});
+
 describe('reservaRepository.cerrar', () => {
   const cerrar = (confirmarSaldo: boolean) =>
     reservaRepository.cerrar(e.restauranteId, e.sucursalId, e.reservaId, confirmarSaldo);

@@ -1,5 +1,5 @@
 // Tareas programadas de sistema (vencimiento de reservas, CU-21, y de pagos,
-// CU-06). Corren al arrancar la API y después cada intervalo; si una vuelta
+// CU-06, y cierre de mesas al horario de cierre). Corren al arrancar la API y después cada intervalo; si una vuelta
 // todavía no terminó, la siguiente se saltea para no procesar dos veces lo mismo.
 export function iniciarTareaPeriodica(
   nombre: string,

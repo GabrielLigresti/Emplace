@@ -7,7 +7,13 @@ import type {
   ReservaInput,
 } from '@pgim/shared';
 import { busEventos, type BusEventos, type TipoEventoReserva } from '../domain/eventos';
-import { elegirMesa, esFechaReservable, fechaDe, iniciosDelDia } from '../domain/franjas';
+import {
+  cierreDelDia,
+  elegirMesa,
+  esFechaReservable,
+  fechaDe,
+  iniciosDelDia,
+} from '../domain/franjas';
 import {
   estadoDeReserva,
   limiteDeLlegada,
@@ -21,6 +27,7 @@ import {
   type FilaReserva,
   type FilaReservaPanel,
   type ReservaRepository,
+  type ResultadoCierre,
   type SucursalReservable,
 } from '../repositories/reserva.repository';
 
@@ -109,6 +116,22 @@ export function createReservaService(
         inicio: fila.inicio,
         estado,
       },
+    });
+  }
+
+  // La visita la registra RegistroVisitas con CUENTA_MESA_CERRADA.
+  function publicarCierre(
+    fila: FilaReserva,
+    hacia: EstadoReserva,
+    restauranteId: string,
+    cierre: Extract<ResultadoCierre, { resultado: 'CERRADA' }>,
+  ) {
+    publicar('RESERVA_FINALIZADA', fila, hacia);
+    bus.publicar({
+      tipo: 'CUENTA_MESA_CERRADA',
+      cuentaMesaId: cierre.cuentaMesaId,
+      restauranteId,
+      comensalId: cierre.comensalId,
     });
   }
 
@@ -291,6 +314,28 @@ export function createReservaService(
       return aReservaPanel({ ...fila, estado: hacia });
     },
 
+    // Tarea programada: al llegar el horario de cierre del día de la reserva, la
+    // mesa se cierra como si el personal confirmara el saldo. Con pedidos sin
+    // entregar o un pago en curso sigue abierta y se reintenta en la próxima
+    // vuelta. Devuelve cuántas cerró.
+    async cerrarMesasAlCierre(): Promise<number> {
+      const momento = ahora();
+      let cerradas = 0;
+      for (const fila of await repo.activasIniciadas(momento)) {
+        if (momento < cierreDelDia(fechaDe(fila.inicio), fila.horarioCierre)) continue;
+        try {
+          const hacia = estadoDeReserva(fila.estado).cerrar();
+          const cierre = await repo.cerrar(fila.restauranteId, fila.sucursalId, fila.id, true);
+          if (cierre.resultado !== 'CERRADA') continue;
+          publicarCierre(fila, hacia, fila.restauranteId, cierre);
+          cerradas++;
+        } catch (e) {
+          console.error(`No se pudo cerrar la mesa de la reserva ${fila.id}`, e);
+        }
+      }
+      return cerradas;
+    },
+
     // CU-18 Cerrar mesa: sin pedidos sin entregar y, si queda saldo, con
     // confirmación. La visita la registra RegistroVisitas con el evento.
     async cerrar(
@@ -317,13 +362,7 @@ export function createReservaService(
               : `Queda un saldo de ${formatoPesos(saldoPendiente ?? 0)} sin pagar.`;
         throw new AppError(409, mensaje, cierre.bloqueo);
       }
-      publicar('RESERVA_FINALIZADA', fila, hacia);
-      bus.publicar({
-        tipo: 'CUENTA_MESA_CERRADA',
-        cuentaMesaId: cierre.cuentaMesaId,
-        restauranteId,
-        comensalId: cierre.comensalId,
-      });
+      publicarCierre(fila, hacia, restauranteId, cierre);
       return aReservaPanel({ ...fila, estado: hacia });
     },
 

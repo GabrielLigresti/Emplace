@@ -2,6 +2,7 @@ import type { Mesa, ReservaInput } from '@pgim/shared';
 import type { BusEventos } from '../domain/eventos';
 import type {
   FilaReserva,
+  FilaReservaAbierta,
   FilaReservaPanel,
   ReservaRepository,
   SucursalReservable,
@@ -78,6 +79,7 @@ function repoFalso(cambios: Partial<ReservaRepository> = {}): jest.Mocked<Reserv
       .fn()
       .mockResolvedValue({ resultado: 'CERRADA', cuentaMesaId: 'CM', comensalId: C }),
     pendientesIniciadas: jest.fn().mockResolvedValue([fila({ inicio: new Date(A_LAS_20) })]),
+    activasIniciadas: jest.fn().mockResolvedValue([]),
     ...cambios,
   } as jest.Mocked<ReservaRepository>;
 }
@@ -541,6 +543,91 @@ describe('cierre de mesa (CU-18)', () => {
     await expect(servicio(repo).service.cerrar(R, S, 'R', true)).rejects.toMatchObject({
       status: 409,
     });
+  });
+});
+
+describe('cierre automático al horario de cierre', () => {
+  const R = 'restaurante';
+  // Cierre a medianoche: el del 30/10 es el 31/10 a las 03:00 UTC.
+  const AL_CIERRE = new Date('2026-10-31T03:00:00.000Z');
+  const ANTES_DEL_CIERRE = new Date('2026-10-31T02:59:59.000Z');
+
+  function abierta(cambios: Partial<FilaReservaAbierta> = {}): FilaReservaAbierta {
+    return {
+      ...fila({ inicio: new Date(A_LAS_20), estado: 'ACTIVA' }),
+      restauranteId: R,
+      horarioCierre: '00:00',
+      ...cambios,
+    };
+  }
+
+  const conAbiertas = (...filas: FilaReservaAbierta[]) =>
+    repoFalso({ activasIniciadas: jest.fn().mockResolvedValue(filas) });
+
+  it('antes del horario de cierre no toca la mesa', async () => {
+    const { service, repo } = servicio(conAbiertas(abierta()), busFalso(), ANTES_DEL_CIERRE);
+
+    expect(await service.cerrarMesasAlCierre()).toBe(0);
+    expect(repo.cerrar).not.toHaveBeenCalled();
+  });
+
+  it('al llegar el horario cierra confirmando el saldo y avisa como el cierre manual', async () => {
+    const { service, repo, bus } = servicio(conAbiertas(abierta()), busFalso(), AL_CIERRE);
+
+    expect(await service.cerrarMesasAlCierre()).toBe(1);
+    expect(repo.activasIniciadas).toHaveBeenCalledWith(AL_CIERRE);
+    expect(repo.cerrar).toHaveBeenCalledWith(R, S, 'R', true);
+    expect(bus.publicar).toHaveBeenCalledWith({
+      tipo: 'RESERVA_FINALIZADA',
+      reserva: expect.objectContaining({ id: 'R', estado: 'FINALIZADA' }),
+    });
+    expect(bus.publicar).toHaveBeenCalledWith({
+      tipo: 'CUENTA_MESA_CERRADA',
+      cuentaMesaId: 'CM',
+      restauranteId: R,
+      comensalId: C,
+    });
+  });
+
+  it('recupera las mesas de días anteriores si la tarea no corrió a tiempo', async () => {
+    const dosDiasDespues = new Date('2026-11-01T15:00:00.000Z');
+    const { service } = servicio(conAbiertas(abierta()), busFalso(), dosDiasDespues);
+
+    expect(await service.cerrarMesasAlCierre()).toBe(1);
+  });
+
+  it('una mesa bloqueada queda abierta, sin eventos, y la próxima vuelta reintenta', async () => {
+    const repo = conAbiertas(abierta());
+    repo.cerrar.mockResolvedValueOnce({
+      resultado: 'BLOQUEADA',
+      bloqueo: { pedidosSinEntregar: 1 },
+    });
+    const { service, bus } = servicio(repo, busFalso(), AL_CIERRE);
+
+    expect(await service.cerrarMesasAlCierre()).toBe(0);
+    expect(bus.publicar).not.toHaveBeenCalled();
+
+    expect(await service.cerrarMesasAlCierre()).toBe(1);
+  });
+
+  it('si la cerraron mientras tanto, no avisa de nuevo', async () => {
+    const repo = conAbiertas(abierta());
+    repo.cerrar.mockResolvedValue({ resultado: 'CAMBIO' });
+    const { service, bus } = servicio(repo, busFalso(), AL_CIERRE);
+
+    expect(await service.cerrarMesasAlCierre()).toBe(0);
+    expect(bus.publicar).not.toHaveBeenCalled();
+  });
+
+  it('un error en una mesa no frena a las demás', async () => {
+    const error = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const repo = conAbiertas(abierta({ id: 'R1' }), abierta({ id: 'R2' }));
+    repo.cerrar.mockRejectedValueOnce(new Error('caída'));
+    const { service } = servicio(repo, busFalso(), AL_CIERRE);
+
+    expect(await service.cerrarMesasAlCierre()).toBe(1);
+    expect(repo.cerrar).toHaveBeenCalledWith(R, S, 'R2', true);
+    error.mockRestore();
   });
 });
 

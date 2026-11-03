@@ -1,4 +1,11 @@
-import { elegirMesa, esFechaReservable, fechaDe, iniciosDelDia, sumarDias } from './franjas';
+import {
+  cierreDelDia,
+  elegirMesa,
+  esFechaReservable,
+  fechaDe,
+  iniciosDelDia,
+  sumarDias,
+} from './franjas';
 
 const iso = (fechas: Date[]) => fechas.map((f) => f.toISOString());
 
@@ -20,6 +27,16 @@ describe('iniciosDelDia', () => {
 
   it('sin una hora completa no hay franjas', () => {
     expect(iniciosDelDia('2026-10-30', '12:00', '12:30')).toEqual([]);
+  });
+});
+
+describe('cierreDelDia', () => {
+  it('es la hora de cierre de esa fecha en Argentina', () => {
+    expect(cierreDelDia('2026-10-30', '22:30').toISOString()).toBe('2026-10-31T01:30:00.000Z');
+  });
+
+  it('un cierre a 00:00 es la medianoche que termina ese día', () => {
+    expect(cierreDelDia('2026-10-30', '00:00').toISOString()).toBe('2026-10-31T03:00:00.000Z');
   });
 });
 
