@@ -22,6 +22,9 @@ declare module 'react' {
         'rotation-per-second'?: string;
         'interaction-prompt'?: string;
         'shadow-intensity'?: string;
+        'shadow-softness'?: string;
+        'camera-orbit'?: string;
+        'min-camera-orbit'?: string;
       };
     }
   }

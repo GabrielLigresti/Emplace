@@ -48,7 +48,7 @@ export function BuscadorSucursales() {
 
   return (
     <>
-      <div ref={refHeroe} className="revelar max-w-[560px] pt-10 lg:pt-[14svh]">
+      <div ref={refHeroe} className="revelar max-w-[560px] pt-8 lg:pt-[14svh]">
         <h1 className="max-w-[14ch] text-[clamp(38px,3.6vw,56px)] leading-[1.02] font-semibold tracking-[-0.03em] text-balance text-ink">
           Mirá el plato antes de pedirlo
         </h1>
@@ -111,7 +111,7 @@ export function BuscadorSucursales() {
           >
             Dónde comer
           </h2>
-          <p aria-live="polite" className="text-sm text-meta">
+          <p aria-live="polite" className="text-[14px] leading-5 text-text">
             {resumen}
           </p>
         </div>
@@ -162,12 +162,12 @@ function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
   return (
     <li className="flex flex-col gap-1 rounded-panel bg-surface p-5">
       <p className="text-[22px] leading-7 font-semibold text-ink">{restaurante.nombre}</p>
-      <p className="text-[17px] leading-[26px] text-text">
+      <p className="text-[17px] leading-[26px] font-medium text-ink">
         {mismoTexto(sucursal.nombre, nombreBarrio(sucursal.barrio))
           ? sucursal.nombre
           : `${sucursal.nombre} · ${nombreBarrio(sucursal.barrio)}`}
       </p>
-      <p className="text-sm text-meta">{sucursal.direccion}</p>
+      <p className="text-[15px] text-meta">{sucursal.direccion}</p>
       {platosCoincidentes.length > 0 && (
         <p className="text-[17px] leading-[26px] text-text">
           <span className="font-medium text-accent-ink">Coincide:</span>{' '}

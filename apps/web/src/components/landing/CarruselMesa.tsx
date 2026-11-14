@@ -2,25 +2,26 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { PlatoEnVivo } from './PlatoEnVivo';
 
-type Slide = { titulo: string; texto: string; foto?: string; alt?: string };
+type Slide = { titulo: string; texto: string; foto?: string; alt?: string; posicion?: string };
 
 const SLIDES: Slide[] = [
   {
     titulo: 'Ver en mi mesa',
     texto:
-      'Girá el plato con el dedo. Desde el celular, tocá Ver en mi mesa y aparece a tamaño real sobre tu mesa.',
-  },
-  {
-    titulo: 'A tamaño real, con su porción',
-    texto: 'El plato aparece con el tamaño que tiene de verdad: 400 g de bife, 120 g de flan.',
+      'El plato aparece sobre tu mesa a tamaño real, con su porción: 400 g de bife, 120 g de flan.',
     foto: '/fotos-demo/grandes/bife-de-chorizo-con-papas.jpg',
     alt: 'Bife de chorizo con papas, de la carta de La Parrilla Demo',
+  },
+  {
+    titulo: 'Giralo con el dedo',
+    texto: 'Este es el plato en 3D. Desde el celular, tocá Ver en mi mesa y aparece sobre tu mesa.',
   },
   {
     titulo: 'Sin instalar nada',
     texto: 'Se abre en el navegador de tu celular. Apuntás la cámara a la mesa y listo.',
     foto: '/fotos-demo/grandes/flan-casero.jpg',
     alt: 'Flan casero con dulce de leche y crema, de la carta de La Parrilla Demo',
+    posicion: '72% 62%',
   },
   {
     titulo: 'La carta, sin crear cuenta',
@@ -68,7 +69,7 @@ export function CarruselMesa() {
     if (!avanza) return;
     const t = setTimeout(
       () => setActual((i) => (i + 1) % SLIDES.length),
-      actual === 0 ? 12000 : 6000,
+      actual === 1 ? 12000 : 6000,
     );
     return () => clearTimeout(t);
   }, [avanza, actual]);
@@ -121,7 +122,8 @@ export function CarruselMesa() {
                 <img
                   src={s.foto}
                   alt={s.alt}
-                  loading={i === 1 ? 'eager' : 'lazy'}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  style={s.posicion ? { objectPosition: s.posicion } : undefined}
                   className={`size-full object-cover ${activo ? 'mesa-deriva' : ''}`}
                 />
               ) : (
@@ -131,13 +133,15 @@ export function CarruselMesa() {
           );
         })}
       </div>
-      <div className="min-h-[212px] bg-surface p-5 md:min-h-[204px] md:p-6">
+      <div className="min-h-[196px] bg-surface p-4 md:min-h-[204px] md:p-6">
         <div aria-live={pausado ? 'polite' : 'off'}>
           <div key={actual} className="mesa-entra">
-            <h2 className="text-balance text-[26px] font-semibold leading-[30px] tracking-[-0.025em] text-ink md:text-[32px] md:leading-[36px]">
+            <h2 className="text-balance text-[22px] font-semibold leading-7 tracking-[-0.025em] text-ink md:text-[32px] md:leading-[36px]">
               {slide.titulo}
             </h2>
-            <p className="mt-2 max-w-[46ch] text-[17px] leading-[26px] text-text">{slide.texto}</p>
+            <p className="mt-2 max-w-[46ch] text-[16px] leading-6 text-text md:text-[17px] md:leading-[26px]">
+              {slide.texto}
+            </p>
           </div>
         </div>
         <div data-controles className="mt-4 flex items-center gap-2">
@@ -169,7 +173,7 @@ export function CarruselMesa() {
           >
             <ChevronRight aria-hidden className="size-5" />
           </button>
-          <span aria-hidden className="ml-auto text-sm text-meta">
+          <span aria-hidden className="text-[14px] text-text">
             {actual + 1} de {SLIDES.length}
           </span>
         </div>

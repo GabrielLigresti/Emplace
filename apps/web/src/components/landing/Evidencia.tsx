@@ -18,20 +18,27 @@ export function Evidencia() {
   const ref = useRevelar<HTMLElement>();
   return (
     <section ref={ref} aria-labelledby="titulo-evidencia" className="revelar mt-24 lg:mt-40">
-      <h2
-        id="titulo-evidencia"
-        className="px-1 text-[clamp(28px,3.2vw,48px)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-ink md:px-5 lg:px-11"
-      >
-        Verlo antes cambia lo que pedís
-      </h2>
+      <div className="grid gap-4 px-1 md:px-5 lg:grid-cols-2 lg:items-end lg:gap-12 lg:px-11">
+        <h2
+          id="titulo-evidencia"
+          className="text-[clamp(28px,3.2vw,48px)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-ink"
+        >
+          Verlo antes cambia lo que pedís
+        </h2>
+        <p className="max-w-[44ch] text-[17px] leading-[26px] text-text">
+          En un experimento de campo, ver el postre sobre la mesa antes de pedirlo hizo que más del
+          doble de los comensales lo pidiera.
+        </p>
+      </div>
       <div className="mt-10 grid overflow-hidden rounded-panel lg:h-[600px] lg:grid-cols-3">
         <img
           src="/fotos-demo/grandes/flan-casero.jpg"
           alt="Flan casero servido en un plato"
           loading="lazy"
+          style={{ objectPosition: '50% 85%' }}
           className="aspect-[4/3] w-full object-cover lg:col-span-2 lg:aspect-auto lg:h-full"
         />
-        <div className="grid grid-cols-2 lg:grid-cols-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1">
           <Ficha
             fondo="bg-hoja"
             cifra={'41,2\u00a0%'}
@@ -40,7 +47,7 @@ export function Evidencia() {
           <Ficha fondo="bg-panel" cifra={'18\u00a0%'} texto="lo pidió con la carta de siempre." />
         </div>
       </div>
-      <p className="mt-4 px-1 text-sm text-meta md:px-5 lg:px-11">
+      <p className="mt-4 px-1 text-[14px] leading-5 text-text md:px-5 lg:px-11">
         Experimento de campo de Fritz, Hadi y Stephen (2023).
       </p>
     </section>

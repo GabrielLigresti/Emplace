@@ -8,9 +8,7 @@ test('el carrusel avanza, se pausa y el cierre lleva al buscador', async ({ page
   await expect(carrusel.getByRole('heading', { name: 'Ver en mi mesa' })).toBeVisible();
 
   await carrusel.getByRole('button', { name: 'Plato siguiente' }).click();
-  await expect(
-    carrusel.getByRole('heading', { name: 'A tamaño real, con su porción' }),
-  ).toBeVisible();
+  await expect(carrusel.getByRole('heading', { name: 'Giralo con el dedo' })).toBeVisible();
 
   await carrusel.getByRole('button', { name: 'Pausar el carrusel' }).click();
   await expect(carrusel.getByRole('button', { name: 'Reanudar el carrusel' })).toBeVisible();

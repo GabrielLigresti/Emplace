@@ -47,11 +47,11 @@ function Grupo({ nombre, filas }: { nombre: string; filas: [string, string][] })
   return (
     <div ref={ref} className="revelar mt-7 first:mt-0">
       <p className="font-semibold text-ink">{nombre}</p>
-      <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-6 gap-y-1">
+      <dl className="mt-2 grid gap-y-2 sm:grid-cols-[1fr_auto] sm:gap-x-6 sm:gap-y-1">
         {filas.map(([paso, dato]) => (
           <div key={paso} className="contents">
             <dt className="text-text">{paso}</dt>
-            <dd className="text-right text-meta">{dato}</dd>
+            <dd className="text-meta sm:text-right">{dato}</dd>
           </div>
         ))}
       </dl>
@@ -85,7 +85,7 @@ export function Comanda() {
           Sumás puntos en ese restaurante
         </p>
       </div>
-      <p className="mt-4 text-sm text-meta">
+      <p className="mt-4 text-[14px] leading-5 text-text">
         Ver en mi mesa aparece solo en los platos que el restaurante cargó en 3D.
       </p>
     </section>

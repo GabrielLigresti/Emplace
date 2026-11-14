@@ -48,7 +48,7 @@ export function PlatoEnVivo() {
   }, [listo, fallo]);
 
   return (
-    <div className="relative size-full bg-panel">
+    <div className="relative size-full bg-hoja">
       {fallo ? (
         <img src={plato.foto} alt={plato.alt} className="size-full object-cover" />
       ) : listo ? (
@@ -61,7 +61,10 @@ export function PlatoEnVivo() {
           auto-rotate={reducir ? undefined : true}
           rotation-per-second="18deg"
           interaction-prompt="none"
-          shadow-intensity="0"
+          camera-orbit="30deg 62deg 70%"
+          min-camera-orbit="auto auto 50%"
+          shadow-intensity="1"
+          shadow-softness="0.9"
           ar
           ar-modes="webxr scene-viewer quick-look"
           ar-scale="fixed"
