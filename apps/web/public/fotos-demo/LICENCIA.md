@@ -10,3 +10,7 @@ Las usa el seed como `fotoUrl` de los platos de "La Parrilla Demo" (Vite las sir
 | `milanesa-con-pure.jpg` | Milanesa con puré | Horacio Cambeiro | [Milanesa con puré de papas.jpg](https://commons.wikimedia.org/wiki/File:Milanesa_con_puré_de_papas.jpg) | CC BY-SA 4.0 |
 | `flan-casero.jpg` | Flan casero | Horacio Cambeiro | [Flan (postre) acompañado de dulce de leche argentino y crema.jpg](https://commons.wikimedia.org/wiki/File:Flan_(postre)_acompañado_de_dulce_de_leche_argentino_y_crema.jpg) | CC BY 3.0 |
 | `agua-mineral.jpg` | Agua mineral | Kurt Kaiser | [Glass of water ouside.jpg](https://commons.wikimedia.org/wiki/File:Glass_of_water_ouside.jpg) | CC0 1.0 |
+
+## Versiones grandes para la portada
+
+`grandes/` tiene cinco de estas fotos (todas menos `agua-mineral.jpg`) a 1600 px de ancho, para el carrusel de la portada (`/`). Salen de los mismos archivos de Wikimedia Commons, con el mismo autor y la misma licencia que figuran en la tabla; el único cambio es el tamaño y la recompresión en JPEG.
