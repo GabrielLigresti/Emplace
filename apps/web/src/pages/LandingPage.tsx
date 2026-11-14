@@ -69,7 +69,7 @@ export function LandingPage() {
   const refPie = useRevelar<HTMLElement>();
 
   return (
-    <div className="relative min-h-screen bg-bg">
+    <div className="relative min-h-svh bg-bg">
       <a
         href="#buscar"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-20 focus:rounded-control focus:bg-accent focus:px-4 focus:py-3 focus:text-[14px] focus:leading-5 focus:font-semibold focus:text-white"
@@ -172,8 +172,8 @@ export function LandingPage() {
           className="revelar grid gap-12 px-4 py-28 md:grid-cols-2 md:items-start md:gap-12 md:px-8 lg:px-14 lg:py-40"
         >
           <div>
-            <p className="max-w-[26ch] text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-medium tracking-[-0.02em] text-ink">
-              ¿Ya sabés qué querés comer? Buscá el plato y miralo sobre tu mesa antes de pedirlo.
+            <p className="max-w-[24ch] text-[22px] leading-7 font-medium tracking-[-0.02em] text-ink lg:text-[clamp(26px,2.2vw,32px)] lg:leading-[1.15]">
+              Buscá el plato y miralo sobre tu mesa antes de pedirlo.
             </p>
             <button
               type="button"
@@ -203,7 +203,7 @@ export function LandingPage() {
           ref={refPie}
           className="revelar grid gap-2 px-4 pb-8 text-[14px] leading-5 text-text md:px-8 lg:grid-cols-[1fr_auto_1fr] lg:items-baseline lg:gap-6 lg:px-14"
         >
-          <p>
+          <p className="max-w-[70ch]">
             PGIM, restaurantes de Buenos Aires. Sitio de demostración: La Parrilla Demo es un
             restaurante ficticio.
           </p>
@@ -215,7 +215,7 @@ export function LandingPage() {
               Créditos de fotos y modelos
             </a>
           </p>
-          <p className="lg:text-right">
+          <p className="max-w-[70ch] lg:text-right">
             Fotos de Snapwire, Leeroy, Matt Bango, Jakub Kapusnak y rawpixel, en dominio público
             (CC0). Modelo 3D de Kuutti Siitonen, en Poly Haven (CC0). 2026.
           </p>
