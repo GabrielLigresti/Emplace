@@ -22,7 +22,7 @@ const PLATOS = [
 ] as const;
 
 const claseChip =
-  'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold transition active:scale-[0.98]';
+  'inline-flex min-h-11 items-center rounded-full px-4 text-[14px] leading-5 font-semibold transition active:scale-[0.98]';
 
 // Primer slide del carrusel: el plato en 3D, que se gira con el dedo y se abre en la mesa.
 export function PlatoEnVivo() {
@@ -73,13 +73,13 @@ export function PlatoEnVivo() {
           <button
             slot="ar-button"
             type="button"
-            className="absolute bottom-4 right-4 min-h-11 rounded-control bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-hover active:scale-[0.98]"
+            className="absolute bottom-4 right-4 min-h-11 rounded-control bg-accent px-4 text-[14px] leading-5 font-semibold text-white transition hover:bg-accent-hover active:scale-[0.98]"
           >
             Ver en mi mesa
           </button>
         </model-viewer>
       ) : (
-        <p className="absolute inset-0 flex items-center justify-center text-meta">
+        <p className="absolute inset-0 flex items-center justify-center text-[14px] leading-5 text-meta">
           Cargando el plato…
         </p>
       )}

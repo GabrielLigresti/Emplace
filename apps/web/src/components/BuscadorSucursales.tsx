@@ -107,7 +107,7 @@ export function BuscadorSucursales() {
         <div className="flex items-baseline justify-between gap-4">
           <h2
             id="titulo-restaurantes"
-            className="text-[clamp(26px,2.2vw,32px)] leading-[1.1] font-semibold tracking-[-0.025em] text-ink"
+            className="text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-semibold tracking-[-0.025em] text-ink"
           >
             Dónde comer
           </h2>
@@ -167,7 +167,7 @@ function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
           ? sucursal.nombre
           : `${sucursal.nombre} · ${nombreBarrio(sucursal.barrio)}`}
       </p>
-      <p className="text-[15px] text-meta">{sucursal.direccion}</p>
+      <p className="text-[14px] leading-5 text-meta">{sucursal.direccion}</p>
       {platosCoincidentes.length > 0 && (
         <p className="text-[17px] leading-[26px] text-text">
           <span className="font-medium text-accent-ink">Coincide:</span>{' '}
@@ -177,13 +177,13 @@ function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
       <div className="mt-3 flex gap-2">
         <Link
           to={`/s/${sucursal.id}/menu`}
-          className="inline-flex min-h-11 items-center justify-center rounded-control bg-panel px-4 text-sm font-semibold text-text transition hover:bg-line active:scale-[0.98]"
+          className="inline-flex min-h-11 items-center justify-center rounded-control bg-panel px-4 text-[14px] leading-5 font-semibold text-text transition hover:bg-line active:scale-[0.98]"
         >
           Ver carta
         </Link>
         <Link
           to={`/s/${sucursal.id}/reservar`}
-          className="inline-flex min-h-11 items-center justify-center rounded-control bg-accent-soft px-4 text-sm font-semibold text-accent-ink transition hover:bg-accent/15 active:scale-[0.98]"
+          className="inline-flex min-h-11 items-center justify-center rounded-control bg-accent-soft px-4 text-[14px] leading-5 font-semibold text-accent-ink transition hover:bg-accent/15 active:scale-[0.98]"
         >
           Reservar
         </Link>

@@ -66,7 +66,7 @@ export function Comanda() {
     <section ref={ref} aria-labelledby="titulo-recorrido" className="revelar mt-24 max-w-[560px]">
       <h2
         id="titulo-recorrido"
-        className="text-[clamp(26px,2.2vw,32px)] leading-[1.1] font-semibold tracking-[-0.025em] text-balance text-ink"
+        className="text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-semibold tracking-[-0.025em] text-balance text-ink"
       >
         De la búsqueda a la mesa
       </h2>

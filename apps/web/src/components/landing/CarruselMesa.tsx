@@ -136,12 +136,10 @@ export function CarruselMesa() {
       <div className="min-h-[196px] bg-surface p-4 md:min-h-[204px] md:p-6">
         <div aria-live={pausado ? 'polite' : 'off'}>
           <div key={actual} className="mesa-entra">
-            <h2 className="text-balance text-[22px] font-semibold leading-7 tracking-[-0.025em] text-ink md:text-[32px] md:leading-[36px]">
+            <h2 className="text-balance text-[22px] font-semibold leading-7 tracking-[-0.025em] text-ink md:text-[clamp(26px,2.2vw,32px)] md:leading-[1.15]">
               {slide.titulo}
             </h2>
-            <p className="mt-2 max-w-[46ch] text-[16px] leading-6 text-text md:text-[17px] md:leading-[26px]">
-              {slide.texto}
-            </p>
+            <p className="mt-2 max-w-[46ch] text-[17px] leading-[26px] text-text">{slide.texto}</p>
           </div>
         </div>
         <div data-controles className="mt-4 flex items-center gap-2">
@@ -173,7 +171,7 @@ export function CarruselMesa() {
           >
             <ChevronRight aria-hidden className="size-5" />
           </button>
-          <span aria-hidden className="text-[14px] text-text">
+          <span aria-hidden className="text-[14px] leading-5 text-text">
             {actual + 1} de {SLIDES.length}
           </span>
         </div>

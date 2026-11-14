@@ -8,7 +8,7 @@ function Ficha({ fondo, cifra, texto }: { fondo: string; cifra: string; texto: s
   return (
     <div ref={ref} className={`revelar flex flex-col justify-between gap-6 p-5 md:p-7 ${fondo}`}>
       <p className={claseCifra}>{cifra}</p>
-      <p className="text-base leading-6 text-text md:text-[17px] md:leading-[26px]">{texto}</p>
+      <p className="text-[17px] leading-[26px] text-text">{texto}</p>
     </div>
   );
 }
@@ -18,10 +18,10 @@ export function Evidencia() {
   const ref = useRevelar<HTMLElement>();
   return (
     <section ref={ref} aria-labelledby="titulo-evidencia" className="revelar mt-24 lg:mt-40">
-      <div className="grid gap-4 px-1 md:px-5 lg:grid-cols-2 lg:items-end lg:gap-12 lg:px-11">
+      <div className="grid gap-4 px-4 md:px-8 lg:grid-cols-2 lg:items-end lg:gap-12 lg:px-14">
         <h2
           id="titulo-evidencia"
-          className="text-[clamp(28px,3.2vw,48px)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-ink"
+          className="text-[clamp(38px,3.6vw,56px)] leading-[1.02] font-semibold tracking-[-0.03em] text-balance text-ink"
         >
           Verlo antes cambia lo que pedís
         </h2>
@@ -47,7 +47,7 @@ export function Evidencia() {
           <Ficha fondo="bg-panel" cifra={'18\u00a0%'} texto="lo pidió con la carta de siempre." />
         </div>
       </div>
-      <p className="mt-4 px-1 text-[14px] leading-5 text-text md:px-5 lg:px-11">
+      <p className="mt-4 px-4 text-[14px] leading-5 text-text md:px-8 lg:px-14">
         Experimento de campo de Fritz, Hadi y Stephen (2023).
       </p>
     </section>
