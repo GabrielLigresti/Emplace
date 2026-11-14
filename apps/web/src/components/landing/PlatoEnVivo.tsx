@@ -24,7 +24,7 @@ export function PlatoEnVivo() {
             src={`/fotos-portada/${v.archivo}`}
             alt={`Torta de chocolate y frutillas escaneada en 3D, ${v.alt}`}
             aria-hidden={activa ? undefined : true}
-            className={`absolute inset-0 size-full object-contain p-6 pb-20 transition-opacity duration-500 md:p-12 md:pb-24 ${
+            className={`absolute inset-0 size-full object-contain p-3 pb-16 transition-opacity duration-500 md:p-12 md:pb-24 ${
               activa ? 'mesa-flota opacity-100' : 'opacity-0'
             }`}
           />
