@@ -6,9 +6,9 @@ const claseCifra =
 function Ficha({ fondo, cifra, texto }: { fondo: string; cifra: string; texto: string }) {
   const ref = useRevelar();
   return (
-    <div ref={ref} className={`revelar flex flex-col justify-between gap-6 p-5 md:p-7 ${fondo}`}>
+    <div ref={ref} className={`revelar flex flex-col justify-start p-5 md:p-7 ${fondo}`}>
       <p className={claseCifra}>{cifra}</p>
-      <p className="text-[17px] leading-[26px] text-text">{texto}</p>
+      <p className="mt-3 text-[17px] leading-[26px] text-text">{texto}</p>
     </div>
   );
 }

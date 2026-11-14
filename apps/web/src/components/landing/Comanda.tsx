@@ -47,9 +47,9 @@ function Grupo({ nombre, filas }: { nombre: string; filas: [string, string][] })
   return (
     <div ref={ref} className="revelar mt-7 first:mt-0">
       <p className="font-semibold text-ink">{nombre}</p>
-      <dl className="mt-2 grid gap-y-2 sm:grid-cols-[1fr_auto] sm:gap-x-6 sm:gap-y-1">
+      <dl className="mt-2 grid gap-y-3 sm:grid-cols-[1fr_auto] sm:gap-x-6 sm:gap-y-1">
         {filas.map(([paso, dato]) => (
-          <div key={paso} className="contents">
+          <div key={paso} className="sm:contents">
             <dt className="text-text">{paso}</dt>
             <dd className="text-meta sm:text-right">{dato}</dd>
           </div>

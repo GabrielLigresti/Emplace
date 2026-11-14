@@ -43,7 +43,7 @@ function useSeccionALaVista(): number | undefined {
           if (e.isIntersecting) setSlide(SECCIONES[e.target.id]);
         }
       },
-      { rootMargin: '-40% 0px -50% 0px' },
+      { rootMargin: '-55% 0px -35% 0px' },
     );
     for (const id of Object.keys(SECCIONES)) {
       const el = document.getElementById(id);
@@ -149,7 +149,7 @@ export function LandingPage() {
         </header>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <div className="h-[40svh] min-h-[340px] lg:sticky lg:top-3 lg:h-[calc(100svh-24px)] lg:min-h-[400px]">
+          <div className="h-[47svh] min-h-[400px] lg:sticky lg:top-3 lg:h-[calc(100svh-24px)] lg:min-h-[400px]">
             <CarruselMesa pedido={pedido} />
           </div>
         </div>
@@ -168,25 +168,26 @@ export function LandingPage() {
 
         <section
           ref={refCierre}
-          aria-label="Empezar"
-          className="revelar grid gap-12 px-4 py-28 md:grid-cols-2 md:items-start md:gap-12 md:px-8 lg:px-14 lg:py-40"
+          aria-labelledby="titulo-cierre"
+          className="revelar grid gap-12 px-4 py-20 md:grid-cols-[3fr_2fr] md:items-end md:px-8 lg:px-14 lg:py-28"
         >
           <div>
-            <p className="max-w-[24ch] text-[22px] leading-7 font-medium tracking-[-0.02em] text-ink lg:text-[clamp(26px,2.2vw,32px)] lg:leading-[1.15]">
-              Buscá el plato y miralo sobre tu mesa antes de pedirlo.
-            </p>
+            <h2
+              id="titulo-cierre"
+              className="text-[clamp(38px,3.6vw,56px)] leading-[1.02] font-semibold tracking-[-0.03em] text-balance text-ink"
+            >
+              Buscá dónde comer hoy
+            </h2>
             <button
               type="button"
               onClick={irAlBuscador}
-              className="mt-6 min-h-12 rounded-control bg-accent px-6 text-[14px] leading-5 font-semibold text-white transition hover:bg-accent-hover active:scale-[0.98]"
+              className="mt-8 min-h-14 rounded-control bg-accent px-8 text-[17px] leading-6 font-semibold text-white transition hover:bg-accent-hover active:scale-[0.98]"
             >
               Buscar restaurantes
             </button>
           </div>
           <div>
-            <h2 className="text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-semibold tracking-[-0.025em] text-ink">
-              ¿Tenés un restaurante?
-            </h2>
+            <h3 className="text-[22px] leading-7 font-semibold text-ink">¿Tenés un restaurante?</h3>
             <p className="mt-3 max-w-[40ch] text-[17px] leading-[26px] text-text">
               Cargá tu carta y recibí reservas y pedidos en la mesa.
             </p>

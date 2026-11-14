@@ -138,16 +138,18 @@ export function CarruselMesa({ pedido }: { pedido?: number }) {
           );
         })}
       </div>
-      <div className="min-h-[196px] bg-surface p-4 md:min-h-[204px] md:p-6">
+      <div className="min-h-0 bg-surface p-4 md:min-h-[204px] md:p-6">
         <div aria-live={pausado ? 'polite' : 'off'}>
           <div key={actual} className="mesa-entra">
             <h2 className="text-balance text-[22px] font-semibold leading-7 tracking-[-0.025em] text-ink md:text-[clamp(26px,2.2vw,32px)] md:leading-[1.15]">
               {slide.titulo}
             </h2>
-            <p className="mt-2 max-w-[46ch] text-[17px] leading-[26px] text-text">{slide.texto}</p>
+            <p className="mt-2 hidden max-w-[46ch] md:block text-[17px] leading-[26px] text-text">
+              {slide.texto}
+            </p>
           </div>
         </div>
-        <div data-controles className="mt-4 flex items-center gap-2">
+        <div data-controles className="mt-3 flex items-center gap-2">
           <button
             type="button"
             onClick={() => setPausado((p) => !p)}

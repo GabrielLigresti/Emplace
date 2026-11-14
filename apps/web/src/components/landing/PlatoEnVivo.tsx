@@ -1,14 +1,14 @@
 import { useState } from 'react';
 
 const VISTAS = [
-  { id: 'textura', chip: 'Con textura', alt: 'con textura', archivo: 'torta-3d-textura.webp' },
-  { id: 'malla', chip: 'Malla', alt: 'en malla', archivo: 'torta-3d-malla.webp' },
+  { id: 'textura', chip: 'Con color', alt: 'con color', archivo: 'torta-3d-textura.webp' },
+  { id: 'malla', chip: 'Sin color', alt: 'sin color', archivo: 'torta-3d-malla.webp' },
   { id: 'arriba', chip: 'De arriba', alt: 'vista de arriba', archivo: 'torta-3d-arriba.webp' },
   { id: 'frente', chip: 'De frente', alt: 'vista de frente', archivo: 'torta-3d-frente.webp' },
 ] as const;
 
 const claseChip =
-  'inline-flex min-h-11 items-center rounded-full px-4 text-[14px] leading-5 font-semibold transition active:scale-[0.98]';
+  'inline-flex min-h-11 shrink-0 items-center rounded-full px-3text-[14px] leading-5 font-semibold transition active:scale-[0.98]';
 
 // Segundo slide del carrusel: las vistas de un plato escaneado en 3D.
 export function PlatoEnVivo() {
@@ -24,13 +24,13 @@ export function PlatoEnVivo() {
             src={`/fotos-portada/${v.archivo}`}
             alt={`Torta de chocolate y frutillas escaneada en 3D, ${v.alt}`}
             aria-hidden={activa ? undefined : true}
-            className={`absolute inset-0 size-full object-contain p-8 pt-20 transition-opacity duration-500 md:p-14 md:pt-24 ${
+            className={`absolute inset-0 size-full object-contain p-6 pb-20 transition-opacity duration-500 md:p-12 md:pb-24${
               activa ? 'mesa-flota opacity-100' : 'opacity-0'
             }`}
           />
         );
       })}
-      <div className="absolute left-4 top-4 right-4 flex flex-wrap gap-2">
+      <div className="absolute inset-x-4 bottom-4 flex gap-2 overflow-x-auto">
         {VISTAS.map((v) => (
           <button
             key={v.id}
