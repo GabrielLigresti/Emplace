@@ -99,7 +99,7 @@ export function BuscadorSucursales() {
             ))}
           </select>
         </div>
-        <p aria-live="polite" className="mt-3 min-h-5 text-[14px] leading-5 text-text">
+        <p aria-live="polite" className="mt-3 min-h-[26px] text-[17px] leading-[26px] text-text">
           {error ? '' : resumen}
         </p>
       </div>
