@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { CalendarDays, LogOut, Receipt, Star, UserRound } from 'lucide-react';
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
 import { BuscadorSucursales } from '../components/BuscadorSucursales';
+import { CarruselMesa } from '../components/landing/CarruselMesa';
 import { useMiMesa } from '../lib/miMesa';
 
 // En el celular, ícono con el texto chico debajo (como las pestañas); desde md, en fila.
@@ -96,6 +97,9 @@ export function LandingPage() {
       </header>
 
       <main className="mx-auto max-w-[480px] px-4 pt-5 md:max-w-[960px]">
+        <div className="mb-6 h-[520px]">
+          <CarruselMesa />
+        </div>
         <BuscadorSucursales />
       </main>
 

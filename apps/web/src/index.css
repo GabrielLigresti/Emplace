@@ -74,3 +74,33 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@keyframes mesa-deriva {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes mesa-entra {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mesa-deriva {
+    animation: mesa-deriva 9s ease-out forwards;
+  }
+
+  .mesa-entra {
+    animation: mesa-entra 500ms ease-out;
+  }
+}
