@@ -36,20 +36,61 @@ const SECCIONES: Record<string, number> = { inicio: 0, restaurantes: 3, recorrid
 function useSeccionALaVista(): number | undefined {
   const [slide, setSlide] = useState<number>();
   useEffect(() => {
-    if (!window.matchMedia('(min-width: 1024px)').matches) return;
-    const observador = new IntersectionObserver(
-      (entradas) => {
-        for (const e of entradas) {
-          if (e.isIntersecting) setSlide(SECCIONES[e.target.id]);
-        }
-      },
-      { rootMargin: '-55% 0px -35% 0px' },
-    );
-    for (const id of Object.keys(SECCIONES)) {
-      const el = document.getElementById(id);
-      if (el) observador.observe(el);
+    const ancho = window.matchMedia('(min-width: 1024px)');
+    let desconectar = () => {};
+
+    function conectar() {
+      // Hasta el primer scroll del usuario la portada se queda en el slide 1.
+      let habilitado = false;
+      const dentro = new Set<string>();
+
+      // La última sección de la banda, en orden de documento; si no hay, queda la anterior.
+      const emitir = () => {
+        const ids = Object.keys(SECCIONES).filter((id) => dentro.has(id));
+        const ultima = ids[ids.length - 1];
+        if (habilitado && ultima) setSlide(SECCIONES[ultima]);
+      };
+
+      const alScroll = () => {
+        habilitado = true;
+        window.removeEventListener('scroll', alScroll);
+        emitir();
+      };
+      window.addEventListener('scroll', alScroll, { passive: true });
+
+      const observador = new IntersectionObserver(
+        (entradas) => {
+          for (const e of entradas) {
+            if (e.isIntersecting) dentro.add(e.target.id);
+            else dentro.delete(e.target.id);
+          }
+          emitir();
+        },
+        { rootMargin: '-55% 0px -35% 0px' },
+      );
+      for (const id of Object.keys(SECCIONES)) {
+        const el = document.getElementById(id);
+        if (el) observador.observe(el);
+      }
+
+      desconectar = () => {
+        window.removeEventListener('scroll', alScroll);
+        observador.disconnect();
+      };
     }
-    return () => observador.disconnect();
+
+    function alCambiar() {
+      desconectar();
+      setSlide(undefined);
+      if (ancho.matches) conectar();
+    }
+
+    if (ancho.matches) conectar();
+    ancho.addEventListener('change', alCambiar);
+    return () => {
+      ancho.removeEventListener('change', alCambiar);
+      desconectar();
+    };
   }, []);
   return slide;
 }
@@ -76,12 +117,9 @@ export function LandingPage() {
       >
         Ir al buscador
       </a>
-      <div className="mx-auto grid max-w-[1600px] gap-3 p-3 lg:grid-cols-2">
-        <div
-          aria-hidden
-          className="hidden rounded-panel bg-hoja lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:block"
-        />
-        <header className="relative lg:col-start-1 lg:row-start-1">
+      <div className="relative mx-auto max-w-[1600px]">
+        {/* Debajo de lg va arriba de todo; desde lg se dibuja sobre la mitad izquierda. */}
+        <header className="mx-3 mt-3 lg:absolute lg:top-3 lg:left-3 lg:z-10 lg:m-0 lg:w-[calc(50%-18px)]">
           <div className="flex h-14 items-center justify-between gap-2 px-4 md:px-8 lg:h-16 lg:px-14">
             <span className="text-[22px] leading-7 font-semibold tracking-tight text-ink">
               PGIM
@@ -148,58 +186,67 @@ export function LandingPage() {
           </div>
         </header>
 
-        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <div className="h-[47svh] min-h-[400px] lg:sticky lg:top-3 lg:h-[calc(100svh-24px)] lg:min-h-[400px]">
-            <CarruselMesa pedido={pedido} />
-          </div>
-        </div>
+        <main id="contenido">
+          <div className="grid gap-3 p-3 lg:grid-cols-2">
+            <div
+              aria-hidden
+              className="hidden rounded-panel bg-hoja lg:col-start-1 lg:row-start-1 lg:block"
+            />
+            <div className="lg:col-start-2 lg:row-start-1">
+              <div className="h-[34svh] min-h-[300px] md:h-[47svh] md:min-h-[400px] lg:sticky lg:top-3 lg:h-[calc(100svh-24px)] lg:min-h-[400px]">
+                <CarruselMesa pedido={pedido} />
+              </div>
+            </div>
 
-        <main
-          id="contenido"
-          className="relative rounded-panel bg-hoja px-4 pb-16 md:px-8 lg:col-start-1 lg:row-start-2 lg:rounded-none lg:bg-transparent lg:px-14 lg:pb-24"
-        >
-          <BuscadorSucursales />
-          <Comanda />
+            <div className="relative rounded-panel bg-hoja px-4 pb-16 md:px-8 lg:col-start-1 lg:row-start-1 lg:rounded-none lg:bg-transparent lg:px-14 lg:pt-[76px] lg:pb-24">
+              <BuscadorSucursales />
+              <Comanda />
+            </div>
+          </div>
+
+          <div className="mx-auto max-w-[1600px] px-3">
+            <Evidencia />
+
+            <section
+              ref={refCierre}
+              aria-labelledby="titulo-cierre"
+              className="revelar grid gap-12 px-4 py-20 md:grid-cols-[3fr_2fr] md:items-end md:px-8 lg:px-14 lg:py-28"
+            >
+              <div>
+                <h2
+                  id="titulo-cierre"
+                  className="text-[clamp(38px,3.6vw,56px)] leading-[1.02] font-semibold tracking-[-0.03em] text-balance text-ink"
+                >
+                  Buscá dónde comer hoy
+                </h2>
+                <button
+                  type="button"
+                  onClick={irAlBuscador}
+                  className="mt-8 min-h-14 rounded-control bg-accent px-8 text-[17px] leading-6 font-semibold text-white transition hover:bg-accent-hover active:scale-[0.98]"
+                >
+                  Buscar restaurantes
+                </button>
+              </div>
+              <div>
+                <h3 className="text-[22px] leading-7 font-semibold text-ink">
+                  ¿Tenés un restaurante?
+                </h3>
+                <p className="mt-3 max-w-[40ch] text-[17px] leading-[26px] text-text">
+                  Cargá tu carta y recibí reservas y pedidos en la mesa.
+                </p>
+                <Link
+                  to="/registrar-restaurante"
+                  className="mt-6 inline-flex min-h-12 items-center rounded-control bg-accent-soft px-6 text-[14px] leading-5 font-semibold text-accent-ink transition hover:bg-accent/15 active:scale-[0.98]"
+                >
+                  Registralo en PGIM
+                </Link>
+              </div>
+            </section>
+          </div>
         </main>
       </div>
 
       <div className="mx-auto max-w-[1600px] px-3">
-        <Evidencia />
-
-        <section
-          ref={refCierre}
-          aria-labelledby="titulo-cierre"
-          className="revelar grid gap-12 px-4 py-20 md:grid-cols-[3fr_2fr] md:items-end md:px-8 lg:px-14 lg:py-28"
-        >
-          <div>
-            <h2
-              id="titulo-cierre"
-              className="text-[clamp(38px,3.6vw,56px)] leading-[1.02] font-semibold tracking-[-0.03em] text-balance text-ink"
-            >
-              Buscá dónde comer hoy
-            </h2>
-            <button
-              type="button"
-              onClick={irAlBuscador}
-              className="mt-8 min-h-14 rounded-control bg-accent px-8 text-[17px] leading-6 font-semibold text-white transition hover:bg-accent-hover active:scale-[0.98]"
-            >
-              Buscar restaurantes
-            </button>
-          </div>
-          <div>
-            <h3 className="text-[22px] leading-7 font-semibold text-ink">¿Tenés un restaurante?</h3>
-            <p className="mt-3 max-w-[40ch] text-[17px] leading-[26px] text-text">
-              Cargá tu carta y recibí reservas y pedidos en la mesa.
-            </p>
-            <Link
-              to="/registrar-restaurante"
-              className="mt-6 inline-flex min-h-12 items-center rounded-control bg-accent-soft px-6 text-[14px] leading-5 font-semibold text-accent-ink transition hover:bg-accent/15 active:scale-[0.98]"
-            >
-              Registralo en PGIM
-            </Link>
-          </div>
-        </section>
-
         <footer
           ref={refPie}
           className="revelar grid gap-2 px-4 pb-8 text-[14px] leading-5 text-text md:px-8 lg:grid-cols-[1fr_auto_1fr] lg:items-baseline lg:gap-6 lg:px-14"

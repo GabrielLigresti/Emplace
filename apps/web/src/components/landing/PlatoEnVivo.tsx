@@ -8,7 +8,7 @@ const VISTAS = [
 ] as const;
 
 const claseChip =
-  'inline-flex min-h-11 shrink-0 items-center rounded-full px-3text-[14px] leading-5 font-semibold transition active:scale-[0.98]';
+  'inline-flex min-h-11 shrink-0 items-center rounded-full px-4 text-[14px] leading-5 font-semibold transition active:scale-[0.98]';
 
 // Segundo slide del carrusel: las vistas de un plato escaneado en 3D.
 export function PlatoEnVivo() {
@@ -24,7 +24,7 @@ export function PlatoEnVivo() {
             src={`/fotos-portada/${v.archivo}`}
             alt={`Torta de chocolate y frutillas escaneada en 3D, ${v.alt}`}
             aria-hidden={activa ? undefined : true}
-            className={`absolute inset-0 size-full object-contain p-6 pb-20 transition-opacity duration-500 md:p-12 md:pb-24${
+            className={`absolute inset-0 size-full object-contain p-6 pb-20 transition-opacity duration-500 md:p-12 md:pb-24 ${
               activa ? 'mesa-flota opacity-100' : 'opacity-0'
             }`}
           />

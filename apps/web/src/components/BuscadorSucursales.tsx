@@ -44,7 +44,9 @@ export function BuscadorSucursales() {
       ? `${datos.length === 1 ? '1 sucursal' : `${datos.length} sucursales`}${
           barrio ? ` en ${nombreBarrio(barrio as BarrioConSucursales['valor'])}` : ''
         }`
-      : '';
+      : datos && datos.length === 0
+        ? 'Sin resultados para esa búsqueda'
+        : '';
 
   return (
     <>
@@ -97,6 +99,9 @@ export function BuscadorSucursales() {
             ))}
           </select>
         </div>
+        <p aria-live="polite" className="mt-3 min-h-5 text-[14px] leading-5 text-text">
+          {error ? '' : resumen}
+        </p>
       </div>
 
       <section
@@ -105,17 +110,12 @@ export function BuscadorSucursales() {
         aria-labelledby="titulo-restaurantes"
         className="revelar mt-16 max-w-[560px]"
       >
-        <div className="flex items-baseline justify-between gap-4">
-          <h2
-            id="titulo-restaurantes"
-            className="text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-semibold tracking-[-0.025em] text-ink"
-          >
-            Dónde comer
-          </h2>
-          <p aria-live="polite" className="text-[14px] leading-5 text-text">
-            {resumen}
-          </p>
-        </div>
+        <h2
+          id="titulo-restaurantes"
+          className="text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-semibold tracking-[-0.025em] text-ink"
+        >
+          Dónde comer
+        </h2>
         <div className="mt-5">
           {error ? (
             <div className="grid justify-items-start gap-3">

@@ -156,3 +156,10 @@
     transition-delay: 490ms;
   }
 }
+
+@media print {
+  .revelar > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

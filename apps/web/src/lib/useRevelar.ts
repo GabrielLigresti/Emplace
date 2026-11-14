@@ -24,7 +24,7 @@ export function useRevelar<T extends HTMLElement = HTMLDivElement>() {
           observador.disconnect();
         }
       },
-      { threshold: 0.15 },
+      { threshold: 0, rootMargin: '0px 0px -10% 0px' },
     );
     observador.observe(el);
     return () => observador.disconnect();

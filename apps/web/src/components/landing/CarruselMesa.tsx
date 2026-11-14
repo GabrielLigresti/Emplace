@@ -14,7 +14,7 @@ const SLIDES: Slide[] = [
   {
     titulo: 'Así se ve un plato en 3D',
     texto:
-      'El restaurante escanea el plato y vos lo ves con todo su detalle, desde cualquier lado.',
+      'El restaurante carga el plato en 3D y vos lo ves con todo su detalle, desde cualquier lado. Esta torta es un ejemplo.',
   },
   {
     titulo: 'Sin instalar nada',
@@ -65,7 +65,8 @@ export function CarruselMesa({ pedido }: { pedido?: number }) {
   }, []);
 
   useEffect(() => {
-    if (pedido !== undefined) setActual(pedido);
+    // No le cambia el slide a quien lo pausó o lo está usando con el teclado.
+    if (pedido !== undefined && !pausado && !conFoco) setActual(pedido);
   }, [pedido]);
 
   const avanza = !pausado && !encima && !conFoco && !oculta;
@@ -83,7 +84,7 @@ export function CarruselMesa({ pedido }: { pedido?: number }) {
 
   function alTeclear(e: KeyboardEvent<HTMLElement>) {
     const destino = e.target as HTMLElement;
-    if (destino.closest('model-viewer') || !destino.closest('[data-controles]')) return;
+    if (!destino.closest('[data-controles]')) return;
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
       ir(-1);
@@ -139,7 +140,7 @@ export function CarruselMesa({ pedido }: { pedido?: number }) {
         })}
       </div>
       <div className="min-h-0 bg-surface p-4 md:min-h-[204px] md:p-6">
-        <div aria-live={pausado ? 'polite' : 'off'}>
+        <div aria-live={avanza ? 'off' : 'polite'}>
           <div key={actual} className="mesa-entra">
             <h2 className="text-balance text-[22px] font-semibold leading-7 tracking-[-0.025em] text-ink md:text-[clamp(26px,2.2vw,32px)] md:leading-[1.15]">
               {slide.titulo}
