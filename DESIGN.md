@@ -190,7 +190,7 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 - **Verde Albahaca** (#16756b): acción principal, navegación activa, foco, chip seleccionado y todo lo que está "en curso" (En preparación, Mesa en curso, Cuenta abierta). Blanco encima pasa AA.
 - **Verde Albahaca Hondo** (#125e56): hover de la acción y texto sobre fondos verdes suaves.
 - **Verde Albahaca Suave** (#e3eeed): fondo de la opción activa, del botón tonal y de la etiqueta "en curso".
-- **Hoja de Albahaca** (#dceae9): hoja tintada que agrupa contenido detrás de tarjetas blancas en el comensal. Hoy lo usa la landing, en el bloque de búsqueda; el resto del comensal llega con la carta nueva.
+- **Hoja de Albahaca** (#dceae9): hoja tintada que agrupa contenido detrás de tarjetas blancas en el comensal. Hoy lo usa la portada, como fondo de toda la columna de lectura (ver Portada, en Layout); el resto del comensal llega con la carta nueva.
 
 ### Neutral
 - **Blanco Mantel** (#ffffff): fondo de página y de tarjetas.
@@ -240,6 +240,30 @@ Una columna en el celular y grillas por rol en escritorio. El comensal usa un an
 Las tres densidades fijan la altura de los controles: compacta 36 px (44 px en celular), comensal 44 px y táctil 48 px. El espaciado sigue la escala de 4 px; los grupos se separan con `gap`, no con márgenes.
 
 **The Thumb Rule.** En el celular, la acción principal de la pantalla queda fija abajo; nunca arriba ni escondida en un menú.
+
+### Portada
+
+La portada pública (`/`) usa los mismos tokens de color, la misma tipografía y los mismos radios, pero tiene su propia composición, porque se lee y se recorre en vez de operarse. Lo que sigue vale solo para ella.
+
+- **Dos mitades.** Desde 1024 px, la izquierda es la columna de lectura sobre Hoja de Albahaca (título, buscador, resultados y el recorrido) y la derecha es una foto fija que acompaña al bajar: un carrusel que también cambia de imagen según la sección a la vista. Después de la columna, la página sigue a todo el ancho (cifras, cierre y pie). En el celular el orden es encabezado, carrusel y columna.
+- **Marco.** 12 px de margen exterior y 12 px entre las dos mitades; el texto comparte un solo par de márgenes interiores (16, 32 y 56 px según el ancho).
+- **Escala de letra propia**, más grande que la de la app, con siete pasos y ninguno más:
+  - Nota: 14 px / 20 px. Notas, pie, direcciones y el texto de botones y chips.
+  - Campo: 16 px. Los campos del buscador y el recorrido.
+  - Texto: 17 px / 26 px. Todo el texto corrido.
+  - Destacado: 22 px / 28 px. Nombre del restaurante, la marca y el título del carrusel en el celular.
+  - Título de sección: `clamp(26px, 2.2vw, 32px)`, interlineado 1,15.
+  - Título grande: `clamp(38px, 3.6vw, 56px)`, interlineado 1,02 y tracking -0,03em. El `h1`, el título de las cifras y el del cierre.
+  - Cifra: `clamp(44px, 5.6vw, 96px)`.
+- **Títulos en dos líneas como máximo**, en cualquier ancho. El peso sigue siendo 600.
+- **Sin bordes de 1 px.** Las superficies se separan por tono: blanco sobre Hoja de Albahaca, Gris Bandeja sobre blanco. Los campos del buscador conservan su borde. Los botones de la portada no llevan borde: principal en Verde Albahaca, tonal en Verde Albahaca Suave y neutro en blanco (sobre la hoja) o Gris Bandeja (sobre blanco).
+- **Sin sombras ni gradientes.** Nada flota en la portada.
+- **Controles de 44 px o más**; el botón del cierre mide 56 px.
+- **Movimiento**, solo con `transform` y `opacity`, y todo apagado con `prefers-reduced-motion`:
+  - Carrusel: fundido de 1600 ms entre imágenes, avance cada 6 s y un acercamiento lento de la foto activa (hasta 1,06 en 9 s). Se detiene con el puntero encima, con el foco adentro, con la pestaña oculta o con su botón de pausa.
+  - Entradas: las partes de cada sección suben 20 px con opacidad en 600 ms, escalonadas de a 70 ms, una sola vez al entrar en pantalla. Sin JavaScript, o al imprimir, todo se ve.
+  - Controles: transición corta en hover y una leve reducción al presionar.
+- **Imágenes.** Fotos de stock y renders en dominio público, en `apps/web/public/fotos-portada/`, con su `LICENCIA.md`. No muestran platos ni salones de ningún restaurante de la plataforma, y los autores se nombran en el pie.
 
 ## Elevation & Depth
 
@@ -292,7 +316,7 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 - **Do** usar Verde Albahaca (#16756b) solo en acciones, navegación activa, foco y estados en curso.
 - **Do** acompañar cada estado con ícono y texto, y usar Azul Listo (#1d5fb4) para OK.
 - **Do** escribir la acción siguiente en el restaurante ("Marcar listo", "Activar mesa") en lugar de dejar un ícono solo.
-- **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (hoy lo hace la landing en el bloque de búsqueda; el resto llega con la carta nueva).
+- **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (hoy lo hace la portada en su columna de lectura; el resto llega con la carta nueva).
 - **Do** respetar las alturas por densidad: 36, 44 y 48 px.
 
 ### Don't:
