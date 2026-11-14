@@ -95,7 +95,20 @@
   }
 }
 
+@keyframes mesa-flota {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-10px);
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
+  .mesa-flota {
+    animation: mesa-flota 6s ease-in-out infinite alternate;
+  }
+
   .mesa-deriva {
     animation: mesa-deriva 9s ease-out forwards;
   }

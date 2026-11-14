@@ -7,40 +7,40 @@ type Slide = { titulo: string; texto: string; foto?: string; alt?: string; posic
 const SLIDES: Slide[] = [
   {
     titulo: 'Ver en mi mesa',
-    texto:
-      'El plato aparece sobre tu mesa a tamaño real, con su porción: 400 g de bife, 120 g de flan.',
-    foto: '/fotos-demo/grandes/bife-de-chorizo-con-papas.jpg',
-    alt: 'Bife de chorizo con papas, de la carta de La Parrilla Demo',
+    texto: 'El plato aparece sobre tu mesa a tamaño real, antes de pedirlo.',
+    foto: '/fotos-portada/bife-con-esparragos.jpg',
+    alt: 'Bife con salsa, espárragos y tomate relleno en un plato blanco',
   },
   {
-    titulo: 'Giralo con el dedo',
-    texto: 'Este es el plato en 3D. Desde el celular, tocá Ver en mi mesa y aparece sobre tu mesa.',
+    titulo: 'Así se ve un plato en 3D',
+    texto:
+      'El restaurante escanea el plato y vos lo ves con todo su detalle, desde cualquier lado.',
   },
   {
     titulo: 'Sin instalar nada',
     texto: 'Se abre en el navegador de tu celular. Apuntás la cámara a la mesa y listo.',
-    foto: '/fotos-demo/grandes/flan-casero.jpg',
-    alt: 'Flan casero con dulce de leche y crema, de la carta de La Parrilla Demo',
-    posicion: '72% 62%',
+    foto: '/fotos-portada/carne-a-la-plancha.jpg',
+    alt: 'Carne a la plancha sobre una tabla, con papas fritas y salsa',
   },
   {
     titulo: 'La carta, sin crear cuenta',
     texto:
       'Buscás el restaurante y abrís la carta. Los platos que están en 3D traen el botón Ver en mi mesa.',
-    foto: '/fotos-demo/grandes/provoleta.jpg',
-    alt: 'Provoleta, de la carta de La Parrilla Demo',
+    foto: '/fotos-portada/mesa-compartida.jpg',
+    alt: 'Mesa de azulejos vista desde arriba, con platos para compartir',
   },
   {
     titulo: 'Reservá por una hora',
     texto: 'Elegís el día y el horario, y la mesa te espera. Recién ahí te pedimos una cuenta.',
-    foto: '/fotos-demo/grandes/empanada-de-carne.jpg',
-    alt: 'Empanadas de carne, de la carta de La Parrilla Demo',
+    foto: '/fotos-portada/mesa-puesta.jpg',
+    alt: 'Mesa de restaurante lista, con copas y sillas',
   },
   {
     titulo: 'Pedí desde tu mesa',
     texto: 'Pedís desde el celular, pagás con Mercado Pago y sumás puntos en ese restaurante.',
-    foto: '/fotos-demo/grandes/milanesa-con-pure.jpg',
-    alt: 'Milanesa con puré, de la carta de La Parrilla Demo',
+    foto: '/fotos-portada/platos-al-pase.jpg',
+    alt: 'Platos terminados saliendo de la cocina',
+    posicion: '50% 70%',
   },
 ];
 
@@ -48,7 +48,8 @@ const claseControl =
   'inline-flex size-11 items-center justify-center rounded-control bg-accent-soft text-accent-ink transition hover:bg-accent/15 active:scale-[0.98]';
 
 // Portada: la mesa del comensal, donde los platos se van sirviendo uno tras otro.
-export function CarruselMesa() {
+// `pedido` lleva el carrusel a un slide cuando la página muestra otra sección.
+export function CarruselMesa({ pedido }: { pedido?: number }) {
   const [actual, setActual] = useState(0);
   const [pausado, setPausado] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -62,6 +63,10 @@ export function CarruselMesa() {
     document.addEventListener('visibilitychange', alCambiar);
     return () => document.removeEventListener('visibilitychange', alCambiar);
   }, []);
+
+  useEffect(() => {
+    if (pedido !== undefined) setActual(pedido);
+  }, [pedido]);
 
   const avanza = !pausado && !encima && !conFoco && !oculta;
 

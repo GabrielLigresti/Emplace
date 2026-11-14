@@ -18,13 +18,6 @@ declare module 'react' {
         'camera-controls'?: boolean;
         'touch-action'?: string;
         scale?: string;
-        'auto-rotate'?: boolean;
-        'rotation-per-second'?: string;
-        'interaction-prompt'?: string;
-        'shadow-intensity'?: string;
-        'shadow-softness'?: string;
-        'camera-orbit'?: string;
-        'min-camera-orbit'?: string;
       };
     }
   }

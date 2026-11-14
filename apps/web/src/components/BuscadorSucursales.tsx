@@ -48,7 +48,7 @@ export function BuscadorSucursales() {
 
   return (
     <>
-      <div ref={refHeroe} className="revelar max-w-[560px] pt-8 lg:pt-[14svh]">
+      <div id="inicio" ref={refHeroe} className="revelar max-w-[560px] pt-8 lg:pt-[14svh]">
         <h1 className="max-w-[14ch] text-[clamp(38px,3.6vw,56px)] leading-[1.02] font-semibold tracking-[-0.03em] text-balance text-ink">
           Mirá el plato antes de pedirlo
         </h1>
@@ -100,6 +100,7 @@ export function BuscadorSucursales() {
       </div>
 
       <section
+        id="restaurantes"
         ref={refResultados}
         aria-labelledby="titulo-restaurantes"
         className="revelar mt-16 max-w-[560px]"

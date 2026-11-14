@@ -32,10 +32,9 @@ export function Evidencia() {
       </div>
       <div className="mt-10 grid overflow-hidden rounded-panel lg:h-[600px] lg:grid-cols-3">
         <img
-          src="/fotos-demo/grandes/flan-casero.jpg"
-          alt="Flan casero servido en un plato"
+          src="/fotos-portada/flan-con-frambuesas.jpg"
+          alt="Flan con frambuesas y caramelo"
           loading="lazy"
-          style={{ objectPosition: '50% 85%' }}
           className="aspect-[4/3] w-full object-cover lg:col-span-2 lg:aspect-auto lg:h-full"
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1">

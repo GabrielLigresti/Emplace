@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { CalendarDays, LogOut, Receipt, Star, UserRound } from 'lucide-react';
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
@@ -30,6 +30,30 @@ function irAlBuscador() {
   campo?.focus({ preventScroll: true });
 }
 
+// Slide que pide la sección que está a la vista; solo desde lg, donde el escenario es fijo.
+const SECCIONES: Record<string, number> = { inicio: 0, restaurantes: 3, recorrido: 4 };
+
+function useSeccionALaVista(): number | undefined {
+  const [slide, setSlide] = useState<number>();
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        for (const e of entradas) {
+          if (e.isIntersecting) setSlide(SECCIONES[e.target.id]);
+        }
+      },
+      { rootMargin: '-40% 0px -50% 0px' },
+    );
+    for (const id of Object.keys(SECCIONES)) {
+      const el = document.getElementById(id);
+      if (el) observador.observe(el);
+    }
+    return () => observador.disconnect();
+  }, []);
+  return slide;
+}
+
 // Entrada pública: cualquiera busca una sucursal y mira su carta sin sesión.
 export function LandingPage() {
   const { sesion, cargando, logout } = useSesion();
@@ -40,6 +64,7 @@ export function LandingPage() {
   // "Mi mesa" aparece solo con una mesa activa; sin sesión de comensal no se consulta.
   const mesa = useMiMesa(null, tipo === 'COMENSAL').datos;
 
+  const pedido = useSeccionALaVista();
   const refCierre = useRevelar<HTMLElement>();
   const refPie = useRevelar<HTMLElement>();
 
@@ -125,7 +150,7 @@ export function LandingPage() {
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <div className="h-[40svh] min-h-[340px] lg:sticky lg:top-3 lg:h-[calc(100svh-24px)] lg:min-h-[400px]">
-            <CarruselMesa />
+            <CarruselMesa pedido={pedido} />
           </div>
         </div>
 
@@ -184,15 +209,15 @@ export function LandingPage() {
           </p>
           <p className="flex justify-start lg:justify-center">
             <a
-              href="/fotos-demo/LICENCIA.md"
+              href="/fotos-portada/LICENCIA.md"
               className="inline-flex min-h-11 items-center font-medium text-accent-ink underline"
             >
               Créditos de fotos y modelos
             </a>
           </p>
           <p className="lg:text-right">
-            Fotos de Horacio Cambeiro y Ceeseven, en Wikimedia Commons (CC BY y CC BY-SA). Modelos
-            3D de Kenney (CC0). 2026.
+            Fotos de Snapwire, Leeroy, Matt Bango, Jakub Kapusnak y rawpixel, en dominio público
+            (CC0). Modelo 3D de Kuutti Siitonen, en Poly Haven (CC0). 2026.
           </p>
         </footer>
       </div>

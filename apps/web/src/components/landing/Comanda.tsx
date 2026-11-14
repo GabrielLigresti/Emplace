@@ -63,7 +63,12 @@ function Grupo({ nombre, filas }: { nombre: string; filas: [string, string][] })
 export function Comanda() {
   const ref = useRevelar<HTMLElement>();
   return (
-    <section ref={ref} aria-labelledby="titulo-recorrido" className="revelar mt-24 max-w-[560px]">
+    <section
+      id="recorrido"
+      ref={ref}
+      aria-labelledby="titulo-recorrido"
+      className="revelar mt-24 max-w-[560px]"
+    >
       <h2
         id="titulo-recorrido"
         className="text-[clamp(26px,2.2vw,32px)] leading-[1.15] font-semibold tracking-[-0.025em] text-balance text-ink"
