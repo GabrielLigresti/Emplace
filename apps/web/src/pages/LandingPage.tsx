@@ -249,21 +249,13 @@ export function LandingPage() {
       <div className="mx-auto max-w-[1600px] px-3">
         <footer
           ref={refPie}
-          className="revelar grid gap-2 px-4 pb-8 text-[14px] leading-5 text-text md:px-8 lg:grid-cols-[1fr_auto_1fr] lg:items-baseline lg:gap-6 lg:px-14"
+          className="revelar grid gap-2 px-4 pb-8 text-[14px] leading-5 text-text md:px-8 lg:grid-cols-2 lg:items-baseline lg:gap-12 lg:px-14"
         >
           <p className="max-w-[70ch]">
             PGIM, restaurantes de Buenos Aires. Sitio de demostración: La Parrilla Demo es un
             restaurante ficticio.
           </p>
-          <p className="flex justify-start lg:justify-center">
-            <a
-              href="/fotos-portada/LICENCIA.md"
-              className="inline-flex min-h-11 items-center font-medium text-accent-ink underline"
-            >
-              Créditos de fotos y modelos
-            </a>
-          </p>
-          <p className="max-w-[70ch] lg:text-right">
+          <p className="max-w-[70ch] lg:justify-self-end lg:text-right">
             Fotos de Snapwire, Leeroy, Matt Bango, Jakub Kapusnak y rawpixel, en dominio público
             (CC0). Modelo 3D de Kuutti Siitonen, en Poly Haven (CC0). 2026.
           </p>
