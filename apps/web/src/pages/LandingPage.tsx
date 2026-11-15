@@ -61,17 +61,17 @@ export function LandingPage() {
   const mover = (dx: number) => slider.current?.scrollBy({ left: dx });
 
   return (
-    <div className="min-h-screen bg-papel font-lora text-tinta-clasica">
+    <div className="landing-clasica min-h-screen bg-papel font-lora text-tinta-clasica">
       <div className="mx-auto max-w-[1240px] border-linea-clasica bg-papel min-[1241px]:border-x">
         <header className="flex items-center justify-between gap-4 border-b border-linea-clasica px-5 py-4 md:px-14 md:py-[18px]">
           <span className="font-titulo text-[28px] leading-none font-semibold tracking-tight">
             PGIM
           </span>
           <nav aria-label="Secciones" className="hidden items-center gap-8 text-sm md:flex">
-            <a href="#restaurantes" className="text-dorado-700 hover:text-dorado-800">
+            <a href="#restaurantes" className="py-3 text-dorado-700 hover:text-dorado-800">
               Restaurantes
             </a>
-            <a href="#ver-en-mi-mesa" className="hover:text-dorado-700">
+            <a href="#ver-en-mi-mesa" className="py-3 hover:text-dorado-700">
               Ver en mi mesa
             </a>
           </nav>
@@ -240,7 +240,7 @@ export function LandingPage() {
             ¿Tenés un restaurante?{' '}
             <Link
               to="/registrar-restaurante"
-              className="text-dorado-700 underline underline-offset-[3px] hover:text-dorado-600"
+              className="inline-flex min-h-11 items-center text-dorado-700 underline underline-offset-[3px] hover:text-dorado-600"
             >
               Registralo en PGIM
             </Link>

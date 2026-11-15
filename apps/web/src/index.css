@@ -80,6 +80,11 @@
   }
 }
 
+/* La landing es dorada: el foco no usa el verde de la app. */
+.landing-clasica :focus-visible {
+  outline-color: var(--color-dorado-700);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

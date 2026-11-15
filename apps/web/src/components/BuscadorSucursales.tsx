@@ -104,7 +104,7 @@ export function BuscadorSucursales() {
 
       <div className="mt-5">
         {error ? (
-          <div className="grid justify-items-start gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Aviso tono="bad">No pudimos cargar las sucursales.</Aviso>
             <Boton variante="secundario" densidad="comensal" onClick={recargar}>
               Reintentar
