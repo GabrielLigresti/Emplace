@@ -9,9 +9,11 @@ const ESPERA_BUSQUEDA_MS = 300;
 const claseBotonClasico =
   'inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-papel-hondo px-5 font-titulo text-base font-semibold text-dorado-700 hover:bg-tinta-clasica/10';
 
-// Buscador de la landing: texto libre y barrio. El resultado se actualiza solo,
+// Buscador de sucursales (landing e inicio del comensal): texto libre y barrio.
+// `compacto`: una sola columna, para el ancho de celular de LayoutComensal; además
+// el título pasa a ser el h1 de la pantalla. El resultado se actualiza solo,
 // poco después de que el visitante deja de escribir.
-export function BuscadorSucursales() {
+export function BuscadorSucursales({ compacto = false }: { compacto?: boolean }) {
   const [texto, setTexto] = useState('');
   // '' = todos los barrios.
   const [barrio, setBarrio] = useState('');
@@ -48,21 +50,23 @@ export function BuscadorSucursales() {
   const claseCampo =
     'min-h-11 w-full rounded-clasico border border-linea-clasica bg-transparent px-3.5 font-titulo text-lg font-semibold text-tinta-clasica hover:border-dorado focus-visible:border-dorado';
 
+  const Titulo = compacto ? 'h1' : 'h2';
+
   return (
     <>
       <div className="flex flex-col gap-2">
         <span className="font-lora text-[13px] leading-none tracking-[0.08em] text-dorado-700 uppercase">
           Restaurantes
         </span>
-        <h2 className="m-0 font-titulo text-[30px] leading-[1.1] font-normal md:text-[38px]">
+        <Titulo className="m-0 font-titulo text-[30px] leading-[1.1] font-normal md:text-[38px]">
           Buscá dónde comer
-        </h2>
+        </Titulo>
         <p className="m-0 text-[15.5px] leading-7 text-tinta-clasica/80">
           Un restaurante, un barrio o un plato: mirá la carta y reservá tu mesa.
         </p>
       </div>
       <section className="mt-5 rounded-clasico border border-linea-clasica bg-papel p-3.5">
-        <div className="grid gap-2.5 md:grid-cols-[1fr_260px]">
+        <div className={`grid gap-2.5 ${compacto ? '' : 'md:grid-cols-[1fr_260px]'}`}>
           <div className="relative">
             <Search
               aria-hidden
@@ -136,7 +140,7 @@ export function BuscadorSucursales() {
               </div>
             )}
             {datos && datos.length > 0 && (
-              <ul className="grid gap-5 md:grid-cols-3">
+              <ul className={`grid gap-5 ${compacto ? '' : 'md:grid-cols-3'}`}>
                 {datos.map((r) => (
                   <TarjetaResultado key={r.sucursal.id} r={r} />
                 ))}

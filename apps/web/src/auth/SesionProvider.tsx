@@ -20,6 +20,8 @@ import { reconectarSocket } from '../lib/socket';
 interface SesionContexto {
   sesion: Sesion | null;
   cargando: boolean;
+  // Cerró sesión a propósito: las rutas protegidas lo mandan a la landing y no al login.
+  saliendo: boolean;
   login(email: string, password: string): Promise<Sesion>;
   // Ingreso o alta del comensal con la credencial de Google.
   loginConGoogle(credential: string): Promise<Sesion>;
@@ -40,6 +42,7 @@ const Contexto = createContext<SesionContexto | null>(null);
 export function SesionProvider({ children }: { children: ReactNode }) {
   const [sesion, setSesion] = useState<Sesion | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [saliendo, setSaliendo] = useState(false);
 
   const recargarSesion = useCallback(async () => {
     try {
@@ -64,6 +67,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
 
   const guardar = useCallback((datos: unknown) => {
     const nueva = sesionSchema.parse(datos);
+    setSaliendo(false);
     setSesion(nueva);
     return nueva;
   }, []);
@@ -72,6 +76,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     () => ({
       sesion,
       cargando,
+      saliendo,
       login: async (email, password) =>
         guardar(await api('/auth/login', { method: 'POST', body: { email, password } })),
       loginConGoogle: async (credential) =>
@@ -82,6 +87,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
         guardar(await api('/auth/registro-restaurante', { method: 'POST', body: datos })),
       logout: async () => {
         await api('/auth/logout', { method: 'POST' });
+        setSaliendo(true);
         setSesion(null);
       },
       seleccionarSucursal: async (sucursalId) =>
@@ -89,7 +95,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
       recargarSesion,
       tienePermiso: (codigo) => sesion?.permisos.includes(codigo) ?? false,
     }),
-    [sesion, cargando, guardar, recargarSesion],
+    [sesion, cargando, saliendo, guardar, recargarSesion],
   );
 
   return <Contexto value={valor}>{children}</Contexto>;

@@ -1,21 +1,10 @@
 import { useRef, type ReactNode } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
-import {
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  Receipt,
-  Star,
-  UserRound,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
 import { BuscadorSucursales } from '../components/BuscadorSucursales';
+import { Cargando } from '../components/Cargando';
 import { VisorModeloLanding } from '../components/VisorModeloLanding';
-
-// En el celular, ícono con el texto chico debajo (como las pestañas); desde md, en fila.
-const claseEnlace =
-  'inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-control px-1.5 text-tinta-clasica hover:bg-papel-hondo md:flex-row md:gap-1.5 md:px-2 md:text-sm md:font-medium';
 
 const claseBotonPrincipal =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-cuadrado bg-dorado-700 px-6 font-titulo text-base font-semibold text-white hover:bg-dorado-800';
@@ -31,15 +20,6 @@ const MODELOS: { nombre: string; src: string }[] = [
 ];
 
 const hayModelos = MODELOS.some((m) => m.src);
-
-function Texto({ corto, largo }: { corto: string; largo?: ReactNode }) {
-  return (
-    <>
-      <span className="text-[11px] leading-none md:hidden">{corto}</span>
-      <span className="hidden md:inline">{largo ?? corto}</span>
-    </>
-  );
-}
 
 function Etiqueta({ children }: { children: ReactNode }) {
   return (
@@ -60,6 +40,7 @@ export function LandingPage() {
   const mover = (dx: number) => slider.current?.scrollBy({ left: dx });
 
   // La landing es para quien no tiene sesión o acaba de cerrarla.
+  if (cargando) return <Cargando />;
   if (tipo === 'COMENSAL') return <Navigate to={rutaInicio(sesion!)} replace />;
 
   return (

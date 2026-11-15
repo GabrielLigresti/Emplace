@@ -15,11 +15,12 @@ interface Props {
 }
 
 export function RutaProtegida({ tipo, requiereSucursal = false, permiso, children }: Props) {
-  const { sesion, cargando, tienePermiso } = useSesion();
+  const { sesion, cargando, saliendo, tienePermiso } = useSesion();
   const { pathname } = useLocation();
 
   if (cargando) return <Cargando />;
   // Después del login se vuelve a la página pedida (por ejemplo, el menú del QR).
+  if (!sesion && saliendo) return <Navigate to="/" replace />;
   if (!sesion) return <Navigate to="/login" replace state={{ desde: pathname, tipo }} />;
   if (sesion.usuario.tipo !== tipo) return <Navigate to={rutaInicio(sesion)} replace />;
   if (requiereSucursal && !sesion.sucursalActiva) return <Navigate to="/sucursal" replace />;

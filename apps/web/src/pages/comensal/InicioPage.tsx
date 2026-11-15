@@ -6,7 +6,7 @@ export function InicioPage() {
   return (
     <LayoutComensal>
       <div className="landing-clasica font-lora text-tinta-clasica">
-        <BuscadorSucursales />
+        <BuscadorSucursales compacto />
       </div>
     </LayoutComensal>
   );
