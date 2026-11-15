@@ -36,11 +36,9 @@ test('buscar un plato, filtrar por barrio y ver la carta sin ingresar', async ({
   expect(noAutorizadas).toEqual([]);
 });
 
-// La portada: los botones del héroe llevan a sus secciones y, mientras las fichas de
-// "Ver en mi mesa" no tengan modelo, no se monta ningún visor 3D ni se ofrecen flechas.
-test('los botones del héroe llevan al buscador y las fichas vacías no montan visor', async ({
-  page,
-}) => {
+// La portada: los botones del héroe llevan a sus secciones y las tres fichas de
+// "Ver en mi mesa" montan su visor 3D, con los créditos de los modelos en el pie.
+test('los botones del héroe llevan al buscador y las fichas montan su visor', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Explorar restaurantes' }).click();
   await expect(page).toHaveURL(/#restaurantes$/);
@@ -49,6 +47,6 @@ test('los botones del héroe llevan al buscador y las fichas vacías no montan v
   await page.getByRole('link', { name: 'Ver en mi mesa →' }).click();
   await expect(page).toHaveURL(/#ver-en-mi-mesa$/);
   await expect(page.getByRole('group', { name: 'Platos en 3D' })).toBeVisible();
-  await expect(page.locator('model-viewer')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Plato siguiente' })).toHaveCount(0);
+  await expect(page.locator('model-viewer')).toHaveCount(3);
+  await expect(page.getByRole('link', { name: 'darklord3d' })).toBeAttached();
 });
