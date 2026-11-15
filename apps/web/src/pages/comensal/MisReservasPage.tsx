@@ -31,7 +31,7 @@ export function MisReservasPage() {
   }
 
   return (
-    <LayoutComensal volver={{ a: '/', texto: 'Sucursales' }}>
+    <LayoutComensal volver={{ a: '/inicio', texto: 'Sucursales' }}>
       <div className="mb-4">
         <TituloComensal>Mis reservas</TituloComensal>
       </div>

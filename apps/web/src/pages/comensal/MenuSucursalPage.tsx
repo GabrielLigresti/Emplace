@@ -49,7 +49,10 @@ export function MenuSucursalPage() {
 
   return (
     <LayoutComensal
-      volver={{ a: '/', texto: sesion ? 'Sucursales' : 'Buscar' }}
+      volver={{
+        a: sesion?.usuario.tipo === 'COMENSAL' ? '/inicio' : '/',
+        texto: sesion?.usuario.tipo === 'COMENSAL' ? 'Sucursales' : 'Buscar',
+      }}
       accionFija={accion || undefined}
     >
       <EstadoCarga cargando={cargando && !datos} error={error} />
