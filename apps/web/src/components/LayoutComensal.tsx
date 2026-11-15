@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, House, LogOut, Receipt, Star, UserRound } fr
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
 import { useSalir } from '../auth/useSalir';
 import { useMiMesa } from '../lib/miMesa';
+import { useTemaStaff } from '../lib/useTemaStaff';
 
 const PESTANIAS = [
   { a: '/inicio', texto: 'Inicio', icono: House },
@@ -40,6 +41,7 @@ export function LayoutComensal({
   clasico?: boolean;
   children: ReactNode;
 }) {
+  useTemaStaff();
   const { sesion } = useSesion();
   const salir = useSalir();
   const { pathname } = useLocation();
@@ -145,7 +147,7 @@ export function LayoutComensal({
                     <>
                       <span
                         className={`flex h-7 w-12 items-center justify-center rounded-full ${
-                          isActive ? 'bg-accent-soft' : ''
+                          isActive ? 'bg-accent/20' : ''
                         }`}
                       >
                         <Icono aria-hidden className="size-5" />

@@ -77,7 +77,7 @@
 /* Tema del staff (panel, cocina, salón, selector de sucursal): los mismos nombres
    de token con la paleta del registro Clásico (papel, tinta, dorado). Se aplica con
    la clase en <html> (ver lib/useTemaStaff) para que también alcance a lo que
-   se monta fuera del árbol (portales). El comensal conserva el verde. */
+   se monta fuera del árbol (portales). También lo usa el comensal (LayoutComensal). */
 .tema-staff {
   --color-bg: var(--color-papel);
   --color-panel: var(--color-papel-hondo);
@@ -95,6 +95,8 @@
   --color-accent-hover: var(--color-dorado-800);
   --color-accent-ink: var(--color-dorado-800);
   --color-accent-soft: #efe6d5;
+  /* Hoja tintada: en este tema es el papel hondo, no el verde. */
+  --color-hoja: var(--color-papel-hondo);
 
   /* El aviso se aleja del rojo y del dorado; siempre va con ícono y texto. */
   --color-warn: #a24f00;
@@ -113,6 +115,13 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+}
+
+/* Inicio del comensal: reusa el buscador de la landing pero con la tipografía de la app. */
+.tipografia-app,
+.tipografia-app .font-titulo,
+.tipografia-app .font-lora {
+  font-family: var(--font-sans);
 }
 
 /* La landing es dorada: el foco no usa el verde de la app. */

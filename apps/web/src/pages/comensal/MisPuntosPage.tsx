@@ -52,7 +52,7 @@ export function MisPuntosPage() {
                     <li key={r.id} className="space-y-1">
                       {r.alcanzada ? (
                         <p className="flex items-center gap-2 text-sm">
-                          <CircleCheck aria-hidden className="size-4 shrink-0 text-ok" />
+                          <CircleCheck aria-hidden className="size-4 shrink-0 text-accent" />
                           <span className="min-w-0">
                             <span className="font-semibold text-ink">{r.nombre}</span>
                             <span className="text-meta"> · ¡Ya la podés usar al pagar!</span>
