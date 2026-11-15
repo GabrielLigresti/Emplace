@@ -459,7 +459,7 @@ function Detalle({ p }: { p: PronosticoFranja }) {
                 </div>
                 <div aria-hidden className="h-1.5 rounded-full bg-panel">
                   <div
-                    className="h-full rounded-full bg-accent-soft"
+                    className="h-full rounded-full bg-accent"
                     style={{ width: `${maxima > 0 ? (d.cantidad / maxima) * 100 : 0}%` }}
                   />
                 </div>
