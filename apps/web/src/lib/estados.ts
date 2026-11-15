@@ -106,8 +106,10 @@ export const ESTADOS = {
 
 export type EntidadConEstado = keyof typeof ESTADOS;
 
-// Al comensal, la inasistencia se le muestra sin tono de reproche.
-const NO_ASISTIO: InfoEstado = { etiqueta: 'No asististe', tono: 'neutro', icono: X };
+// Al comensal, la inasistencia se le muestra sin tono de reproche: naranja de aviso, no rojo.
+const NO_ASISTIO: InfoEstado = { etiqueta: 'No asististe', tono: 'warn', icono: X };
+// En el comensal la reserva finalizada va en tono "ok", para distinguirla de la cancelada.
+const RESERVA_FINALIZADA: InfoEstado = { etiqueta: 'Finalizada', tono: 'ok', icono: Check };
 // Para el comensal, su pedido confirmado ya lo recibió la cocina.
 const RECIBIDO: InfoEstado = { etiqueta: 'Recibido', tono: 'neutro', icono: Circle };
 
@@ -117,6 +119,9 @@ export function infoEstado(
   publico: Publico = 'personal',
 ): InfoEstado {
   if (entidad === 'reserva' && valor === 'VENCIDA' && publico === 'comensal') return NO_ASISTIO;
+  if (entidad === 'reserva' && valor === 'FINALIZADA' && publico === 'comensal') {
+    return RESERVA_FINALIZADA;
+  }
   if (entidad === 'pedido' && valor === 'CONFIRMADO' && publico === 'comensal') return RECIBIDO;
   const tabla: Record<string, InfoEstado> = ESTADOS[entidad];
   // Un valor nuevo de la API que todavía no está mapeado no rompe la pantalla.

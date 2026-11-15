@@ -205,12 +205,12 @@ components:
 
 Todo a mano y en su lugar. Las superficies son blancas y limpias, los grupos se arman con hojas de un verde muy claro, y el Verde Albahaca aparece solo donde se puede tocar o donde algo está pasando. Nada decora: la foto del plato, el precio y la acción siguiente son el contenido.
 
-El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y el comensal usa los tokens verdes; el staff usa los mismos nombres de token con la paleta Clásica (ver "Tema del staff"). **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px. La carta ya la usa: pestañas de categoría en texto, grilla de dos columnas y, en cada tarjeta, la espera promedio del plato cuando hay pedidos suficientes. **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
+El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y el comensal y el staff usan los mismos nombres de token con la paleta Clásica (ver "Tema del staff"); el verde Albahaca queda como valor base de los tokens, sin pantalla que lo muestre. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px (la carta nueva está pendiente; hoy el comensal usa la lista anterior). **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
 Tema claro único. En el comensal, nada de beige, piedra ni crema: el blanco es blanco y los grises son fríos. La landing y el staff son la excepción, con el papel gris cálido del registro Clásico.
 
 **Key Characteristics:**
-- Un solo acento por registro: Verde Albahaca en el comensal, Dorado Hondo en la landing y en el staff. Nunca los dos en la misma pantalla.
+- Un solo acento: Dorado Hondo en la landing, el comensal y el staff. El Verde Albahaca ya no aparece en ninguna pantalla.
 - Urbanist en el panel y el comensal; hoy de 400 a 600 (700–800 pendiente, para los títulos del comensal). La landing usa sus propias serifs (registro Clásico).
 - Tres densidades: compacta (36 px) en escritorio, comensal (44 px) en el celular, táctil (48 px) en cocina y salón.
 - Estados siempre con tono, ícono y texto; el OK es azul.
@@ -241,7 +241,7 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 - **Rojo Falta** (#b91c1c) sobre **#fef2f2**: faltante, error, cancelado, rechazado.
 
 ### Named Rules
-**The Albahaca Touch Rule.** En el comensal, el verde solo marca lo que se puede tocar o lo que está en curso. Si un elemento verde no hace nada y no está pasando, no es verde.
+**The Albahaca Touch Rule.** (Vale hoy para el dorado del comensal.) El acento solo marca lo que se puede tocar o lo que está en curso. Si un elemento con el acento no hace nada y no está pasando, no lleva el acento.
 
 **The Listo Is Blue Rule.** El estado OK es azul, nunca verde, para que "En preparación" y "Listo" no se confundan en la cola de cocina.
 
@@ -256,8 +256,8 @@ Desde esta versión el staff (y el login) usa la paleta del registro Clásico, s
 - **Acento:** `accent` = Dorado Hondo (#7d5411), hover y `accent-ink` = Dorado Oscuro (#5a3b0a), `accent-soft` #efe6d5. Las barras de datos (por ejemplo la demanda en Apertura) van en `accent` pleno, no en `accent-soft`, que sobre `panel` no se ve. Cumple The Dorado Is Touch Rule: marca lo que se toca y el ítem activo.
 - **Estados:** `ok` (azul) y `bad` (rojo) no cambian; `warn` pasa a naranja quemado (#a24f00, suave #fff1e0). Se parece al dorado y al rojo en luminancia, así que nunca va solo: siempre con ícono y texto (en Cocina, "Demorado" y "Muy demorado" se leen escritos).
 - **Líneas:** `line` #dad9d8 y `line-strong` #c0bfbe, opacos (también se usan como relleno). El token `control` (#8c8b89, 3:1 sobre blanco y papel) es el borde de campos y botones de contorno.
-- **Pantallas con el tema:** panel, selector de sucursal, login y alta de restaurante. Las demás pantallas del comensal siguen en verde.
-- El comensal conserva el verde y la regla No-Beige; el papel cálido y el dorado ahora valen también en el staff.
+- **Pantallas con el tema:** panel, selector de sucursal, login, alta de restaurante y todas las pantallas del comensal (`LayoutComensal` pone la clase). La landing tiene su propio registro.
+- **Comensal (15/11, decisión de Gabriel):** también usa esta paleta, así que la pestaña activa, "Guardar cambios" y el resto de los botones son dorados. La regla No-Beige del comensal queda superada por esta decisión. Dentro del comensal: `/inicio` usa Urbanist (clase `tipografia-app` sobre el buscador de la landing), la pestaña activa lleva un óvalo `accent` al 20 %, la reserva finalizada va en `ok`, la inasistencia en `warn` (sin rojo, para no reprochar) y `hoja` pasa a Papel Hondo.
 
 ## Registro Clásico (landing pública)
 
@@ -368,7 +368,7 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 ## Do's and Don'ts
 
 ### Do:
-- **Do** usar el acento (Verde Albahaca en el comensal, Dorado Hondo en el staff) solo en acciones, navegación activa, foco y estados en curso.
+- **Do** usar el acento (Dorado Hondo en el comensal y en el staff) solo en acciones, navegación activa, foco y estados en curso.
 - **Do** acompañar cada estado con ícono y texto, y usar Azul Listo (#1d5fb4) para OK.
 - **Do** escribir la acción siguiente en el restaurante ("Marcar listo", "Activar mesa") en lugar de dejar un ícono solo.
 - **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (la carta ya lo hace).
@@ -377,7 +377,7 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 
 ### Don't:
 - **Don't** usar fondos beige, piedra o crema en el comensal (la landing y el staff tienen su papel).
-- **Don't** mezclar Verde Albahaca y Dorado en una misma pantalla (el login y el staff son dorados).
+- **Don't** mezclar Verde Albahaca y Dorado en una misma pantalla: ninguna pantalla usa ya el verde.
 - **Don't** sumar un segundo color de acento ni volver al terracota.
 - **Don't** usar verde para un estado OK.
 - **Don't** poner sombra a tarjetas apoyadas.
