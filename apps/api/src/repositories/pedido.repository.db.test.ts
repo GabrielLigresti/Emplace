@@ -133,7 +133,7 @@ describe('pedidoRepository.confirmar', () => {
 
 describe('pedidoRepository.tiemposPreparacion', () => {
   async function pedidoListo(minutos: number) {
-    const pedido = await pedidoRepository.confirmar(cuenta, [pizzas(1)]);
+    const pedido = await pedidoRepository.confirmar(cuenta, [agua()]);
     const creado = new Date(Date.now() - 3_600_000);
     await prisma.pedido.update({
       where: { id: pedido.id },
@@ -152,7 +152,7 @@ describe('pedidoRepository.tiemposPreparacion', () => {
 
     await pedidoListo(30);
     const tiempos = await pedidoRepository.tiemposPreparacion(e.sucursalId);
-    expect(tiempos.get(e.pizzaId)).toBe(20);
+    expect(tiempos.get(e.aguaId)).toBe(20);
   });
 });
 
