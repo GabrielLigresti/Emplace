@@ -1,5 +1,6 @@
 import path from 'node:path';
 import express from 'express';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { API_PREFIX } from '@pgim/shared';
 import { alertasRouter } from './routes/alertas';
@@ -27,23 +28,37 @@ import { salonRouter } from './routes/salon';
 import { sucursalesRouter } from './routes/sucursales';
 import { turnosRouter } from './routes/turnos';
 import { CARPETA_FOTOS, TIPO_FOTO } from './lib/archivos-foto';
+import { servirWeb } from './lib/web-estatica';
 import { CARPETA_MODELOS } from './lib/archivos-modelo';
 import { autenticar, soloTipo } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
+import { env } from './config/env';
 
 const TIPO_MODELO: Record<string, string> = {
   '.glb': 'model/gltf-binary',
   '.usdz': 'model/vnd.usdz+zip',
 };
 
-export function createApp() {
+export type OpcionesApp = {
+  trustProxy?: number | string;
+  // La carpeta de la web compilada. Sin valor, la web la sirve Vite.
+  webDist?: string;
+};
+
+export function createApp(opciones: OpcionesApp = {}) {
+  const trustProxy = opciones.trustProxy ?? env.TRUST_PROXY;
+  const webDist = opciones.webDist ?? env.WEB_DIST;
   const app = express();
 
   app.disable('x-powered-by');
-  // Se confía solo en los proxies locales (Vite y cloudflared): así el rate
-  // limit ve la IP real tanto por la red local como por el túnel, y un
-  // X-Forwarded-For inventado por el cliente no la reemplaza.
-  app.set('trust proxy', 'loopback');
+  // Se confía solo en los proxies conocidos, para que el rate limit vea la IP
+  // real y `req.secure` lea X-Forwarded-Proto, y un X-Forwarded-For inventado
+  // por el cliente no la reemplace. En desarrollo `loopback` (Vite y
+  // cloudflared); en Railway `1` (su proxy de borde).
+  app.set('trust proxy', trustProxy);
+  // Comprime las respuestas (sobre todo el JS de la web, que en la primera carga
+  // viaja por datos móviles al escanear el QR de la mesa).
+  app.use(compression());
   app.use(express.json());
   app.use(cookieParser());
 
@@ -111,6 +126,8 @@ export function createApp() {
   app.use(`${API_PREFIX}/publico`, publicoRouter);
   app.use(`${API_PREFIX}/comensal`, autenticar, soloTipo('COMENSAL'), reservasComensalRouter);
   app.use(`${API_PREFIX}/comensal`, autenticar, soloTipo('COMENSAL'), mesaComensalRouter);
+
+  if (webDist) servirWeb(app, webDist);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

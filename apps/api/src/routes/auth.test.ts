@@ -63,6 +63,21 @@ describe('POST /api/auth/login', () => {
     expect(String(res.headers['set-cookie'])).toMatch(/Secure/);
   });
 
+  it('detrás del proxy de Railway (trustProxy 1) la cookie sale Secure por HTTPS', async () => {
+    const app = createApp({ trustProxy: 1 });
+    const https = await request(app)
+      .post('/api/auth/login')
+      .set('X-Forwarded-For', '203.0.113.7')
+      .set('X-Forwarded-Proto', 'https')
+      .send({ email: 'mozo@demo.test', password: PASSWORD });
+    const http = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'mozo@demo.test', password: PASSWORD });
+
+    expect(String(https.headers['set-cookie'])).toMatch(/Secure/);
+    expect(String(http.headers['set-cookie'])).not.toMatch(/Secure/);
+  });
+
   it('responde 401 con mensaje genérico ante credenciales incorrectas', async () => {
     const res = await request(createApp())
       .post('/api/auth/login')

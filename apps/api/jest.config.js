@@ -3,6 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
+  setupFiles: ['<rootDir>/src/test/setup-env.ts'],
   // Los *.db.test.ts necesitan la base de prueba: van con jest.db.config.js.
   testPathIgnorePatterns: ['/node_modules/', '\\.db\\.test\\.ts$'],
   // El cliente que genera Prisma importa sus módulos con extensión .js.
