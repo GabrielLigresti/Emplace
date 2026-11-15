@@ -23,12 +23,12 @@ const claseBotonPrincipal =
 const claseBotonSecundario =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-cuadrado bg-papel-hondo px-5 font-titulo text-base font-semibold text-dorado-700 hover:bg-tinta-clasica/10';
 
-// Los modelos 3D de la demo se cargan después: sin `src`, la ficha queda vacía y
-// sin botón. Para sumar uno, completar `nombre` y `src` (un .glb libre).
+// Modelos 3D de la demo (CC BY 4.0, créditos en el pie y en public/modelos/CREDITOS.md).
+// Sin `src`, la ficha queda vacía y sin botón.
 const MODELOS: { nombre: string; src: string }[] = [
-  { nombre: '', src: '' },
-  { nombre: '', src: '' },
-  { nombre: '', src: '' },
+  { nombre: 'Hamburguesa', src: '/modelos/burger.glb' },
+  { nombre: 'Pizza', src: '/modelos/pizza.glb' },
+  { nombre: 'Cheesecake', src: '/modelos/cheese_cake.glb' },
 ];
 
 const hayModelos = MODELOS.some((m) => m.src);
@@ -244,7 +244,36 @@ export function LandingPage() {
         </main>
 
         <footer className="mx-5 flex flex-wrap justify-between gap-3 border-t border-linea-clasica pt-5 pb-7 text-[13px] leading-5 text-tinta-clasica/70 md:mx-14">
-          <span>PGIM · Gestión de restaurantes</span>
+          <span>
+            PGIM · Gestión de restaurantes. Modelos 3D en CC BY 4.0 de Sketchfab:{' '}
+            <a
+              href="https://sketchfab.com/3d-models/burger-realistic-free-18e59d7dbd2243c69f469e0f056f44c4"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-[3px]"
+            >
+              darklord3d
+            </a>
+            ,{' '}
+            <a
+              href="https://sketchfab.com/3d-models/pizza-realistic-2443db3e29c64b03853685872c15ae00"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-[3px]"
+            >
+              neshallads
+            </a>{' '}
+            y{' '}
+            <a
+              href="https://sketchfab.com/3d-models/cheese-cake-7290e12a31d04cb3892049f379c4bafb"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-[3px]"
+            >
+              rebuilderai
+            </a>
+            .
+          </span>
           <span>
             ¿Tenés un restaurante?{' '}
             <Link
