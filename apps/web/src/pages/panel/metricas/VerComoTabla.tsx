@@ -11,7 +11,7 @@ export function useVerComoTabla() {
       variante="fantasma"
       aria-pressed={tabular}
       onClick={() => setTabular((t) => !t)}
-      className="!min-h-11 !px-2 text-xs sm:!min-h-8"
+      className="!min-h-8 !px-2 text-xs"
     >
       {tabular ? 'Ver como gráfico' : 'Ver como tabla'}
     </Boton>

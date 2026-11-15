@@ -342,9 +342,7 @@ function Comanda({
           )}
           {minutos} min
           {demora !== 'ok' && (
-            <span className="text-xs font-semibold">
-              {demora === 'bad' ? 'Muy demorado' : 'Demorado'}
-            </span>
+            <span className="sr-only">{demora === 'bad' ? ', muy demorado' : ', demorado'}</span>
           )}
         </p>
       </header>
