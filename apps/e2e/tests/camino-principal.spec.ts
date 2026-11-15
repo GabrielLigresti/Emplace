@@ -18,6 +18,9 @@ test('del alta del comensal a su primera visita, con el personal en otra sesión
   await comensal.getByRole('searchbox', { name: 'Buscar' }).fill('milanesa');
   const centro = comensal.getByRole('listitem').filter({ hasText: 'Centro' });
   await centro.getByRole('link', { name: 'Ver carta' }).click();
+  // Esperar la carta (el URL cambia antes de que se pinte): en la landing hay otros "Reservar mesa".
+  await expect(comensal).toHaveURL(/\/menu$/);
+  await expect(comensal.getByRole('link', { name: 'Buscar', exact: true })).toBeVisible();
   await comensal.getByRole('link', { name: 'Reservar mesa' }).click();
   await expect(comensal).toHaveURL(/\/login$/);
   await comensal.getByRole('link', { name: 'Registrate' }).click();
