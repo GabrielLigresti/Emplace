@@ -41,6 +41,10 @@ describe('web estática', () => {
     fs.writeFileSync(path.join(carpeta, 'index.html'), '<!doctype html><title>PGIM</title>');
     fs.mkdirSync(path.join(carpeta, 'assets'));
     fs.writeFileSync(path.join(carpeta, 'assets', 'app-abc123.js'), 'console.log(1);');
+    fs.writeFileSync(
+      path.join(carpeta, 'assets', 'grande-abc123.js'),
+      'console.log(1);'.repeat(500),
+    );
   });
 
   afterAll(() => {
@@ -102,6 +106,46 @@ describe('web estática', () => {
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('<title>PGIM</title>');
+  });
+
+  it('un archivo faltante fuera de /assets da 404 y no index.html', async () => {
+    const res = await request(createApp({ webDist: carpeta })).get('/fotos-demo/no-existe.jpg');
+
+    expect(res.status).toBe(404);
+    expect(res.text).not.toContain('<title>PGIM</title>');
+  });
+
+  it('una ruta de /api en mayúsculas sigue dando 404 JSON', async () => {
+    const res = await request(createApp({ webDist: carpeta })).get('/API/no-existe');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Recurso no encontrado' });
+  });
+
+  it('index.html y los assets no se pueden embeber ni reinterpretar', async () => {
+    const app = createApp({ webDist: carpeta });
+
+    for (const ruta of ['/', '/mesa/x', '/assets/app-abc123.js']) {
+      const res = await request(app).get(ruta);
+      expect(res.headers['x-frame-options']).toBe('DENY');
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+    }
+  });
+
+  it('comprime los assets si el navegador lo acepta', async () => {
+    const res = await request(createApp({ webDist: carpeta }))
+      .get('/assets/grande-abc123.js')
+      .set('Accept-Encoding', 'gzip');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-encoding']).toBe('gzip');
+  });
+
+  it('falla al arrancar si la carpeta no tiene index.html', () => {
+    const vacia = fs.mkdtempSync(path.join(os.tmpdir(), 'pgim-web-vacia-'));
+
+    expect(() => createApp({ webDist: vacia })).toThrow(/index\.html/);
+    fs.rmSync(vacia, { recursive: true, force: true });
   });
 
   it('sin webDist, GET / da 404 JSON', async () => {

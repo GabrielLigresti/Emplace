@@ -14,4 +14,9 @@ describe('parsearTrustProxy', () => {
     expect(parsearTrustProxy('loopback')).toBe('loopback');
     expect(parsearTrustProxy('10.0.0.0/8')).toBe('10.0.0.0/8');
   });
+
+  it('sin valor queda en loopback', () => {
+    expect(parsearTrustProxy('')).toBe('loopback');
+    expect(parsearTrustProxy('   ')).toBe('loopback');
+  });
 });

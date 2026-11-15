@@ -1,5 +1,6 @@
 import path from 'node:path';
 import express from 'express';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { API_PREFIX } from '@pgim/shared';
 import { alertasRouter } from './routes/alertas';
@@ -55,6 +56,9 @@ export function createApp(opciones: OpcionesApp = {}) {
   // por el cliente no la reemplace. En desarrollo `loopback` (Vite y
   // cloudflared); en Railway `1` (su proxy de borde).
   app.set('trust proxy', trustProxy);
+  // Comprime las respuestas (sobre todo el JS de la web, que en la primera carga
+  // viaja por datos móviles al escanear el QR de la mesa).
+  app.use(compression());
   app.use(express.json());
   app.use(cookieParser());
 
