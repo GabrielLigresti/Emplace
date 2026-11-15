@@ -11,6 +11,7 @@ import {
 } from '../components/HorariosServicioEditor';
 import { Aviso, Boton, Campo, claseInput } from '../components/ui';
 import { aNumero } from '../lib/formato';
+import { useTemaStaff } from '../lib/useTemaStaff';
 
 type Errores = Record<string, string>;
 
@@ -40,6 +41,7 @@ function Bloque({ titulo, children }: { titulo: string; children: React.ReactNod
 
 // CU-11: alta de un restaurante con su primera sucursal y su administrador.
 export function RegistroRestaurantePage() {
+  useTemaStaff();
   const { sesion, cargando, registrarRestaurante } = useSesion();
   const navigate = useNavigate();
   const [restauranteNombre, setRestauranteNombre] = useState('');

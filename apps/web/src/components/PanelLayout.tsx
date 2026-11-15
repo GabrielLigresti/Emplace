@@ -27,6 +27,7 @@ import {
 import type { CodigoPermiso } from '@pgim/shared';
 import { useSesion } from '../auth/SesionProvider';
 import { useSalir } from '../auth/useSalir';
+import { useTemaStaff } from '../lib/useTemaStaff';
 
 export type GrupoPanel = 'Operación' | 'Menú' | 'Stock' | 'Gestión' | 'Análisis';
 
@@ -205,6 +206,7 @@ function Marca({ nombre }: { nombre?: string }) {
 }
 
 export function PanelLayout() {
+  useTemaStaff();
   const { sesion, tienePermiso, seleccionarSucursal } = useSesion();
   const salir = useSalir();
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -246,7 +248,7 @@ export function PanelLayout() {
         aria-label="Sucursal de trabajo"
         value={sesion.sucursalActiva?.id ?? ''}
         onChange={(e) => seleccionarSucursal(e.target.value)}
-        className="min-h-11 w-full min-w-0 max-w-44 truncate rounded-control border border-line-strong bg-surface px-2 text-[16px] sm:min-h-9 sm:text-sm"
+        className="min-h-11 w-full min-w-0 max-w-44 truncate rounded-control border border-control bg-surface px-2 text-[16px] sm:min-h-9 sm:text-sm"
       >
         {!sesion.sucursalActiva && (
           <option value="" disabled>
