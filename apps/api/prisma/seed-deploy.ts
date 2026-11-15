@@ -14,7 +14,6 @@ import {
   redondearCosto,
   seedComponente,
   seedFaltantesSimulador,
-  seedFidelizacion,
   seedHistorialVentas,
   seedMenus,
   seedModelosRa,
@@ -192,15 +191,15 @@ const BEBIDA_AGUA: PlatoSeed = {
   categoria: 'Bebidas',
   precio: 2000,
   descripcion: 'Botella de 500 ml, con o sin gas.',
-  foto: 'parrilla/agua-mineral.webp',
+  foto: 'bebidas/agua-mineral.webp',
   reventa: 'Agua mineral 500 ml',
 };
 const BEBIDA_GASEOSA: PlatoSeed = {
   nombre: 'Gaseosa cola 500 ml',
   categoria: 'Bebidas',
   precio: 2500,
-  descripcion: 'Botella individual, bien fría.',
-  foto: 'hamburgueseria/gaseosa-con-hielo.webp',
+  descripcion: 'Botella de 500 ml, bien fría.',
+  foto: 'bebidas/gaseosa-cola.webp',
   reventa: 'Gaseosa cola 500 ml',
 };
 const BEBIDA_MALBEC: PlatoSeed = {
@@ -1519,7 +1518,6 @@ async function seedRestaurante(
         where: { id: { in: [...sucursalIds.values()] } },
         data: { menuActivoId: cartaId },
       });
-      await seedFidelizacion(tx, restaurante.id, cartaId);
       return { restauranteId: restaurante.id, sucursalIds };
     },
     { timeout: 120_000 },

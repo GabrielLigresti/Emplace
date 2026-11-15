@@ -401,8 +401,12 @@ export async function seedProduccionDemo(
     });
     if (yaCargada > 0) continue;
 
+    const emailCocina = cocinaDe[nombreSucursal];
+    if (!emailCocina) {
+      throw new Error(`Falta el email de cocina de la sucursal "${nombreSucursal}".`);
+    }
     const empleado = await prisma.usuario.findUniqueOrThrow({
-      where: { email: cocinaDe[nombreSucursal] },
+      where: { email: emailCocina },
     });
     const ctx = { restauranteId, sucursalId, empleadoId: empleado.id };
 
@@ -572,10 +576,14 @@ export async function seedHistorialVentas(
       where: { sucursalId },
       _max: { numero: true },
     });
+    const semanas = semanasHistorial[nombre];
+    if (semanas === undefined) {
+      throw new Error(`Faltan las semanas de historial de la sucursal "${nombre}".`);
+    }
     const reservas = generarReservasHistorial({
       semilla: SEMILLA_HISTORIAL + indice,
       hoy,
-      semanas: semanasHistorial[nombre]!,
+      semanas,
       mesas,
       horarios: horarios.map((h) => ({
         franja: h.franja as Franja,
