@@ -205,7 +205,7 @@ components:
 
 Todo a mano y en su lugar. Las superficies son blancas y limpias, los grupos se arman con hojas de un verde muy claro, y el Verde Albahaca aparece solo donde se puede tocar o donde algo está pasando. Nada decora: la foto del plato, el precio y la acción siguiente son el contenido.
 
-El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y los otros dos comparten los tokens verdes. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px (la carta nueva está pendiente; hoy el comensal usa la lista anterior). **El restaurante** (panel, cocina y salón) sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
+El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y los otros dos comparten los tokens verdes. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px (la carta nueva está pendiente; hoy el comensal usa la lista anterior). **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
 Tema claro único. En el panel y el comensal, nada de beige, piedra ni crema: el blanco es blanco y los grises son fríos. La landing es la excepción, con su papel gris cálido (registro Clásico).
 
@@ -247,9 +247,19 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 
 **The No-Beige Rule.** En el panel y el comensal no hay fondos cálidos, piedra ni crema: las superficies son Blanco Mantel o Gris Bandeja. El Papel de la landing no se usa fuera de ella.
 
+## Tema del staff (panel, cocina, salón)
+
+Desde esta versión el staff usa la paleta del registro Clásico, sin tocar la tipografía (sigue Urbanist). Es un override de los mismos tokens bajo la clase `.tema-staff` de `index.css`, que `useTemaStaff` pone en `<html>` mientras el panel o el selector de sucursal están montados. Los nombres de token no cambian, así que las pantallas no se tocan.
+
+- **Fondos:** `bg` = Papel (#f3f2f2); `panel` = Papel Hondo (#eae9e9); `surface` sigue blanco. Líneas: Tinta Clásica al 12 % y 24 %.
+- **Texto:** `ink` = Tinta Clásica (#201f1d), `text` #2b2a28, `meta` #5f5c57 (AA sobre papel y sobre Papel Hondo).
+- **Acento:** `accent` = Dorado Hondo (#7d5411), hover y `accent-ink` = Dorado Oscuro (#5a3b0a), `accent-soft` #efe6d5. Cumple The Dorado Is Touch Rule: marca lo que se toca y el ítem activo.
+- **Estados:** `ok` (azul) y `bad` (rojo) no cambian; `warn` pasa a naranja quemado (#b4430c, suave #fff1e6) para no confundirse con el dorado.
+- El comensal conserva el verde y la regla No-Beige; el papel cálido y el dorado ahora valen también en el staff.
+
 ## Registro Clásico (landing pública)
 
-La landing (`/`) tiene su propia dirección visual, más editorial que la del resto: papel gris cálido, tinta, un dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design; sus tokens viven en `apps/web/src/index.css` junto a los verdes, con otros nombres, y ninguna pantalla del panel ni del comensal los usa. Cuando el comensal entra a una sucursal, deja de aplicar (manda la marca del restaurante).
+La landing (`/`) tiene su propia dirección visual, más editorial que la del resto: papel gris cálido, tinta, un dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design; sus tokens viven en `apps/web/src/index.css` junto a los verdes, con otros nombres, y el panel los usa a través del tema del staff y el comensal no. Cuando el comensal entra a una sucursal, deja de aplicar (manda la marca del restaurante).
 
 ### Colores
 En CSS los nombres siguen la escala numérica: `papel`, `papel-hondo`, `tinta-clasica`, `linea-clasica`, `dorado`, `dorado-700` (Dorado Hondo) y `dorado-800` (Dorado Oscuro). Los radios son `radius-clasico` (4 px) y `radius-hero` (20 px).

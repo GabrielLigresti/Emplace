@@ -70,6 +70,31 @@
   --font-lora: 'Lora', Georgia, 'Times New Roman', serif;
 }
 
+/* Tema del staff (panel, cocina, salón, selector de sucursal): los mismos nombres
+   de token con la paleta del registro Clásico (papel, tinta, dorado). Se aplica con
+   la clase en <html> (ver lib/useTemaStaff) para que también alcance a lo que
+   se monta fuera del árbol (portales). El comensal conserva el verde. */
+.tema-staff {
+  --color-bg: #f3f2f2;
+  --color-panel: #eae9e9;
+  --color-surface: #ffffff;
+  --color-line: color-mix(in srgb, #201f1d 12%, transparent);
+  --color-line-strong: color-mix(in srgb, #201f1d 24%, transparent);
+  --color-ink: #201f1d;
+  --color-text: #2b2a28;
+  --color-meta: #5f5c57;
+
+  /* Dorado Hondo como acento: blanco sobre él pasa AA. */
+  --color-accent: #7d5411;
+  --color-accent-hover: #5a3b0a;
+  --color-accent-ink: #5a3b0a;
+  --color-accent-soft: #efe6d5;
+
+  /* El aviso pasa a naranja quemado para no confundirse con el dorado. */
+  --color-warn: #b4430c;
+  --color-warn-soft: #fff1e6;
+}
+
 @layer base {
   body {
     @apply bg-bg font-sans text-text antialiased;
