@@ -62,7 +62,7 @@ La app corre como un solo servicio: la API sirve también la web compilada, así
    **Pagos:** con `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` y `PUBLIC_URL` cargadas, los pagos van por el checkout de prueba de Mercado Pago (se paga con una cuenta de comprador de prueba) y `PAGO_SIMULADO` se ignora. Para que los pagos se aprueben al instante sin Mercado Pago, no cargar las `MP_*` y poner `PAGO_SIMULADO=true`.
 
    Si el build no toma Node 22, agregar `RAILPACK_NODE_VERSION=22`. Las migraciones y el seed usan dependencias de desarrollo (`prisma`, `tsx`): si el pre-deploy no encuentra `prisma`, agregar `RAILPACK_PRUNE_DEPS=false`. La instalación (`npm ci`) ya compila `@pgim/shared` y corre `prisma generate`: si falla ahí por `DATABASE_URL`, revisar que la variable esté cargada en el servicio antes del build.
-3. Cargar los datos ficticios **dentro del contenedor**, para que los modelos 3D queden en el volumen: `railway ssh` y después `npm run db:seed -w @pgim/api`.
+3. Cargar los datos ficticios **dentro del contenedor**, para que los modelos 3D queden en el volumen: `railway ssh` y después `npm run db:seed:deploy -w @pgim/api`. Carga cinco restaurantes ficticios de dos sucursales cada uno, con carta y fotos. Cada uno tiene su administrador, con la contraseña `demo1234`: `admin@pastas.pgim.test` (Nonna Ermelinda), `admin@parrilla.pgim.test` (Fuego de Quebracho, con historial de ventas y simulador), `admin@sushi.pgim.test` (Hoshi Sushi Bar), `admin@hamburgueseria.pgim.test` (Doble Medallón) y `admin@pizzeria.pgim.test` (Horno de Barrio). Las cuentas de comensal de la demo son `comensal@demo.pgim.test` y `comensal2@demo.pgim.test`, con la misma contraseña.
 4. Agregar la URL pública a los orígenes autorizados del client ID de Google y, si el webhook está configurado en el panel de Mercado Pago, actualizarlo.
 
 ### Pasar a un dominio propio
@@ -89,3 +89,4 @@ El QR de cada sucursal se arma con la URL desde la que se abre el panel, así qu
 | `npm run db:up` / `db:down` | Levanta o baja PostgreSQL en Docker |
 | `npm run db:migrate -w @pgim/api` | Crea y aplica migraciones de Prisma en desarrollo |
 | `npm run db:seed -w @pgim/api` | Carga los datos ficticios; se puede repetir sin duplicar filas |
+| `npm run db:seed:deploy -w @pgim/api` | Carga los cinco restaurantes ficticios del despliegue; se puede repetir sin duplicar filas |
