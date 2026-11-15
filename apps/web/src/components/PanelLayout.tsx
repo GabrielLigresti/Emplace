@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { CodigoPermiso } from '@pgim/shared';
 import { useSesion } from '../auth/SesionProvider';
+import { useSalir } from '../auth/useSalir';
 
 export type GrupoPanel = 'Operación' | 'Menú' | 'Stock' | 'Gestión' | 'Análisis';
 
@@ -204,7 +205,8 @@ function Marca({ nombre }: { nombre?: string }) {
 }
 
 export function PanelLayout() {
-  const { sesion, tienePermiso, seleccionarSucursal, logout } = useSesion();
+  const { sesion, tienePermiso, seleccionarSucursal } = useSesion();
+  const salir = useSalir();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const botonMenu = useRef<HTMLButtonElement>(null);
   const panelMenu = useRef<HTMLDivElement>(null);
@@ -283,7 +285,7 @@ export function PanelLayout() {
       </NavLink>
       <button
         type="button"
-        onClick={logout}
+        onClick={salir}
         aria-label="Cerrar sesión"
         className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-control px-2 text-sm text-meta hover:bg-panel hover:text-text sm:min-h-9"
       >

@@ -3,10 +3,11 @@ import { Link, NavLink, useLocation } from 'react-router';
 import type { MiMesa } from '@pgim/shared';
 import { CalendarDays, ChevronLeft, House, LogOut, Receipt, Star, UserRound } from 'lucide-react';
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
+import { useSalir } from '../auth/useSalir';
 import { useMiMesa } from '../lib/miMesa';
 
 const PESTANIAS = [
-  { a: '/', texto: 'Inicio', icono: House },
+  { a: '/inicio', texto: 'Inicio', icono: House },
   { a: '/reservas', texto: 'Reservas', icono: CalendarDays },
   { a: '/puntos', texto: 'Mis puntos', icono: Star },
 ];
@@ -34,7 +35,8 @@ export function LayoutComensal({
   mesaActiva?: MiMesa | null;
   children: ReactNode;
 }) {
-  const { sesion, logout } = useSesion();
+  const { sesion } = useSesion();
+  const salir = useSalir();
   const { pathname } = useLocation();
   // "Mi mesa" aparece solo mientras el comensal tiene una mesa activa.
   // Sin sesión de comensal no la consulta: sería un 401 (o 403) en la consola.
@@ -81,7 +83,7 @@ export function LayoutComensal({
               </Link>
               <button
                 type="button"
-                onClick={logout}
+                onClick={salir}
                 className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm text-meta hover:bg-panel hover:text-text"
               >
                 <LogOut aria-hidden className="size-4" />

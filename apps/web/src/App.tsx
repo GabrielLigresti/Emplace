@@ -12,6 +12,7 @@ import { LoginPage } from './pages/LoginPage';
 import { PanelPage } from './pages/PanelPage';
 import { RegistroPage } from './pages/RegistroPage';
 import { RegistroRestaurantePage } from './pages/RegistroRestaurantePage';
+import { InicioPage } from './pages/comensal/InicioPage';
 import { MenuSucursalPage } from './pages/comensal/MenuSucursalPage';
 import { MiCuentaPage } from './pages/comensal/MiCuentaPage';
 import { MisPuntosPage } from './pages/comensal/MisPuntosPage';
@@ -154,7 +155,7 @@ export default function App() {
                   <Route path="platos" element={conPermiso('menu.ver', <PlatosPage />)} />
                   <Route path="menus" element={conPermiso('menu.ver', <MenusPage />)} />
                 </Route>
-                <Route path="/inicio" element={<Navigate to="/" replace />} />
+                <Route path="/inicio" element={paraComensal(<InicioPage />)} />
                 <Route path="/s/:sucursalId/menu" element={<MenuSucursalPage />} />
                 <Route path="/s/:sucursalId/platos/:id" element={<PlatoPage />} />
                 <Route path="/s/:sucursalId/reservar" element={paraComensal(<ReservarPage />)} />

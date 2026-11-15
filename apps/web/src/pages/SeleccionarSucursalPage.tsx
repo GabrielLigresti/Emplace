@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ApiError } from '../lib/api';
 import { useSesion } from '../auth/SesionProvider';
+import { useSalir } from '../auth/useSalir';
 
 // Flujo B del CU-01: el empleado de varias sucursales elige dónde trabaja.
 export function SeleccionarSucursalPage() {
-  const { sesion, seleccionarSucursal, logout } = useSesion();
+  const { sesion, seleccionarSucursal } = useSesion();
+  const salir = useSalir();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +57,7 @@ export function SeleccionarSucursalPage() {
           </p>
         )}
 
-        <button type="button" onClick={logout} className="w-full text-sm text-meta hover:text-text">
+        <button type="button" onClick={salir} className="w-full text-sm text-meta hover:text-text">
           Cerrar sesión
         </button>
       </div>
