@@ -31,6 +31,8 @@ const MODELOS: { nombre: string; src: string }[] = [
   { nombre: '', src: '' },
 ];
 
+const hayModelos = MODELOS.some((m) => m.src);
+
 function Texto({ corto, largo }: { corto: string; largo?: ReactNode }) {
   return (
     <>
@@ -155,7 +157,7 @@ export function LandingPage() {
               </div>
             </div>
             {/* El fondo oscuro asegura el contraste del texto blanco si la foto no carga. */}
-            <figure className="absolute inset-0 m-0 overflow-hidden bg-tinta-clasica md:relative md:min-h-[500px] md:rounded-l-[20px] md:bg-papel-hondo">
+            <figure className="absolute inset-0 m-0 overflow-hidden bg-tinta-clasica md:relative md:min-h-[500px] md:rounded-l-hero md:bg-papel-hondo">
               <img
                 src="/fotos-portada/mesa-puesta.jpg"
                 alt="Mesa puesta en una terraza"
@@ -183,33 +185,38 @@ export function LandingPage() {
             </div>
 
             <div className="flex flex-col gap-4 px-5 pt-5 md:px-14 md:pt-14">
-              <div className="flex items-end justify-between gap-3">
-                <p className="m-0 max-w-[52ch] text-[15.5px] leading-7 text-tinta-clasica/80">
-                  Tocá <u className="text-dorado-700 not-italic">Ver en mi mesa</u> desde tu celular
-                  para verlos sobre tu mesa. Arrastrá para girarlos.
-                </p>
-                {/* Las flechas solo en escritorio: en el celular el carrusel se desliza con el dedo. */}
-                <div className="hidden gap-2 md:flex">
-                  <button
-                    type="button"
-                    aria-label="Anterior"
-                    onClick={() => mover(-360)}
-                    className="inline-flex size-11 items-center justify-center rounded-cuadrado bg-papel-hondo hover:bg-tinta-clasica/10"
-                  >
-                    <ChevronLeft aria-hidden className="size-[18px]" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Siguiente"
-                    onClick={() => mover(360)}
-                    className="inline-flex size-11 items-center justify-center rounded-cuadrado bg-papel-hondo hover:bg-tinta-clasica/10"
-                  >
-                    <ChevronRight aria-hidden className="size-[18px]" strokeWidth={1.5} />
-                  </button>
+              {hayModelos && (
+                <div className="flex items-end justify-between gap-3">
+                  <p className="m-0 max-w-[52ch] text-[15.5px] leading-7 text-tinta-clasica/80">
+                    Tocá <strong className="font-semibold">Ver en mi mesa</strong> desde tu celular
+                    para verlos sobre tu mesa. Arrastrá para girarlos.
+                  </p>
+                  {/* Las flechas solo en escritorio: en el celular el carrusel se desliza con el dedo. */}
+                  <div className="hidden gap-2 md:flex">
+                    <button
+                      type="button"
+                      aria-label="Plato anterior"
+                      onClick={() => mover(-360)}
+                      className="inline-flex size-11 items-center justify-center rounded-cuadrado bg-papel-hondo hover:bg-tinta-clasica/10"
+                    >
+                      <ChevronLeft aria-hidden className="size-[18px]" strokeWidth={1.5} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Plato siguiente"
+                      onClick={() => mover(360)}
+                      className="inline-flex size-11 items-center justify-center rounded-cuadrado bg-papel-hondo hover:bg-tinta-clasica/10"
+                    >
+                      <ChevronRight aria-hidden className="size-[18px]" strokeWidth={1.5} />
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
               <div
                 ref={slider}
+                role="group"
+                aria-label="Platos en 3D"
+                tabIndex={0}
                 className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {MODELOS.map((m, i) => (
@@ -217,12 +224,14 @@ export function LandingPage() {
                     key={i}
                     className="flex w-[82%] flex-none snap-start flex-col gap-2.5 md:w-[340px]"
                   >
-                    <div className="h-[300px] overflow-hidden rounded border border-linea-clasica bg-papel-hondo">
+                    <div className="h-[300px] overflow-hidden rounded-clasico border border-linea-clasica bg-papel-hondo">
                       {m.src && <VisorModeloLanding src={m.src} nombre={m.nombre} />}
                     </div>
-                    <p className="m-0 min-h-[26px] font-titulo text-2xl leading-[1.1] font-semibold">
-                      {m.nombre}
-                    </p>
+                    {m.nombre && (
+                      <p className="m-0 font-titulo text-2xl leading-[1.1] font-semibold">
+                        {m.nombre}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -240,7 +249,7 @@ export function LandingPage() {
             ¿Tenés un restaurante?{' '}
             <Link
               to="/registrar-restaurante"
-              className="inline-flex min-h-11 items-center text-dorado-700 underline underline-offset-[3px] hover:text-dorado-600"
+              className="inline-flex min-h-11 items-center text-dorado-700 underline underline-offset-[3px] hover:text-dorado-800"
             >
               Registralo en PGIM
             </Link>

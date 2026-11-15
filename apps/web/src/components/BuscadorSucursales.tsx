@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Search, SearchX, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { nombreBarrio, type BarrioConSucursales, type ResultadoBusqueda } from '@pgim/shared';
 import { useRecurso } from '../lib/useRecurso';
-import { Aviso, Boton, EstadoCarga, Vacio } from './ui';
 
 const ESPERA_BUSQUEDA_MS = 300;
+
+const claseBotonClasico =
+  'inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-papel-hondo px-5 font-titulo text-base font-semibold text-dorado-700 hover:bg-tinta-clasica/10';
 
 // Buscador de la landing: texto libre y barrio. El resultado se actualiza solo,
 // poco después de que el visitante deja de escribir.
@@ -44,7 +46,7 @@ export function BuscadorSucursales() {
       : '';
 
   const claseCampo =
-    'min-h-11 w-full rounded border border-linea-clasica bg-transparent px-3.5 font-titulo text-lg font-semibold text-tinta-clasica hover:border-dorado focus-visible:border-dorado';
+    'min-h-11 w-full rounded-clasico border border-linea-clasica bg-transparent px-3.5 font-titulo text-lg font-semibold text-tinta-clasica hover:border-dorado focus-visible:border-dorado';
 
   return (
     <>
@@ -59,7 +61,7 @@ export function BuscadorSucursales() {
           Un restaurante, un barrio o un plato: mirá la carta y reservá tu mesa.
         </p>
       </div>
-      <section className="mt-5 rounded border border-linea-clasica bg-papel p-3.5">
+      <section className="mt-5 rounded-clasico border border-linea-clasica bg-papel p-3.5">
         <div className="grid gap-2.5 md:grid-cols-[1fr_260px]">
           <div className="relative">
             <Search
@@ -73,14 +75,14 @@ export function BuscadorSucursales() {
               value={texto}
               maxLength={100}
               onChange={(e) => setTexto(e.target.value)}
-              className={`${claseCampo} pl-10 text-base font-normal placeholder:text-tinta-clasica/55 [&::-webkit-search-cancel-button]:appearance-none ${texto ? 'pr-11' : ''}`}
+              className={`${claseCampo} pl-10 text-base font-normal placeholder:text-tinta-clasica/70 [&::-webkit-search-cancel-button]:appearance-none ${texto ? 'pr-11' : ''}`}
             />
             {texto && (
               <button
                 type="button"
                 aria-label="Borrar búsqueda"
                 onClick={() => setTexto('')}
-                className="absolute top-0 right-0 inline-flex size-11 items-center justify-center rounded text-tinta-clasica/70 hover:text-tinta-clasica"
+                className="absolute top-0 right-0 inline-flex size-11 items-center justify-center rounded-clasico text-tinta-clasica/70 hover:text-tinta-clasica"
               >
                 <X aria-hidden className="size-5" />
               </button>
@@ -105,28 +107,33 @@ export function BuscadorSucursales() {
       <div className="mt-5">
         {error ? (
           <div className="flex flex-wrap items-center gap-3">
-            <Aviso tono="bad">No pudimos cargar las sucursales.</Aviso>
-            <Boton variante="secundario" densidad="comensal" onClick={recargar}>
+            <p role="alert" className="m-0 text-[15.5px] leading-7">
+              No pudimos cargar las sucursales.
+            </p>
+            <button type="button" onClick={recargar} className={claseBotonClasico}>
               Reintentar
-            </Boton>
+            </button>
           </div>
         ) : (
           <>
-            <EstadoCarga cargando={cargando && !datos} error={null} />
+            {cargando && !datos && (
+              <p className="m-0 text-[13px] leading-5 text-tinta-clasica/70">Cargando…</p>
+            )}
             <p aria-live="polite" className="mb-3 text-[13px] leading-5 text-tinta-clasica/70">
               {resumen}
             </p>
             {datos?.length === 0 && (
-              <Vacio
-                icono={SearchX}
-                titulo="No encontramos sucursales con esa búsqueda"
-                texto="Probá con otro plato o elegí Todos los barrios."
-                accion={
-                  <Boton variante="secundario" densidad="comensal" onClick={limpiar}>
-                    Limpiar búsqueda
-                  </Boton>
-                }
-              />
+              <div className="flex flex-col items-start gap-3 border-y border-linea-clasica py-7">
+                <p className="m-0 font-titulo text-2xl leading-[1.1] font-semibold">
+                  No encontramos sucursales con esa búsqueda
+                </p>
+                <p className="m-0 text-[15.5px] leading-7 text-tinta-clasica/80">
+                  Probá con otro plato o elegí Todos los barrios.
+                </p>
+                <button type="button" onClick={limpiar} className={claseBotonClasico}>
+                  Limpiar búsqueda
+                </button>
+              </div>
             )}
             {datos && datos.length > 0 && (
               <ul className="grid gap-5 md:grid-cols-3">
@@ -161,7 +168,7 @@ function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
         </p>
         {platosCoincidentes.length > 0 && (
           <p className="m-0 text-[13px] leading-5">
-            <span className="text-dorado-700">Coincide:</span> {platosCoincidentes.join(', ')}
+            <span className="font-semibold">Coincide:</span> {platosCoincidentes.join(', ')}
           </p>
         )}
       </div>

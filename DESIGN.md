@@ -25,6 +25,7 @@ colors:
   dorado: "#b68235"
   dorado-hondo: "#7d5411"
   dorado-oscuro: "#5a3b0a"
+  linea-clasica: "#201f1d29"
 typography:
   display:
     fontFamily: "Urbanist Variable, ui-sans-serif, system-ui, sans-serif"
@@ -210,7 +211,7 @@ Tema claro único. En el panel y el comensal, nada de beige, piedra ni crema: el
 
 **Key Characteristics:**
 - Un solo acento por registro: Verde Albahaca en el panel y el comensal, Dorado en la landing. Nunca los dos en la misma pantalla.
-- Urbanist en toda la app; hoy de 400 a 600 (700–800 pendiente, para los títulos del comensal).
+- Urbanist en el panel y el comensal; hoy de 400 a 600 (700–800 pendiente, para los títulos del comensal). La landing usa sus propias serifs (registro Clásico).
 - Tres densidades: compacta (36 px) en escritorio, comensal (44 px) en el celular, táctil (48 px) en cocina y salón.
 - Estados siempre con tono, ícono y texto; el OK es azul.
 - Una sola sombra, solo para lo que flota.
@@ -251,9 +252,11 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 La landing (`/`) tiene su propia dirección visual, más editorial que la del resto: papel gris cálido, tinta, un dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design; sus tokens viven en `apps/web/src/index.css` junto a los verdes, con otros nombres, y ninguna pantalla del panel ni del comensal los usa. Cuando el comensal entra a una sucursal, deja de aplicar (manda la marca del restaurante).
 
 ### Colores
+En CSS los nombres siguen la escala numérica: `papel`, `papel-hondo`, `tinta-clasica`, `linea-clasica`, `dorado`, `dorado-700` (Dorado Hondo) y `dorado-800` (Dorado Oscuro). Los radios son `radius-clasico` (4 px) y `radius-hero` (20 px).
+
 - **Papel** (#f3f2f2): fondo de la landing. **Papel Hondo** (#eae9e9): fondos de campos, fichas de modelos y botón secundario.
 - **Tinta Clásica** (#201f1d): texto y títulos; las líneas son esta tinta al 16 %.
-- **Dorado** (#b68235): solo hover y borde de campo enfocado, nunca texto ni fondo de botón (no pasa AA sobre papel). **Dorado Hondo** (#7d5411): botón principal, enlaces, etiquetas y el subrayado de "Ver en mi mesa". **Dorado Oscuro** (#5a3b0a): hover del botón principal. Blanco sobre Dorado Hondo pasa AA.
+- **Dorado** (#b68235): solo el borde de los campos en hover y foco, nunca texto ni fondo de botón (no pasa AA sobre papel). **Dorado Hondo** (#7d5411): botón principal, enlaces y etiquetas de sección. **Dorado Oscuro** (#5a3b0a): hover del botón principal. Blanco sobre Dorado Hondo pasa AA.
 - Blanco (#ffffff) para la franja de "Ver en mi mesa", que separa los modelos del papel.
 
 ### Tipografía
@@ -269,7 +272,7 @@ La landing (`/`) tiene su propia dirección visual, más editorial que la del re
 - **Resultados de búsqueda:** sin tarjeta ni foto (no hay fotos de sucursal): nombre en Cormorant, datos en Lora chico y dos botones.
 
 ### Reglas del registro
-**The Dorado Is Touch Rule.** El Dorado Hondo marca lo que se toca; si no se toca, es tinta.
+**The Dorado Is Touch Rule.** El Dorado Hondo marca lo que se toca y las etiquetas de sección; fuera de eso, el texto es tinta (los énfasis van en peso 600, no en color).
 
 **The Mobile Trim Rule.** En el celular se oculta lo que no funciona con el dedo o repite otro control (flechas del carrusel, menú sin destino, el botón "Reservar mesa" de la barra cuando el héroe ya lo tiene). No se achica ni se apila: se saca.
 

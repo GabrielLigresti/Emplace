@@ -59,11 +59,13 @@
   --color-tinta-clasica: #201f1d;
   --color-linea-clasica: color-mix(in srgb, #201f1d 16%, transparent);
   --color-dorado: #b68235;
-  --color-dorado-600: #a06f24;
   --color-dorado-700: #7d5411;
   --color-dorado-800: #5a3b0a;
 
   /* Cormorant Garamond y Lora se cargan en main.tsx; el resto es la pila de respaldo. */
+  --radius-clasico: 4px;
+  --radius-hero: 20px;
+
   --font-titulo: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-lora: 'Lora', Georgia, 'Times New Roman', serif;
 }
