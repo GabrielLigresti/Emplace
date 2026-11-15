@@ -66,6 +66,7 @@ function aPlatoMenu(
     admiteObservaciones: categoria.admiteObservaciones,
     modeloRa,
     hayStock,
+    tiempoPromedioMin: null,
   };
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { Clock, Utensils } from 'lucide-react';
 import type { DetallePlato } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useAvisos } from '../../components/AvisoEmergente';
@@ -8,7 +9,7 @@ import { SelectorCantidad } from '../../components/SelectorCantidad';
 import { VisorRA } from '../../components/VisorRA';
 import { Aviso, Boton, Campo, EstadoCarga, claseInput } from '../../components/ui';
 import { useCarrito } from '../../lib/carrito';
-import { formatoCantidad, formatoPesos } from '../../lib/formato';
+import { formatoCantidad, formatoMinutos, formatoPesos } from '../../lib/formato';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
@@ -74,12 +75,19 @@ export function PlatoPage() {
       <EstadoCarga cargando={cargando && !datos} error={error} />
       {plato && (
         <article className="space-y-4">
-          {plato.fotoUrl && (
+          {plato.fotoUrl ? (
             <img
               src={plato.fotoUrl}
               alt={plato.nombre}
               className="aspect-[4/3] w-full rounded-panel object-cover"
             />
+          ) : (
+            <span
+              aria-hidden
+              className="grid aspect-[16/9] w-full place-items-center rounded-panel border border-line bg-panel text-meta"
+            >
+              <Utensils className="size-10" strokeWidth={1.6} />
+            </span>
           )}
           <div>
             <p className="text-sm text-meta">{plato.categoria.nombre}</p>
@@ -89,14 +97,20 @@ export function PlatoPage() {
                 {formatoPesos(plato.precio)}
               </span>
             </div>
-            {plato.descripcion && <p className="mt-1 text-meta">{plato.descripcion}</p>}
+            {plato.hayStock && plato.tiempoPromedioMin !== null && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-meta">
+                <Clock aria-hidden className="size-4 text-accent-ink" />
+                Espera {formatoMinutos(plato.tiempoPromedioMin)}
+              </p>
+            )}
+            {plato.descripcion && <p className="mt-2 text-meta">{plato.descripcion}</p>}
             {plato.modeloRa && (
               <p className="mt-1 text-sm text-meta">
                 Porción: {formatoCantidad(plato.modeloRa.porcionGramos, 'GRAMO')}
               </p>
             )}
           </div>
-          {mesa && !plato.hayStock && <Aviso>Hoy no hay stock de este plato.</Aviso>}
+          {!plato.hayStock && <Aviso>Hoy no hay stock de este plato.</Aviso>}
           {plato.modeloRa && (
             <VisorRA
               modelo={plato.modeloRa}

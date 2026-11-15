@@ -11,6 +11,7 @@ import {
 import { AppError } from '../lib/errors';
 import { normalizar } from '../lib/texto';
 import { comensalRepository, type ComensalRepository } from '../repositories/comensal.repository';
+import { pedidoRepository } from '../repositories/pedido.repository';
 import { menuVisible, type MenuVisible } from './menu-visible';
 
 const MAX_PLATOS_COINCIDENTES = 3;
@@ -31,7 +32,18 @@ const comparar = (a: string, b: string) => a.localeCompare(b, 'es');
 // Lo que ve cualquier visitante: buscador, barrios, carta y ficha de un plato.
 // La búsqueda es la única consulta que cruza restaurantes, y por eso devuelve
 // solo los campos públicos de ResultadoBusqueda.
-export function createPublicoService(repo: ComensalRepository, menuDeSucursal: MenuVisible) {
+export function createPublicoService(
+  repo: ComensalRepository,
+  menuDeSucursal: MenuVisible,
+  tiempos: (sucursalId: string) => Promise<Map<string, number>> = async () => new Map(),
+) {
+  // Suma a cada plato su tiempo promedio de espera, si hay datos.
+  async function conTiempos(sucursalId: string, platos: PlatoMenu[]): Promise<PlatoMenu[]> {
+    if (platos.length === 0) return platos;
+    const minutos = await tiempos(sucursalId);
+    return platos.map((p) => ({ ...p, tiempoPromedioMin: minutos.get(p.id) ?? null }));
+  }
+
   // Platos a la vista de la sucursal; una sucursal sin menú vigente (o dada de
   // baja mientras se buscaba) no tiene platos, pero no rompe la búsqueda.
   async function nombresDePlatos(sucursalId: string): Promise<string[]> {
@@ -104,18 +116,29 @@ export function createPublicoService(repo: ComensalRepository, menuDeSucursal: M
       const { sucursal, menu, platos } = await menuDeSucursal(sucursalId);
       return {
         sucursal,
-        menu: menu && { ...menu, categorias: agrupar(platos.map((p) => p.plato)) },
+        menu: menu && {
+          ...menu,
+          categorias: agrupar(
+            await conTiempos(
+              sucursal.id,
+              platos.map((p) => p.plato),
+            ),
+          ),
+        },
       };
     },
 
     // CU-10 obtenerDetalle: el plato tiene que estar a la vista en esa sucursal.
     async obtenerPlato(sucursalId: string, platoId: string): Promise<DetallePlato> {
       const { sucursal, platos } = await menuDeSucursal(sucursalId);
-      const plato = platos.find((p) => p.plato.id === platoId)?.plato;
-      if (!plato) throw new AppError(404, 'El plato no está en el menú de esta sucursal');
-      return { sucursal, plato };
+      const encontrado = platos.find((p) => p.plato.id === platoId)?.plato;
+      if (!encontrado) throw new AppError(404, 'El plato no está en el menú de esta sucursal');
+      const [plato] = await conTiempos(sucursal.id, [encontrado]);
+      return { sucursal, plato: plato! };
     },
   };
 }
 
-export const publicoService = createPublicoService(comensalRepository, menuVisible);
+export const publicoService = createPublicoService(comensalRepository, menuVisible, (id) =>
+  pedidoRepository.tiemposPreparacion(id),
+);

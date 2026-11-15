@@ -78,7 +78,11 @@ const queso: Componente = {
   receta: null,
 };
 
-function servicio(datos: SucursalConMenu | null, stockQueso = 1000) {
+function servicio(
+  datos: SucursalConMenu | null,
+  stockQueso = 1000,
+  tiempos: Map<string, number> = new Map(),
+) {
   const repo: jest.Mocked<ComensalRepository> = {
     listarSucursales: jest.fn(),
     buscarSucursalConMenu: jest.fn().mockResolvedValue(datos),
@@ -90,6 +94,7 @@ function servicio(datos: SucursalConMenu | null, stockQueso = 1000) {
   return createPublicoService(
     repo,
     createMenuVisible(repo, () => HOY, inventario),
+    async () => tiempos,
   );
 }
 
@@ -130,6 +135,22 @@ describe('publicoService: menú y plato', () => {
     const { plato: detalle } = await servicio(sucursal()).obtenerPlato('centro', 'flan');
 
     expect(detalle).toMatchObject({ id: 'flan', categoria: { nombre: 'Postres' } });
+  });
+
+  it('suma el tiempo promedio a los platos que tienen datos y deja null al resto', async () => {
+    const tiempos = new Map([['bife', 25]]);
+    const { menu } = await servicio(sucursal(), 1000, tiempos).obtenerMenu('centro');
+    const platos = menu!.categorias.flatMap((c) => c.platos);
+
+    expect(platos.map((p) => [p.id, p.tiempoPromedioMin])).toEqual([
+      ['bife', 25],
+      ['flan', null],
+    ]);
+    const { plato: detalle } = await servicio(sucursal(), 1000, tiempos).obtenerPlato(
+      'centro',
+      'bife',
+    );
+    expect(detalle.tiempoPromedioMin).toBe(25);
   });
 
   it('un plato que no se muestra en el menú responde 404', async () => {
