@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { parsearTrustProxy } from './trust-proxy';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -9,6 +10,12 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   // Carpeta de los archivos subidos (modelos RA), relativa a donde corre la API.
   UPLOADS_DIR: z.string().default('uploads'),
+  // Proxies de confianza para Express (cantidad de saltos, `loopback`, IP o
+  // subredes). En desarrollo `loopback`; en Railway, `1`.
+  TRUST_PROXY: z.string().default('loopback').transform(parsearTrustProxy),
+  // Carpeta con la web compilada, relativa a donde corre la API. Si falta, la
+  // API no sirve la web (desarrollo: la sirve Vite).
+  WEB_DIST: z.string().min(1).optional(),
   // Habilita el pago de prueba aunque la API corra en producción (demo).
   PAGO_SIMULADO: z.stringbool().default(false),
   // Mercado Pago (Checkout Pro). Si falta alguna de las tres se usa el pago de

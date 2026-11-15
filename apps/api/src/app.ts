@@ -30,20 +30,29 @@ import { CARPETA_FOTOS, TIPO_FOTO } from './lib/archivos-foto';
 import { CARPETA_MODELOS } from './lib/archivos-modelo';
 import { autenticar, soloTipo } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
+import { env } from './config/env';
 
 const TIPO_MODELO: Record<string, string> = {
   '.glb': 'model/gltf-binary',
   '.usdz': 'model/vnd.usdz+zip',
 };
 
-export function createApp() {
+export type OpcionesApp = {
+  trustProxy?: number | string;
+  // La carpeta de la web compilada; la usa la Tarea 2 (servir la web).
+  webDist?: string;
+};
+
+export function createApp(opciones: OpcionesApp = {}) {
+  const trustProxy = opciones.trustProxy ?? env.TRUST_PROXY;
   const app = express();
 
   app.disable('x-powered-by');
-  // Se confía solo en los proxies locales (Vite y cloudflared): así el rate
-  // limit ve la IP real tanto por la red local como por el túnel, y un
-  // X-Forwarded-For inventado por el cliente no la reemplaza.
-  app.set('trust proxy', 'loopback');
+  // Se confía solo en los proxies conocidos, para que el rate limit vea la IP
+  // real y `req.secure` lea X-Forwarded-Proto, y un X-Forwarded-For inventado
+  // por el cliente no la reemplace. En desarrollo `loopback` (Vite y
+  // cloudflared); en Railway `1` (su proxy de borde).
+  app.set('trust proxy', trustProxy);
   app.use(express.json());
   app.use(cookieParser());
 

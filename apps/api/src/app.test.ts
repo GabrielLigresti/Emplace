@@ -19,3 +19,13 @@ describe('rutas inexistentes', () => {
     expect(res.body).toEqual({ error: 'Recurso no encontrado' });
   });
 });
+
+describe('trust proxy', () => {
+  it('toma la opción recibida', () => {
+    expect(createApp({ trustProxy: 1 }).get('trust proxy')).toBe(1);
+  });
+
+  it('por defecto confía solo en loopback', () => {
+    expect(createApp().get('trust proxy')).toBe('loopback');
+  });
+});
