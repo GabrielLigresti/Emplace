@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Clock } from 'lucide-react';
+import { Clock, Utensils } from 'lucide-react';
 import type { DetallePlato } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useAvisos } from '../../components/AvisoEmergente';
@@ -75,12 +75,19 @@ export function PlatoPage() {
       <EstadoCarga cargando={cargando && !datos} error={error} />
       {plato && (
         <article className="space-y-4">
-          {plato.fotoUrl && (
+          {plato.fotoUrl ? (
             <img
               src={plato.fotoUrl}
               alt={plato.nombre}
               className="aspect-[4/3] w-full rounded-panel object-cover"
             />
+          ) : (
+            <span
+              aria-hidden
+              className="grid aspect-[4/3] w-full place-items-center rounded-panel border border-line bg-panel text-meta"
+            >
+              <Utensils className="size-10" strokeWidth={1.6} />
+            </span>
           )}
           <div>
             <p className="text-sm text-meta">{plato.categoria.nombre}</p>

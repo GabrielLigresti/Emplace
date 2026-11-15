@@ -82,7 +82,10 @@ export function MenuSucursalPage() {
                 <input
                   type="search"
                   value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
+                  onChange={(e) => {
+                    setBusqueda(e.target.value);
+                    setCategoria(null);
+                  }}
                   placeholder="Buscar en la carta"
                   aria-label="Buscar en la carta"
                   className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-meta"
@@ -95,18 +98,25 @@ export function MenuSucursalPage() {
                   <div
                     role="group"
                     aria-label="Categorías"
-                    className="-mx-4 flex items-baseline gap-5 overflow-x-auto px-4 pb-3"
+                    className="-mx-4 flex items-baseline gap-5 overflow-x-auto px-4 pb-3 after:w-px after:shrink-0 after:content-['']"
                   >
                     {[{ id: null, nombre: 'Todo' }, ...categorias].map((c) => (
                       <button
                         key={c.id ?? 'todo'}
                         type="button"
                         aria-pressed={categoria === c.id}
-                        onClick={() => setCategoria(c.id)}
-                        className={`min-h-11 shrink-0 whitespace-nowrap border-b-2 px-0.5 ${
+                        onClick={(e) => {
+                          setCategoria(c.id);
+                          e.currentTarget.scrollIntoView({
+                            inline: 'center',
+                            block: 'nearest',
+                            behavior: 'smooth',
+                          });
+                        }}
+                        className={`min-h-11 shrink-0 whitespace-nowrap border-b-2 px-0.5 font-display text-xl font-semibold ${
                           categoria === c.id
-                            ? 'border-accent font-display text-xl font-semibold text-ink'
-                            : 'border-transparent text-base text-meta hover:text-ink'
+                            ? 'border-accent text-ink'
+                            : 'border-transparent text-meta hover:text-ink'
                         }`}
                       >
                         {c.nombre}
@@ -115,65 +125,93 @@ export function MenuSucursalPage() {
                   </div>
                 )}
                 <ul className="grid grid-cols-2 gap-3">
-                  {platos.map((p) => (
-                    <li key={p.id} className="relative">
-                      <Link
-                        to={`/s/${sucursalId}/platos/${p.id}`}
-                        className={`flex h-full flex-col overflow-hidden rounded-panel border border-line bg-surface hover:border-accent ${
-                          p.hayStock ? '' : 'opacity-60'
-                        }`}
-                      >
-                        {p.fotoUrl ? (
-                          <img src={p.fotoUrl} alt="" className="h-28 w-full object-cover" />
-                        ) : (
-                          <span
-                            aria-hidden
-                            className="grid h-28 w-full place-items-center bg-panel text-meta"
-                          >
-                            <Utensils className="size-7" strokeWidth={1.6} />
-                          </span>
-                        )}
-                        <span className="flex flex-1 flex-col gap-1.5 p-3">
-                          <span className="font-display text-lg leading-tight font-semibold text-ink">
-                            {p.nombre}
-                          </span>
-                          {p.tiempoPromedioMin !== null && (
-                            <span className="flex items-center gap-1 text-xs text-meta">
-                              <Clock aria-hidden className="size-3 text-accent-ink" />
-                              <span className="sr-only">Espera promedio: </span>
-                              {formatoMinutos(p.tiempoPromedioMin)}
-                            </span>
-                          )}
-                          <span className="mt-auto flex flex-wrap items-center gap-1.5 pt-0.5">
-                            <span className="text-lg leading-none font-semibold text-ink">
-                              {formatoPesos(p.precio)}
-                            </span>
-                            {!p.hayStock && <Etiqueta>Sin stock</Etiqueta>}
-                            {p.modeloRa && (
-                              <Etiqueta tono="acento">
-                                <Box aria-hidden className="size-3.5" />
-                                RA
-                              </Etiqueta>
+                  {platos.map((p) => {
+                    const puedePedir = Boolean(mesa) && p.hayStock;
+                    return (
+                      <li key={p.id} className="relative">
+                        <Link
+                          to={`/s/${sucursalId}/platos/${p.id}`}
+                          className="flex h-full flex-col overflow-hidden rounded-panel border border-line bg-surface hover:border-accent"
+                        >
+                          <span className="relative block">
+                            {p.fotoUrl ? (
+                              <img
+                                src={p.fotoUrl}
+                                alt=""
+                                className={`h-28 w-full object-cover ${p.hayStock ? '' : 'opacity-50'}`}
+                              />
+                            ) : (
+                              <span
+                                aria-hidden
+                                className="grid h-28 w-full place-items-center bg-panel text-meta"
+                              >
+                                <Utensils className="size-7" strokeWidth={1.6} />
+                              </span>
+                            )}
+                            {(!p.hayStock || p.modeloRa) && (
+                              <span className="absolute top-2 left-2 flex flex-wrap gap-1">
+                                {!p.hayStock && <Etiqueta>Sin stock</Etiqueta>}
+                                {p.modeloRa && (
+                                  <Etiqueta tono="acento">
+                                    <Box aria-hidden className="size-3.5" />
+                                    RA
+                                  </Etiqueta>
+                                )}
+                              </span>
                             )}
                           </span>
-                        </span>
-                      </Link>
-                      {mesa && p.hayStock && (
-                        <BotonAgregar
-                          nombre={p.nombre}
-                          cantidad={carrito.cantidadDe(p.id)}
-                          onClick={() => agregar(p)}
-                        />
-                      )}
-                    </li>
-                  ))}
+                          <span className="flex flex-1 flex-col gap-1.5 p-3">
+                            <span
+                              className={`font-display text-lg leading-tight font-semibold text-ink ${
+                                p.hayStock ? '' : 'opacity-60'
+                              }`}
+                            >
+                              {p.nombre}
+                            </span>
+                            {/* Con "+" sobre la tarjeta se deja su lugar a la derecha. */}
+                            <span
+                              className={`mt-auto flex flex-col gap-1 ${puedePedir ? 'pr-11' : ''}`}
+                            >
+                              {p.hayStock && p.tiempoPromedioMin !== null && (
+                                <span className="flex items-center gap-1 text-sm text-meta">
+                                  <Clock aria-hidden className="size-3.5 text-accent-ink" />
+                                  Espera {formatoMinutos(p.tiempoPromedioMin)}
+                                </span>
+                              )}
+                              <span className="text-lg leading-none font-semibold text-ink">
+                                {formatoPesos(p.precio)}
+                              </span>
+                            </span>
+                          </span>
+                        </Link>
+                        {puedePedir && (
+                          <BotonAgregar
+                            nombre={p.nombre}
+                            cantidad={carrito.cantidadDe(p.id)}
+                            onClick={() => agregar(p)}
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
                 {platos.length === 0 && (
-                  <p className="py-6 text-base text-ink">
-                    {termino
-                      ? 'No hay platos para esa búsqueda.'
-                      : 'El menú no tiene platos disponibles.'}
-                  </p>
+                  <div className="py-6">
+                    <p className="text-base text-ink">
+                      {termino
+                        ? 'No hay platos para esa búsqueda.'
+                        : 'El menú no tiene platos disponibles.'}
+                    </p>
+                    {termino && (
+                      <button
+                        type="button"
+                        onClick={() => setBusqueda('')}
+                        className="mt-2 inline-flex min-h-11 items-center rounded-control px-1 text-sm font-semibold text-accent-ink hover:underline"
+                      >
+                        Borrar búsqueda
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </>
