@@ -332,7 +332,7 @@ Plano por defecto. La profundidad sale de bordes de 1 px, del Gris Bandeja y de 
 
 ## Shapes
 
-Esquinas suaves y consistentes: 10 px en controles, 12 px en botones cuadrados de ícono (pendiente: el token existe, ningún componente lo usa todavía), 16 px en tarjetas, paneles y modales, y píldora para chips y etiquetas. Los bordes son de 1 px; el borde punteado se reserva para estados vacíos.
+Esquinas suaves y consistentes: 10 px en controles, 12 px en botones cuadrados de ícono (pendiente: el token existe, ningún componente lo usa todavía), 16 px en tarjetas, paneles y modales, y píldora para chips, etiquetas y el óvalo de la pestaña activa del comensal. Los bordes son de 1 px; el borde punteado se reserva para estados vacíos.
 
 ## Components
 
@@ -360,7 +360,7 @@ Esquinas suaves y consistentes: 10 px en controles, 12 px en botones cuadrados d
 
 ### Navigation
 - **Panel:** barra lateral blanca; el ítem activo va en el acento suave con texto Hondo y el ícono en el acento (en el staff, dorado; los nombres de token son los mismos). En tablet, ícono arriba y texto chico debajo.
-- **Comensal:** pestañas inferiores con ícono y texto; la activa en Verde Albahaca Hondo.
+- **Comensal:** pestañas inferiores con ícono y texto; la activa en Verde Albahaca Hondo y con un óvalo de Verde Albahaca Suave detrás del ícono. "Mi cuenta" es siempre la última.
 
 ### Estado
 Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.ts` y ninguna pantalla elige el color a mano.
