@@ -132,13 +132,13 @@ export function ExistenciasTab({ accionesEncabezado }: { accionesEncabezado: HTM
                       </Boton>
                     )}
                     <Boton
-                      variante="secundario"
+                      variante="tonal"
                       onClick={() => setMovimiento({ tipo: 'MERMA', componente: c })}
                     >
                       Merma
                     </Boton>
                     <Boton
-                      variante="secundario"
+                      variante="tonal"
                       onClick={() => setMovimiento({ tipo: 'AJUSTE', componente: c })}
                     >
                       Ajuste

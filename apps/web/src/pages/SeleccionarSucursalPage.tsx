@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router';
 import { ApiError } from '../lib/api';
 import { useSesion } from '../auth/SesionProvider';
 import { useSalir } from '../auth/useSalir';
-import { useTemaStaff } from '../lib/useTemaStaff';
 
 // Flujo B del CU-01: el empleado de varias sucursales elige dónde trabaja.
 export function SeleccionarSucursalPage() {
-  useTemaStaff();
   const { sesion, seleccionarSucursal } = useSesion();
   const salir = useSalir();
   const navigate = useNavigate();
