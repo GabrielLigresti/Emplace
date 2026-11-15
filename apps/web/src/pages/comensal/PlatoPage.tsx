@@ -84,7 +84,7 @@ export function PlatoPage() {
           ) : (
             <span
               aria-hidden
-              className="grid aspect-[4/3] w-full place-items-center rounded-panel border border-line bg-panel text-meta"
+              className="grid aspect-[16/9] w-full place-items-center rounded-panel border border-line bg-panel text-meta"
             >
               <Utensils className="size-10" strokeWidth={1.6} />
             </span>
@@ -97,10 +97,10 @@ export function PlatoPage() {
                 {formatoPesos(plato.precio)}
               </span>
             </div>
-            {plato.tiempoPromedioMin !== null && (
+            {plato.hayStock && plato.tiempoPromedioMin !== null && (
               <p className="mt-1 flex items-center gap-1.5 text-sm text-meta">
                 <Clock aria-hidden className="size-4 text-accent-ink" />
-                Espera promedio: {formatoMinutos(plato.tiempoPromedioMin)}
+                Espera {formatoMinutos(plato.tiempoPromedioMin)}
               </p>
             )}
             {plato.descripcion && <p className="mt-2 text-meta">{plato.descripcion}</p>}
@@ -110,7 +110,7 @@ export function PlatoPage() {
               </p>
             )}
           </div>
-          {mesa && !plato.hayStock && <Aviso>Hoy no hay stock de este plato.</Aviso>}
+          {!plato.hayStock && <Aviso>Hoy no hay stock de este plato.</Aviso>}
           {plato.modeloRa && (
             <VisorRA
               modelo={plato.modeloRa}

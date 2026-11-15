@@ -107,6 +107,7 @@ export function MenuSucursalPage() {
                         aria-pressed={categoria === c.id}
                         onClick={(e) => {
                           setCategoria(c.id);
+                          setBusqueda('');
                           e.currentTarget.scrollIntoView({
                             inline: 'center',
                             block: 'nearest',
@@ -164,7 +165,7 @@ export function MenuSucursalPage() {
                             <span
                               className={`font-display text-lg leading-tight font-semibold text-ink ${
                                 p.hayStock ? '' : 'opacity-60'
-                              }`}
+                              } ${puedePedir ? 'pr-11' : ''}`}
                             >
                               {p.nombre}
                             </span>
@@ -206,7 +207,7 @@ export function MenuSucursalPage() {
                       <button
                         type="button"
                         onClick={() => setBusqueda('')}
-                        className="mt-2 inline-flex min-h-11 items-center rounded-control px-1 text-sm font-semibold text-accent-ink hover:underline"
+                        className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-accent-ink hover:underline"
                       >
                         Borrar búsqueda
                       </button>
