@@ -38,9 +38,7 @@ test('buscar un plato, filtrar por barrio y ver la carta sin ingresar', async ({
 
 // La portada: los botones del héroe llevan a sus secciones y las tres fichas de
 // "Ver en mi mesa" montan su visor 3D, con los créditos de los modelos en el pie.
-test('los botones del héroe llevan al buscador y las fichas montan su visor', async ({
-  page,
-}) => {
+test('los botones del héroe llevan al buscador y las fichas montan su visor', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Explorar restaurantes' }).click();
   await expect(page).toHaveURL(/#restaurantes$/);
