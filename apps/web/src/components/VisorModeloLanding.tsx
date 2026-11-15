@@ -17,7 +17,15 @@ const INSTRUCCIONES: Record<EstadoSesion, string> = {
 // Los botones de la capa sobre la cámara no cuentan como toques para ubicar el plato.
 const frenarSeleccion = (e: Event) => e.preventDefault();
 
-export function VisorModeloLanding({ src, nombre }: { src: string; nombre: string }) {
+export function VisorModeloLanding({
+  src,
+  nombre,
+  escalaReal,
+}: {
+  src: string;
+  nombre: string;
+  escalaReal: number;
+}) {
   const listo = useModelViewer();
   const visor = useRef<ModelViewerElement>(null);
   const [cargado, setCargado] = useState(false);
@@ -46,7 +54,7 @@ export function VisorModeloLanding({ src, nombre }: { src: string; nombre: strin
       const { iniciarRa } = await import('../lib/ra-webxr');
       salir.current = await iniciarRa({
         urlModelo: src,
-        escalaReal: 1,
+        escalaReal,
         overlay: capa.current,
         onEstado: setSesion,
         onFin: () => {
@@ -90,6 +98,8 @@ export function VisorModeloLanding({ src, nombre }: { src: string; nombre: strin
         alt={nombre || 'Modelo 3D de un plato'}
         ar={webXR === false}
         ar-modes="scene-viewer quick-look"
+        ar-scale="fixed"
+        scale={`${escalaReal} ${escalaReal} ${escalaReal}`}
         camera-controls={girar}
         auto-rotate={!sinMovimiento}
         touch-action="pan-y"

@@ -25,10 +25,13 @@ const claseBotonSecundario =
 
 // Modelos 3D de la demo (CC BY 4.0, créditos en el pie y en public/modelos/CREDITOS.md).
 // Sin `src`, la ficha queda vacía y sin botón.
-const MODELOS: { nombre: string; src: string }[] = [
-  { nombre: 'Hamburguesa', src: '/modelos/burger.glb' },
-  { nombre: 'Pizza', src: '/modelos/pizza.glb' },
-  { nombre: 'Cheesecake', src: '/modelos/cheese_cake.glb' },
+// `escalaReal` lleva cada .glb a su tamaño real en la RA: la hamburguesa mide 4,7
+// unidades de ancho (12 cm reales), la pizza 49 (30 cm) y la porción de cheesecake
+// ya viene en metros (9 cm).
+const MODELOS: { nombre: string; src: string; escalaReal: number }[] = [
+  { nombre: 'Hamburguesa', src: '/modelos/burger.glb', escalaReal: 0.0255 },
+  { nombre: 'Pizza', src: '/modelos/pizza.glb', escalaReal: 0.0061 },
+  { nombre: 'Cheesecake', src: '/modelos/cheese_cake.glb', escalaReal: 1 },
 ];
 
 const hayModelos = MODELOS.some((m) => m.src);
@@ -225,7 +228,13 @@ export function LandingPage() {
                     className="flex w-[82%] flex-none snap-start flex-col gap-2.5 md:w-[340px]"
                   >
                     <div className="h-[300px] overflow-hidden rounded-clasico border border-linea-clasica bg-papel-hondo">
-                      {m.src && <VisorModeloLanding src={m.src} nombre={m.nombre} />}
+                      {m.src && (
+                        <VisorModeloLanding
+                          src={m.src}
+                          nombre={m.nombre}
+                          escalaReal={m.escalaReal}
+                        />
+                      )}
                     </div>
                     {m.nombre && (
                       <p className="m-0 font-titulo text-2xl leading-[1.1] font-semibold">
