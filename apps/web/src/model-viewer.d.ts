@@ -16,6 +16,8 @@ declare module 'react' {
         'ar-modes'?: string;
         'ar-scale'?: string;
         'camera-controls'?: boolean;
+        'auto-rotate'?: boolean;
+        'shadow-intensity'?: string;
         'touch-action'?: string;
         scale?: string;
       };

@@ -43,12 +43,14 @@ Dos diferenciales:
 
 ## Brand Commitments
 
-- La landing pública (`/`, el buscador entre restaurantes) lleva la marca "PGIM" (nombre provisorio). Desde que el comensal entra a una sucursal (carta, plato, reserva, mesa), manda la marca del restaurante: su nombre y la sucursal. En el restaurante, "PGIM" solo aparece en el panel.
-- Voz: clara, directa y amable, como un buen mozo; sin tecnicismos.
+- La landing pública (`/`, el buscador entre restaurantes) lleva la marca "PGIM" (nombre provisorio) y su propia dirección visual, clásica y editorial: papel, serifs y dorado (registro Clásico de `DESIGN.md`). Desde que el comensal entra a una sucursal (carta, plato, reserva, mesa), manda la marca del restaurante: su nombre y la sucursal. En el restaurante, "PGIM" solo aparece en el panel.
+- Voz: clara, directa y amable, como un buen mozo; sin tecnicismos. En la landing, la promesa es "Una mesa te espera": encontrar el restaurante, ver los platos y reservar en un minuto.
+- La landing muestra, en este orden: héroe con foto de una mesa puesta, "Ver en mi mesa" con modelos 3D de muestra y el buscador de restaurantes. No lleva testimonios ni números inventados.
 
 ## Evidence on Hand
 
 - Restaurante de demostración "La Parrilla Demo" con sucursales ficticias, platos de demo y fotos de Wikimedia Commons con atribución en `apps/web/public/fotos-demo/LICENCIA.md`; modelos 3D libres para la demo.
+- Las fotos de la landing son de stock en dominio público (portada en `apps/web/public/fotos-portada/`; su fuente y licencia se registran en un `LICENCIA.md` de esa carpeta). Los modelos 3D de la landing quedan vacíos hasta elegir los definitivos.
 - No hay testimonios, clientes, calificaciones de platos, tiempos de preparación ni favoritos: no se inventan ni se muestran.
 
 ## Product Principles
