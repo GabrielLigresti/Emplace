@@ -107,7 +107,7 @@ export function LayoutComensal({
 
       <div className="fixed inset-x-0 bottom-0 z-10">
         {accionFija && (
-          <div className="border-t border-line bg-bg">
+          <div className="border-t border-line bg-bg shadow-[0_-6px_12px_-6px_rgb(21_23_26/0.12)]">
             <div className="mx-auto flex max-w-[480px] flex-wrap gap-2 px-4 py-2">{accionFija}</div>
           </div>
         )}
@@ -125,13 +125,23 @@ export function LayoutComensal({
                   to={a}
                   end
                   className={({ isActive }) =>
-                    `grid content-center justify-items-center gap-0.5 text-xs ${
+                    `grid min-w-0 content-center justify-items-center gap-0.5 px-1 text-xs ${
                       isActive ? 'font-semibold text-accent-ink' : 'text-meta'
                     }`
                   }
                 >
-                  <Icono aria-hidden className="size-5" />
-                  {texto}
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`flex h-7 w-12 items-center justify-center rounded-full ${
+                          isActive ? 'bg-accent-soft' : ''
+                        }`}
+                      >
+                        <Icono aria-hidden className="size-5" />
+                      </span>
+                      <span className="whitespace-nowrap">{texto}</span>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>
