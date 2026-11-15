@@ -61,6 +61,8 @@
   --color-tinta-clasica: #201f1d;
   --color-linea-clasica: color-mix(in srgb, #201f1d 16%, transparent);
   --color-dorado: #b68235;
+  --color-dorado-100: #fff3e4;
+  --color-dorado-600: #a06f24;
   --color-dorado-700: #7d5411;
   --color-dorado-800: #5a3b0a;
 

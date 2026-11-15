@@ -29,12 +29,15 @@ export function LayoutComensal({
   volver,
   accionFija,
   mesaActiva,
+  clasico = false,
   children,
 }: {
   volver?: { a: string; texto: string };
   accionFija?: ReactNode;
   // La pantalla que ya consultó la mesa la pasa, para no pedirla dos veces.
   mesaActiva?: MiMesa | null;
+  // Carta y ficha: registro Clásico a sangre, sin márgenes. El tab bar no cambia.
+  clasico?: boolean;
   children: ReactNode;
 }) {
   const { sesion } = useSesion();
@@ -53,8 +56,10 @@ export function LayoutComensal({
   ];
 
   return (
-    <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-10 border-b border-line bg-surface">
+    <div className={`min-h-screen ${clasico ? 'bg-papel' : 'bg-bg'}`}>
+      <header
+        className={`sticky top-0 z-10 border-b border-line bg-surface ${clasico ? 'tema-staff' : ''}`}
+      >
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-2 px-4 py-1">
           {volver ? (
             <Link
@@ -98,14 +103,18 @@ export function LayoutComensal({
       </header>
 
       <main
-        className={`mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`}
+        className={
+          clasico
+            ? 'tema-staff mx-auto max-w-[480px] bg-bg font-lora'
+            : `mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`
+        }
       >
         {children}
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-10">
         {accionFija && (
-          <div className="border-t border-line bg-bg">
+          <div className={`border-t border-line bg-bg ${clasico ? 'tema-staff' : ''}`}>
             <div className="mx-auto flex max-w-[480px] flex-wrap gap-2 px-4 py-2">{accionFija}</div>
           </div>
         )}
