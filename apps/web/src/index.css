@@ -8,6 +8,8 @@
   --color-surface: #ffffff;
   --color-line: #e4e6e9;
   --color-line-strong: #d3d7dc;
+  /* Borde de campos y botones de contorno (en el staff sube a 3:1, WCAG 1.4.11). */
+  --color-control: #d3d7dc;
   --color-ink: #15171a;
   --color-text: #23262b;
   --color-meta: #5d636b;
@@ -75,24 +77,28 @@
    la clase en <html> (ver lib/useTemaStaff) para que también alcance a lo que
    se monta fuera del árbol (portales). El comensal conserva el verde. */
 .tema-staff {
-  --color-bg: #f3f2f2;
-  --color-panel: #eae9e9;
+  --color-bg: var(--color-papel);
+  --color-panel: var(--color-papel-hondo);
   --color-surface: #ffffff;
-  --color-line: color-mix(in srgb, #201f1d 12%, transparent);
-  --color-line-strong: color-mix(in srgb, #201f1d 24%, transparent);
-  --color-ink: #201f1d;
+  /* Opacos sobre papel: también se usan como relleno y pista de progreso. */
+  --color-line: #dad9d8;
+  --color-line-strong: #c0bfbe;
+  --color-control: #8c8b89;
+  --color-ink: var(--color-tinta-clasica);
   --color-text: #2b2a28;
   --color-meta: #5f5c57;
 
   /* Dorado Hondo como acento: blanco sobre él pasa AA. */
-  --color-accent: #7d5411;
-  --color-accent-hover: #5a3b0a;
-  --color-accent-ink: #5a3b0a;
+  --color-accent: var(--color-dorado-700);
+  --color-accent-hover: var(--color-dorado-800);
+  --color-accent-ink: var(--color-dorado-800);
   --color-accent-soft: #efe6d5;
 
-  /* El aviso pasa a naranja quemado para no confundirse con el dorado. */
-  --color-warn: #b4430c;
-  --color-warn-soft: #fff1e6;
+  /* El aviso se aleja del rojo y del dorado; siempre va con ícono y texto. */
+  --color-warn: #a24f00;
+  --color-warn-soft: #fff1e0;
+
+  --shadow-flotante: 0 10px 28px rgb(32 31 29 / 0.16);
 }
 
 @layer base {

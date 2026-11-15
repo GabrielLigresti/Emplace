@@ -107,7 +107,7 @@ export function GraficoVentas({ dias }: { dias: VentaDia[] }) {
           <path
             d={linea}
             fill="none"
-            stroke={activo !== null ? 'var(--color-ink)' : 'var(--color-meta)'}
+            stroke="var(--color-accent)"
             strokeWidth={2}
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -127,14 +127,14 @@ export function GraficoVentas({ dias }: { dias: VentaDia[] }) {
               cx={x(activo)}
               cy={y(dia.monto)}
               r={4}
-              fill="var(--color-ink)"
-              stroke="#fff"
+              fill="var(--color-accent)"
+              stroke="var(--color-surface)"
               strokeWidth={2}
             />
           </g>
         )}
         {dias.length === 1 && !dia && (
-          <circle cx={x(0)} cy={y(dias[0]!.monto)} r={4} fill="var(--color-meta)" />
+          <circle cx={x(0)} cy={y(dias[0]!.monto)} r={4} fill="var(--color-accent)" />
         )}
       </svg>
       {dia && activo !== null && (
