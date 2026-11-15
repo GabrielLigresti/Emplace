@@ -27,6 +27,7 @@ import { salonRouter } from './routes/salon';
 import { sucursalesRouter } from './routes/sucursales';
 import { turnosRouter } from './routes/turnos';
 import { CARPETA_FOTOS, TIPO_FOTO } from './lib/archivos-foto';
+import { servirWeb } from './lib/web-estatica';
 import { CARPETA_MODELOS } from './lib/archivos-modelo';
 import { autenticar, soloTipo } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
@@ -39,12 +40,13 @@ const TIPO_MODELO: Record<string, string> = {
 
 export type OpcionesApp = {
   trustProxy?: number | string;
-  // La carpeta de la web compilada; la usa la Tarea 2 (servir la web).
+  // La carpeta de la web compilada. Sin valor, la web la sirve Vite.
   webDist?: string;
 };
 
 export function createApp(opciones: OpcionesApp = {}) {
   const trustProxy = opciones.trustProxy ?? env.TRUST_PROXY;
+  const webDist = opciones.webDist ?? env.WEB_DIST;
   const app = express();
 
   app.disable('x-powered-by');
@@ -120,6 +122,8 @@ export function createApp(opciones: OpcionesApp = {}) {
   app.use(`${API_PREFIX}/publico`, publicoRouter);
   app.use(`${API_PREFIX}/comensal`, autenticar, soloTipo('COMENSAL'), reservasComensalRouter);
   app.use(`${API_PREFIX}/comensal`, autenticar, soloTipo('COMENSAL'), mesaComensalRouter);
+
+  if (webDist) servirWeb(app, webDist);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
