@@ -1,15 +1,12 @@
 // Datos ficticios de prueba. Es idempotente: se puede correr varias veces sin
 // duplicar filas (npm run db:seed -w @pgim/api).
-import {
-  CONFIGURACION_APERTURA_POR_DEFECTO,
-  type RolPredeterminado,
-  type UnidadBase,
-} from '@pgim/shared';
+import { CONFIGURACION_APERTURA_POR_DEFECTO, type UnidadBase } from '@pgim/shared';
 import { prisma } from '../src/lib/prisma';
 import { hashPassword } from '../src/lib/password';
 import type { Prisma } from '../src/generated/prisma/client';
 import { crearRolesPredeterminados, upsertRol } from '../src/repositories/roles-predeterminados';
 import {
+  ROLES_STAFF,
   hora,
   redondearCosto,
   seedComponente,
@@ -28,29 +25,6 @@ import {
 } from './seed-comun';
 
 const PASSWORD_DEMO = 'demo1234';
-
-// Roles de staff que crearía el Administrador; solo existen en el seed.
-const ROLES_STAFF: RolPredeterminado[] = [
-  {
-    nombre: 'Mozo',
-    arquetipo: 'MOZO',
-    permisos: [
-      'reserva.ver',
-      'reserva.activar',
-      'mesa.cerrar',
-      'pedido.ver',
-      'pedido.avanzar',
-      'pago.ver',
-      'menu.ver',
-      'turno.ver',
-    ],
-  },
-  {
-    nombre: 'Cocinero',
-    arquetipo: 'COCINERO',
-    permisos: ['stock.registrar', 'pedido.ver', 'pedido.gestionar_cola', 'turno.ver'],
-  },
-];
 
 const SUCURSALES = [
   { nombre: 'Centro', direccion: 'Av. Siempre Viva 742', barrio: 'SAN_NICOLAS' },

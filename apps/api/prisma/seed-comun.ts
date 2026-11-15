@@ -3,6 +3,7 @@
 import {
   PERMISOS,
   type CodigoPermiso,
+  type RolPredeterminado,
   type Franja,
   type UnidadBase,
   type UnidadMedida,
@@ -77,6 +78,29 @@ export interface RecetaSeed {
   instrucciones: string;
   lineas: LineaSeed[];
 }
+
+// Roles de staff que crearía el Administrador; solo existen en el seed.
+export const ROLES_STAFF: RolPredeterminado[] = [
+  {
+    nombre: 'Mozo',
+    arquetipo: 'MOZO',
+    permisos: [
+      'reserva.ver',
+      'reserva.activar',
+      'mesa.cerrar',
+      'pedido.ver',
+      'pedido.avanzar',
+      'pago.ver',
+      'menu.ver',
+      'turno.ver',
+    ],
+  },
+  {
+    nombre: 'Cocinero',
+    arquetipo: 'COCINERO',
+    permisos: ['stock.registrar', 'pedido.ver', 'pedido.gestionar_cola', 'turno.ver'],
+  },
+];
 
 export const redondearCosto = (valor: number) => Math.round(valor * 10000) / 10000;
 export const haceDias = (dias: number, hora = 11) => {
