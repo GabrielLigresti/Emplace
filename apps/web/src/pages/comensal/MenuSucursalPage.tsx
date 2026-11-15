@@ -51,7 +51,7 @@ export function MenuSucursalPage() {
     <LayoutComensal
       volver={{
         a: sesion?.usuario.tipo === 'COMENSAL' ? '/inicio' : '/',
-        texto: sesion ? 'Sucursales' : 'Buscar',
+        texto: sesion?.usuario.tipo === 'COMENSAL' ? 'Sucursales' : 'Buscar',
       }}
       accionFija={accion || undefined}
     >
