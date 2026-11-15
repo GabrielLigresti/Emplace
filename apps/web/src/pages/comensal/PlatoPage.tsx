@@ -9,7 +9,7 @@ import { SelectorCantidad } from '../../components/SelectorCantidad';
 import { VisorRA } from '../../components/VisorRA';
 import { Aviso, Campo, EstadoCarga, claseInput } from '../../components/ui';
 import { useCarrito } from '../../lib/carrito';
-import { formatoCantidad, formatoMinutos, formatoPesos } from '../../lib/formato';
+import { formatoCantidad, formatoMinutos, formatoPrecioCarta } from '../../lib/formato';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 import { useVistosRecientemente } from '../../lib/vistosRecientemente';
@@ -60,7 +60,7 @@ export function PlatoPage() {
   // Sin sesión de comensal no hay mesa: la acción es reservar, como en la carta.
   // Mientras se consulta la mesa no se ofrece nada, para que no parpadee.
   const claseAccion =
-    'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-lora text-lg font-semibold text-white hover:bg-dorado-800';
+    'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-semibold text-white hover:bg-dorado-800';
   const accion = !plato ? null : puedePedir ? (
     <button type="button" className={claseAccion} onClick={agregarDesdeFicha}>
       Agregar al pedido
@@ -117,7 +117,7 @@ export function PlatoPage() {
                 {plato.categoria.nombre}
               </span>
               <div className="flex items-start justify-between gap-3">
-                <h1 className="font-titulo text-[30px] leading-[1.05] font-semibold [overflow-wrap:anywhere]">
+                <h1 className="font-titulo text-[30px] leading-[1.05] font-semibold tracking-[-0.015em] [overflow-wrap:anywhere]">
                   {plato.nombre}
                 </h1>
                 {plato.hayStock && plato.tiempoPromedioMin !== null && (
@@ -129,12 +129,12 @@ export function PlatoPage() {
                 )}
               </div>
               <div className="text-[22px] leading-none font-semibold [font-feature-settings:'tnum']">
-                {formatoPesos(plato.precio)}
+                {formatoPrecioCarta(plato.precio)}
               </div>
             </div>
             <div className="border-t border-linea-clasica" />
             {plato.descripcion && (
-              <p className="m-0 text-justify text-base leading-[26px] [hyphens:auto]" lang="es">
+              <p className="m-0 text-justify text-[16px] leading-[26px] [hyphens:auto]" lang="es">
                 {plato.descripcion}
               </p>
             )}
@@ -175,7 +175,7 @@ export function PlatoPage() {
             )}
             {recientes.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h2 className="m-0 font-titulo text-[22px] leading-[1.1] font-semibold">
+                <h2 className="m-0 font-titulo text-[22px] leading-[1.1] font-semibold tracking-[-0.015em]">
                   Vistos recientemente
                 </h2>
                 <div className="-mx-5 flex gap-3 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

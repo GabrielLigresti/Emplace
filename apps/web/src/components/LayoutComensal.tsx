@@ -115,7 +115,11 @@ export function LayoutComensal({
       <div className="fixed inset-x-0 bottom-0 z-10">
         {accionFija && (
           <div className={`border-t border-line bg-bg ${clasico ? 'tema-staff' : ''}`}>
-            <div className="mx-auto flex max-w-[480px] flex-wrap gap-2 px-4 py-2">{accionFija}</div>
+            <div
+              className={`mx-auto flex max-w-[480px] flex-wrap gap-2 ${clasico ? 'px-5 py-3' : 'px-4 py-2'}`}
+            >
+              {accionFija}
+            </div>
           </div>
         )}
         {esComensal && (

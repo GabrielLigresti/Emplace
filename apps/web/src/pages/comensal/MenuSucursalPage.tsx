@@ -6,7 +6,7 @@ import { LayoutComensal } from '../../components/LayoutComensal';
 import { useSesion } from '../../auth/SesionProvider';
 import { EstadoCarga } from '../../components/ui';
 import { useCarrito } from '../../lib/carrito';
-import { formatoMinutos, formatoPesos } from '../../lib/formato';
+import { formatoMinutos, formatoPrecioCarta } from '../../lib/formato';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
@@ -92,7 +92,7 @@ export function MenuSucursalPage() {
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Buscar en la carta"
                 aria-label="Buscar en la carta"
-                className="min-w-0 flex-1 border-0 bg-transparent font-lora text-base leading-6 text-tinta-clasica outline-none placeholder:text-tinta-clasica/55"
+                className="min-w-0 flex-1 border-0 bg-transparent font-lora text-[16px] leading-6 text-tinta-clasica outline-none placeholder:text-tinta-clasica/55"
               />
             </label>
           </div>
@@ -120,7 +120,7 @@ export function MenuSucursalPage() {
                         className={`shrink-0 border-b-2 bg-transparent pb-1 ${
                           activa
                             ? 'border-dorado font-titulo text-[28px] leading-none font-semibold text-tinta-clasica'
-                            : 'border-transparent font-lora text-base leading-[1.2] text-tinta-clasica/75'
+                            : 'border-transparent font-lora text-[16px] leading-[1.2] text-tinta-clasica/75'
                         }`}
                       >
                         {c.nombre}
@@ -172,8 +172,8 @@ export function MenuSucursalPage() {
                               )}
                             </span>
                           )}
-                          <span className="mt-auto pt-0 text-lg leading-none font-semibold [font-feature-settings:'tnum']">
-                            {formatoPesos(p.precio)}
+                          <span className="text-[18px] leading-none font-semibold [font-feature-settings:'tnum']">
+                            {formatoPrecioCarta(p.precio)}
                           </span>
                         </span>
                       </Link>
