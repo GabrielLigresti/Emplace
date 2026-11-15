@@ -93,6 +93,17 @@ describe('web estática', () => {
     expect(res.text).not.toContain('<title>PGIM</title>');
   });
 
+  it('sirve index.html aunque la carpeta esté bajo un directorio oculto', async () => {
+    const oculta = path.join(carpeta, '.oculta', 'dist');
+    fs.mkdirSync(oculta, { recursive: true });
+    fs.writeFileSync(path.join(oculta, 'index.html'), '<!doctype html><title>PGIM</title>');
+
+    const res = await request(createApp({ webDist: oculta })).get('/mesa/x');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('<title>PGIM</title>');
+  });
+
   it('sin webDist, GET / da 404 JSON', async () => {
     const res = await request(createApp()).get('/');
 

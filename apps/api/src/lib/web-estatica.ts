@@ -8,7 +8,7 @@ const PREFIJO_ASSETS = '/assets/';
 // Los assets llevan hash en el nombre, así que se cachean un año; index.html
 // nunca, para que un redeploy no deje al navegador pidiendo assets borrados.
 export function servirWeb(app: Express, carpeta: string): void {
-  // sendFile exige una ruta absoluta.
+  // Relativa al directorio de trabajo, como UPLOADS_DIR.
   const raiz = path.resolve(carpeta);
 
   app.use(
@@ -31,7 +31,9 @@ export function servirWeb(app: Express, carpeta: string): void {
       return;
     }
     res.setHeader('Cache-Control', 'no-cache');
-    res.sendFile(path.join(raiz, 'index.html'), (err) => {
+    // Con `root`, send revisa los dotfiles solo dentro de la carpeta: una ruta
+    // absoluta con un directorio oculto (por ejemplo, .claude/) daría 404.
+    res.sendFile('index.html', { root: raiz }, (err) => {
       if (err) next(err);
     });
   });
