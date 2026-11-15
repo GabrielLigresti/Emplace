@@ -19,6 +19,12 @@ colors:
   amarillo-riesgo-suave: "#fefce8"
   rojo-falta: "#b91c1c"
   rojo-falta-suave: "#fef2f2"
+  papel: "#f3f2f2"
+  papel-hondo: "#eae9e9"
+  tinta-clasica: "#201f1d"
+  dorado: "#b68235"
+  dorado-hondo: "#7d5411"
+  dorado-oscuro: "#5a3b0a"
 typography:
   display:
     fontFamily: "Urbanist Variable, ui-sans-serif, system-ui, sans-serif"
@@ -53,11 +59,24 @@ typography:
     fontSize: "12px"
     fontWeight: 600
     lineHeight: "16px"
+  titulo-clasico:
+    fontFamily: "Cormorant Garamond, Georgia, serif"
+    fontSize: "84px"
+    fontWeight: 400
+    lineHeight: "1.06"
+    letterSpacing: "-0.01em"
+  texto-clasico:
+    fontFamily: "Lora, Georgia, serif"
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: "28px"
 rounded:
   control: "10px"
   cuadrado: "12px"
   panel: "16px"
   full: "9999px"
+  clasico: "4px"
+  hero: "20px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -156,6 +175,20 @@ components:
     textColor: "{colors.tinta}"
     rounded: "{rounded.panel}"
     padding: "10px 12px"
+  button-clasico:
+    backgroundColor: "{colors.dorado-hondo}"
+    textColor: "#ffffff"
+    rounded: "{rounded.cuadrado}"
+    padding: "0 24px"
+    height: "44px"
+  button-clasico-hover:
+    backgroundColor: "{colors.dorado-oscuro}"
+  button-clasico-secundario:
+    backgroundColor: "{colors.papel-hondo}"
+    textColor: "{colors.dorado-hondo}"
+    rounded: "{rounded.cuadrado}"
+    padding: "0 20px"
+    height: "44px"
   nav-item-active:
     backgroundColor: "{colors.verde-albahaca-suave}"
     textColor: "{colors.verde-albahaca-hondo}"
@@ -171,12 +204,12 @@ components:
 
 Todo a mano y en su lugar. Las superficies son blancas y limpias, los grupos se arman con hojas de un verde muy claro, y el Verde Albahaca aparece solo donde se puede tocar o donde algo está pasando. Nada decora: la foto del plato, el precio y la acción siguiente son el contenido.
 
-El sistema tiene dos registros sobre los mismos tokens. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px (la carta nueva está pendiente; hoy el comensal usa la lista anterior). **El restaurante** (panel, cocina y salón) sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
+El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y los otros dos comparten los tokens verdes. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px (la carta nueva está pendiente; hoy el comensal usa la lista anterior). **El restaurante** (panel, cocina y salón) sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
-Tema claro único. Nada de beige, piedra ni crema: el blanco es blanco y los grises son fríos.
+Tema claro único. En el panel y el comensal, nada de beige, piedra ni crema: el blanco es blanco y los grises son fríos. La landing es la excepción, con su papel gris cálido (registro Clásico).
 
 **Key Characteristics:**
-- Un solo acento, Verde Albahaca, reservado para acción y estado en curso.
+- Un solo acento por registro: Verde Albahaca en el panel y el comensal, Dorado en la landing. Nunca los dos en la misma pantalla.
 - Urbanist en toda la app; hoy de 400 a 600 (700–800 pendiente, para los títulos del comensal).
 - Tres densidades: compacta (36 px) en escritorio, comensal (44 px) en el celular, táctil (48 px) en cocina y salón.
 - Estados siempre con tono, ícono y texto; el OK es azul.
@@ -190,7 +223,7 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 - **Verde Albahaca** (#16756b): acción principal, navegación activa, foco, chip seleccionado y todo lo que está "en curso" (En preparación, Mesa en curso, Cuenta abierta). Blanco encima pasa AA.
 - **Verde Albahaca Hondo** (#125e56): hover de la acción y texto sobre fondos verdes suaves.
 - **Verde Albahaca Suave** (#e3eeed): fondo de la opción activa, del botón tonal y de la etiqueta "en curso".
-- **Hoja de Albahaca** (#dceae9): hoja tintada que agrupa contenido detrás de tarjetas blancas en el comensal. Hoy lo usa la portada, como fondo de toda la columna de lectura (ver Portada, en Layout); el resto del comensal llega con la carta nueva.
+- **Hoja de Albahaca** (#dceae9): hoja tintada que agrupa contenido detrás de tarjetas blancas en el comensal. Hoy no lo usa ninguna pantalla: llega con la carta nueva del comensal.
 
 ### Neutral
 - **Blanco Mantel** (#ffffff): fondo de página y de tarjetas.
@@ -211,9 +244,40 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 
 **The Listo Is Blue Rule.** El estado OK es azul, nunca verde, para que "En preparación" y "Listo" no se confundan en la cola de cocina.
 
-**The No-Beige Rule.** No hay fondos cálidos, piedra ni crema. Las superficies son Blanco Mantel o Gris Bandeja.
+**The No-Beige Rule.** En el panel y el comensal no hay fondos cálidos, piedra ni crema: las superficies son Blanco Mantel o Gris Bandeja. El Papel de la landing no se usa fuera de ella.
+
+## Registro Clásico (landing pública)
+
+La landing (`/`) tiene su propia dirección visual, más editorial que la del resto: papel gris cálido, tinta, un dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design; sus tokens viven en `apps/web/src/index.css` junto a los verdes, con otros nombres, y ninguna pantalla del panel ni del comensal los usa. Cuando el comensal entra a una sucursal, deja de aplicar (manda la marca del restaurante).
+
+### Colores
+- **Papel** (#f3f2f2): fondo de la landing. **Papel Hondo** (#eae9e9): fondos de campos, fichas de modelos y botón secundario.
+- **Tinta Clásica** (#201f1d): texto y títulos; las líneas son esta tinta al 16 %.
+- **Dorado** (#b68235): solo hover y borde de campo enfocado, nunca texto ni fondo de botón (no pasa AA sobre papel). **Dorado Hondo** (#7d5411): botón principal, enlaces, etiquetas y el subrayado de "Ver en mi mesa". **Dorado Oscuro** (#5a3b0a): hover del botón principal. Blanco sobre Dorado Hondo pasa AA.
+- Blanco (#ffffff) para la franja de "Ver en mi mesa", que separa los modelos del papel.
+
+### Tipografía
+- **Títulos:** Cormorant Garamond. Display de la landing a 84 px en escritorio y 52 px en celular, siempre en peso 400 (normal); los títulos de ficha y botones, en 600. Cormorant se queda en 600 como máximo, porque es fina.
+- **Texto:** Lora, 15,5 a 17 px con interlineado de 28 px. Las etiquetas de sección van en Lora de 13 px, mayúsculas y 0,08 em de tracking, en Dorado Hondo.
+- Se cargan con `@fontsource` (peso 400 y 600); la pila de respaldo es Georgia.
+
+### Formas y componentes
+- **Botones:** esquinas de 12 px (`rounded-cuadrado`), 44 px de alto, texto en Cormorant 600 de 16 px. Principal en Dorado Hondo con texto blanco; secundario en Papel Hondo con texto Dorado Hondo y flecha "→". Sin sombra, sin borde.
+- **Campos y fichas:** borde de 1 px en la línea clásica y esquina de 4 px, fondo transparente; el campo enfocado toma borde Dorado.
+- **Héroe:** foto a la derecha con esquinas de 20 px a la izquierda en escritorio; en celular, la foto ocupa todo el fondo con un velo oscuro y el texto va en blanco.
+- **Fichas de modelos 3D:** 300 px de alto, nombre debajo en Cormorant 24 px y botón "Ver en mi mesa" dentro del recuadro. El carrusel se desliza con el dedo en celular; las flechas existen solo en escritorio.
+- **Resultados de búsqueda:** sin tarjeta ni foto (no hay fotos de sucursal): nombre en Cormorant, datos en Lora chico y dos botones.
+
+### Reglas del registro
+**The Dorado Is Touch Rule.** El Dorado Hondo marca lo que se toca; si no se toca, es tinta.
+
+**The Mobile Trim Rule.** En el celular se oculta lo que no funciona con el dedo o repite otro control (flechas del carrusel, menú sin destino, el botón "Reservar mesa" de la barra cuando el héroe ya lo tiene). No se achica ni se apila: se saca.
+
+**The Honest Placeholder Rule.** Si un modelo o una foto todavía no existe, la ficha queda vacía y sin botón; no se muestra un control que no hace nada ni se inventa contenido.
 
 ## Typography
+
+**Alcance:** esta sección rige el panel y el comensal; la landing usa la tipografía de su registro (arriba).
 
 **Display Font:** Urbanist Variable (con ui-sans-serif, system-ui)
 **Body Font:** Urbanist Variable (con ui-sans-serif, system-ui)
@@ -240,30 +304,6 @@ Una columna en el celular y grillas por rol en escritorio. El comensal usa un an
 Las tres densidades fijan la altura de los controles: compacta 36 px (44 px en celular), comensal 44 px y táctil 48 px. El espaciado sigue la escala de 4 px; los grupos se separan con `gap`, no con márgenes.
 
 **The Thumb Rule.** En el celular, la acción principal de la pantalla queda fija abajo; nunca arriba ni escondida en un menú.
-
-### Portada
-
-La portada pública (`/`) usa los mismos tokens de color, la misma tipografía y los mismos radios, pero tiene su propia composición, porque se lee y se recorre en vez de operarse. Lo que sigue vale solo para ella.
-
-- **Dos mitades.** Desde 1024 px, la izquierda es la columna de lectura sobre Hoja de Albahaca (título, buscador, resultados y el recorrido) y la derecha es una foto fija que acompaña al bajar: un carrusel que también cambia de imagen según la sección a la vista. Después de la columna, la página sigue a todo el ancho (cifras, cierre y pie). En el celular el orden es encabezado, carrusel y columna.
-- **Marco.** 12 px de margen exterior y 12 px entre las dos mitades; el texto comparte un solo par de márgenes interiores (16, 32 y 56 px según el ancho).
-- **Escala de letra propia**, más grande que la de la app, con siete pasos y ninguno más:
-  - Nota: 14 px / 20 px. Notas, pie, direcciones y el texto de botones y chips.
-  - Campo: 16 px. Los campos del buscador y el recorrido.
-  - Texto: 17 px / 26 px. Todo el texto corrido.
-  - Destacado: 22 px / 28 px. Nombre del restaurante, la marca y el título del carrusel en el celular.
-  - Título de sección: `clamp(26px, 2.2vw, 32px)`, interlineado 1,15.
-  - Título grande: `clamp(38px, 3.6vw, 56px)`, interlineado 1,02 y tracking -0,03em. El `h1`, el título de las cifras y el del cierre.
-  - Cifra: `clamp(44px, 5.6vw, 96px)`.
-- **Títulos en dos líneas como máximo**, en cualquier ancho. El peso sigue siendo 600.
-- **Sin bordes de 1 px.** Las superficies se separan por tono: blanco sobre Hoja de Albahaca, Gris Bandeja sobre blanco. Los campos del buscador conservan su borde. Los botones de la portada no llevan borde: principal en Verde Albahaca, tonal en Verde Albahaca Suave y neutro en blanco (sobre la hoja) o Gris Bandeja (sobre blanco).
-- **Sin sombras ni gradientes.** Nada flota en la portada.
-- **Controles de 44 px o más**; el botón del cierre mide 56 px.
-- **Movimiento**, solo con `transform` y `opacity`, y todo apagado con `prefers-reduced-motion`:
-  - Carrusel: fundido de 1600 ms entre imágenes, avance cada 6 s y un acercamiento lento de la foto activa (hasta 1,06 en 9 s). Se detiene con el puntero encima, con el foco adentro, con la pestaña oculta o con su botón de pausa.
-  - Entradas: las partes de cada sección suben 20 px con opacidad en 600 ms, escalonadas de a 70 ms, una sola vez al entrar en pantalla. Sin JavaScript, o al imprimir, todo se ve.
-  - Controles: transición corta en hover y una leve reducción al presionar.
-- **Imágenes.** Fotos de stock y renders en dominio público, en `apps/web/public/fotos-portada/`, con su `LICENCIA.md`. No muestran platos ni salones de ningún restaurante de la plataforma, y los autores se nombran en el pie.
 
 ## Elevation & Depth
 
@@ -316,11 +356,13 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 - **Do** usar Verde Albahaca (#16756b) solo en acciones, navegación activa, foco y estados en curso.
 - **Do** acompañar cada estado con ícono y texto, y usar Azul Listo (#1d5fb4) para OK.
 - **Do** escribir la acción siguiente en el restaurante ("Marcar listo", "Activar mesa") en lugar de dejar un ícono solo.
-- **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (hoy lo hace la portada en su columna de lectura; el resto llega con la carta nueva).
+- **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (llega con la carta nueva).
+- **Do** usar el registro Clásico solo en la landing pública y sus colores y serifs solo ahí.
 - **Do** respetar las alturas por densidad: 36, 44 y 48 px.
 
 ### Don't:
-- **Don't** usar fondos beige, piedra o crema.
+- **Don't** usar fondos beige, piedra o crema en el panel ni en el comensal (la landing tiene el suyo).
+- **Don't** mezclar Verde Albahaca y Dorado en una misma pantalla.
 - **Don't** sumar un segundo color de acento ni volver al terracota.
 - **Don't** usar verde para un estado OK.
 - **Don't** poner sombra a tarjetas apoyadas.
