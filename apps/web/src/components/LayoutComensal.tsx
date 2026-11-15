@@ -12,6 +12,8 @@ const PESTANIAS = [
   { a: '/puntos', texto: 'Mis puntos', icono: Star },
 ];
 
+const CUENTA = { a: '/cuenta', texto: 'Mi cuenta', icono: UserRound };
+
 // Título de las pantallas del comensal.
 export function TituloComensal({ children }: { children: ReactNode }) {
   return (
@@ -43,9 +45,12 @@ export function LayoutComensal({
   const esComensal = sesion?.usuario.tipo === 'COMENSAL';
   const consultada = useMiMesa(null, mesaActiva === undefined && esComensal).datos;
   const mesa = mesaActiva === undefined ? consultada : mesaActiva;
-  const pestanias = mesa
-    ? [...PESTANIAS, { a: '/mesa', texto: 'Mi mesa', icono: Receipt }]
-    : PESTANIAS;
+  // "Mi cuenta" va siempre última, a la derecha de la barra.
+  const pestanias = [
+    ...PESTANIAS,
+    ...(mesa ? [{ a: '/mesa', texto: 'Mi mesa', icono: Receipt }] : []),
+    CUENTA,
+  ];
 
   return (
     <div className="min-h-screen bg-bg">
@@ -74,13 +79,6 @@ export function LayoutComensal({
             </Link>
           ) : esComensal ? (
             <div className="flex shrink-0 items-center">
-              <Link
-                to="/cuenta"
-                aria-label="Mi cuenta"
-                className="inline-flex size-11 items-center justify-center rounded-control text-meta hover:bg-panel hover:text-text"
-              >
-                <UserRound aria-hidden className="size-5" />
-              </Link>
               <button
                 type="button"
                 onClick={salir}
@@ -119,7 +117,7 @@ export function LayoutComensal({
             className="border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
           >
             <div
-              className={`mx-auto grid h-14 max-w-[480px] ${mesa ? 'grid-cols-4' : 'grid-cols-3'}`}
+              className={`mx-auto grid h-14 max-w-[480px] ${mesa ? 'grid-cols-5' : 'grid-cols-4'}`}
             >
               {pestanias.map(({ a, texto, icono: Icono }) => (
                 <NavLink
