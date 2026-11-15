@@ -54,6 +54,9 @@ export interface PedidoRepository {
   confirmar(cuenta: CuentaParaPedido, lineas: LineaAConfirmar[]): Promise<PedidoCola>;
   // componenteId → cantidad actual en la sucursal.
   existencias(sucursalId: string): Promise<Map<string, number>>;
+  // platoId → minutos promedio entre que se confirma un pedido y queda listo,
+  // sobre los últimos 90 días. Solo platos con al menos MIN_PEDIDOS_TIEMPO pedidos.
+  tiemposPreparacion(sucursalId: string): Promise<Map<string, number>>;
   // CU-05: pedidos activos de la sucursal de trabajo, por orden de llegada.
   cola(restauranteId: string, sucursalId: string): Promise<PedidoCola[]>;
   buscarEnSucursal(
@@ -80,6 +83,9 @@ export interface PedidoRepository {
     reservaIds: string[],
   ): Promise<Map<string, PedidoSalon[]>>;
 }
+
+// Pedidos mínimos para mostrar un tiempo: con menos, el promedio no dice nada.
+const MIN_PEDIDOS_TIEMPO = 3;
 
 function deLaSucursal(restauranteId: string, sucursalId: string) {
   return { sucursalId, sucursal: { restauranteId } };
@@ -267,6 +273,21 @@ export const pedidoRepository: PedidoRepository = {
       select: { componenteId: true, cantidadActual: true },
     });
     return new Map(filas.map((f) => [f.componenteId, Number(f.cantidadActual)]));
+  },
+
+  async tiemposPreparacion(sucursalId) {
+    const filas = await prisma.$queryRaw<{ plato_id: string; minutos: number }[]>`
+      SELECT l.item_menu_id AS plato_id,
+             AVG(EXTRACT(EPOCH FROM (p.listo_en - p.creado_en)) / 60)::float8 AS minutos
+      FROM pedido p
+      JOIN linea_pedido l ON l.pedido_id = p.id
+      WHERE p.sucursal_id = ${sucursalId}::uuid
+        AND p.listo_en IS NOT NULL
+        AND p.estado IN ('LISTO', 'ENTREGADO')
+        AND p.creado_en >= now() - interval '90 days'
+      GROUP BY l.item_menu_id
+      HAVING COUNT(DISTINCT p.id) >= ${MIN_PEDIDOS_TIEMPO}`;
+    return new Map(filas.map((f) => [f.plato_id, Math.max(1, Math.round(f.minutos))]));
   },
 
   async cola(restauranteId, sucursalId) {

@@ -131,6 +131,31 @@ describe('pedidoRepository.confirmar', () => {
   });
 });
 
+describe('pedidoRepository.tiemposPreparacion', () => {
+  async function pedidoListo(minutos: number) {
+    const pedido = await pedidoRepository.confirmar(cuenta, [pizzas(1)]);
+    const creado = new Date(Date.now() - 3_600_000);
+    await prisma.pedido.update({
+      where: { id: pedido.id },
+      data: {
+        estado: 'LISTO',
+        creadoEn: creado,
+        listoEn: new Date(creado.getTime() + minutos * 60_000),
+      },
+    });
+  }
+
+  it('promedia en minutos solo con tres pedidos listos o más', async () => {
+    await pedidoListo(10);
+    await pedidoListo(20);
+    expect((await pedidoRepository.tiemposPreparacion(e.sucursalId)).size).toBe(0);
+
+    await pedidoListo(30);
+    const tiempos = await pedidoRepository.tiemposPreparacion(e.sucursalId);
+    expect(tiempos.get(e.pizzaId)).toBe(20);
+  });
+});
+
 describe('pedidoRepository.existencias', () => {
   it('devuelve el stock de la sucursal por componente', async () => {
     const existencias = await pedidoRepository.existencias(e.sucursalId);

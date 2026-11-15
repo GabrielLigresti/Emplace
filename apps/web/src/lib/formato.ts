@@ -98,3 +98,8 @@ export function sumarDias(fecha: string, dias: number): string {
   const [anio, mes, dia] = fecha.split('-').map(Number) as [number, number, number];
   return new Date(Date.UTC(anio, mes - 1, dia + dias)).toISOString().slice(0, 10);
 }
+
+// Espera promedio de un plato, en minutos: "25 min".
+export function formatoMinutos(minutos: number): string {
+  return `${minutos} min`;
+}

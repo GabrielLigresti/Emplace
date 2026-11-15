@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Box, Plus, Utensils } from 'lucide-react';
+import { Box, Clock, Plus, Search, Utensils } from 'lucide-react';
 import type { MenuSucursal, PlatoMenu } from '@pgim/shared';
 import { LayoutComensal, TituloComensal } from '../../components/LayoutComensal';
 import { useSesion } from '../../auth/SesionProvider';
-import { Chip, EstadoCarga, Etiqueta } from '../../components/ui';
+import { EstadoCarga, Etiqueta } from '../../components/ui';
 import { useCarrito } from '../../lib/carrito';
-import { formatoPesos } from '../../lib/formato';
+import { formatoMinutos, formatoPesos } from '../../lib/formato';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
@@ -18,6 +18,7 @@ export function MenuSucursalPage() {
   );
   // null = todas las categorías.
   const [categoria, setCategoria] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
   // Con la mesa activa en esta sucursal, el comensal pide desde el menú.
   const { sesion } = useSesion();
   const mesa = useMiMesa(sucursalId ?? null, sesion?.usuario.tipo === 'COMENSAL').datos;
@@ -45,7 +46,11 @@ export function MenuSucursalPage() {
   }
 
   const categorias = datos?.menu?.categorias ?? [];
-  const visibles = categoria ? categorias.filter((c) => c.id === categoria) : categorias;
+  const termino = busqueda.trim().toLowerCase();
+  const platos = categorias
+    .filter((c) => categoria === null || c.id === categoria)
+    .flatMap((c) => c.platos)
+    .filter((p) => !termino || p.nombre.toLowerCase().includes(termino));
 
   return (
     <LayoutComensal
@@ -72,82 +77,103 @@ export function MenuSucursalPage() {
               {datos.menu.descripcion && (
                 <p className="text-sm text-meta">{datos.menu.descripcion}</p>
               )}
-              {categorias.length > 1 && (
-                <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-                  <Chip seleccionado={categoria === null} onClick={() => setCategoria(null)}>
-                    Todo
-                  </Chip>
-                  {categorias.map((c) => (
-                    <Chip
-                      key={c.id}
-                      seleccionado={categoria === c.id}
-                      onClick={() => setCategoria(c.id)}
-                    >
-                      {c.nombre}
-                    </Chip>
-                  ))}
-                </div>
-              )}
-              <div className="mt-4 space-y-6">
-                {visibles.map((c) => (
-                  <section key={c.id}>
-                    <h3 className="text-sm font-semibold text-meta">{c.nombre}</h3>
-                    <ul className="divide-y divide-line">
-                      {c.platos.map((p) => (
-                        <li key={p.id} className="relative">
-                          <Link
-                            to={`/s/${sucursalId}/platos/${p.id}`}
-                            className={`flex gap-3 py-3 hover:bg-panel ${p.hayStock ? '' : 'opacity-60'}`}
+              <label className="mt-3 flex min-h-11 items-center gap-2.5 border-b border-line-strong text-meta focus-within:border-accent">
+                <Search aria-hidden className="size-[18px] shrink-0" />
+                <input
+                  type="search"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar en la carta"
+                  aria-label="Buscar en la carta"
+                  className="min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-meta"
+                />
+              </label>
+
+              {/* Hoja tintada a sangre: las pestañas de categoría y la grilla de tarjetas. */}
+              <div className="-mx-4 mt-4 rounded-t-[32px] bg-hoja px-4 pt-5 pb-6">
+                {categorias.length > 1 && (
+                  <div
+                    role="group"
+                    aria-label="Categorías"
+                    className="-mx-4 flex items-baseline gap-5 overflow-x-auto px-4 pb-3"
+                  >
+                    {[{ id: null, nombre: 'Todo' }, ...categorias].map((c) => (
+                      <button
+                        key={c.id ?? 'todo'}
+                        type="button"
+                        aria-pressed={categoria === c.id}
+                        onClick={() => setCategoria(c.id)}
+                        className={`min-h-11 shrink-0 whitespace-nowrap border-b-2 px-0.5 ${
+                          categoria === c.id
+                            ? 'border-accent font-display text-xl font-semibold text-ink'
+                            : 'border-transparent text-base text-meta hover:text-ink'
+                        }`}
+                      >
+                        {c.nombre}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <ul className="grid grid-cols-2 gap-3">
+                  {platos.map((p) => (
+                    <li key={p.id} className="relative">
+                      <Link
+                        to={`/s/${sucursalId}/platos/${p.id}`}
+                        className={`flex h-full flex-col overflow-hidden rounded-panel border border-line bg-surface hover:border-accent ${
+                          p.hayStock ? '' : 'opacity-60'
+                        }`}
+                      >
+                        {p.fotoUrl ? (
+                          <img src={p.fotoUrl} alt="" className="h-28 w-full object-cover" />
+                        ) : (
+                          <span
+                            aria-hidden
+                            className="grid h-28 w-full place-items-center bg-panel text-meta"
                           >
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-semibold text-ink">{p.nombre}</span>
-                              {p.descripcion && (
-                                <span className="line-clamp-2 block text-sm text-meta">
-                                  {p.descripcion}
-                                </span>
-                              )}
-                              <span className="mt-1.5 flex flex-wrap items-center gap-2">
-                                <span className="font-semibold text-ink">
-                                  {formatoPesos(p.precio)}
-                                </span>
-                                {!p.hayStock && <Etiqueta>Sin stock</Etiqueta>}
-                                {p.modeloRa && (
-                                  <Etiqueta tono="acento">
-                                    <Box aria-hidden className="size-3.5" />
-                                    Ver en mi mesa
-                                  </Etiqueta>
-                                )}
-                              </span>
+                            <Utensils className="size-7" strokeWidth={1.6} />
+                          </span>
+                        )}
+                        <span className="flex flex-1 flex-col gap-1.5 p-3">
+                          <span className="font-display text-lg leading-tight font-semibold text-ink">
+                            {p.nombre}
+                          </span>
+                          {p.tiempoPromedioMin !== null && (
+                            <span className="flex items-center gap-1 text-xs text-meta">
+                              <Clock aria-hidden className="size-3 text-accent-ink" />
+                              <span className="sr-only">Espera promedio: </span>
+                              {formatoMinutos(p.tiempoPromedioMin)}
                             </span>
-                            {p.fotoUrl ? (
-                              <img
-                                src={p.fotoUrl}
-                                alt=""
-                                className="size-[76px] shrink-0 rounded-panel object-cover"
-                              />
-                            ) : (
-                              <span
-                                aria-hidden
-                                className="grid size-[76px] shrink-0 place-items-center rounded-panel border border-line bg-panel text-meta"
-                              >
-                                <Utensils className="size-6" strokeWidth={1.6} />
-                              </span>
-                            )}
-                          </Link>
-                          {mesa && p.hayStock && (
-                            <BotonAgregar
-                              nombre={p.nombre}
-                              cantidad={carrito.cantidadDe(p.id)}
-                              onClick={() => agregar(p)}
-                            />
                           )}
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-                {categorias.length === 0 && (
-                  <p className="text-sm text-meta">El menú no tiene platos disponibles.</p>
+                          <span className="mt-auto flex flex-wrap items-center gap-1.5 pt-0.5">
+                            <span className="text-lg leading-none font-semibold text-ink">
+                              {formatoPesos(p.precio)}
+                            </span>
+                            {!p.hayStock && <Etiqueta>Sin stock</Etiqueta>}
+                            {p.modeloRa && (
+                              <Etiqueta tono="acento">
+                                <Box aria-hidden className="size-3.5" />
+                                RA
+                              </Etiqueta>
+                            )}
+                          </span>
+                        </span>
+                      </Link>
+                      {mesa && p.hayStock && (
+                        <BotonAgregar
+                          nombre={p.nombre}
+                          cantidad={carrito.cantidadDe(p.id)}
+                          onClick={() => agregar(p)}
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                {platos.length === 0 && (
+                  <p className="py-6 text-base text-ink">
+                    {termino
+                      ? 'No hay platos para esa búsqueda.'
+                      : 'El menú no tiene platos disponibles.'}
+                  </p>
                 )}
               </div>
             </>
@@ -175,7 +201,7 @@ function BotonAgregar({
       aria-label={
         cantidad > 0 ? `${nombre}: ${cantidad} en el pedido. Agregar otro` : `Agregar ${nombre}`
       }
-      className={`absolute right-1 bottom-1 grid size-11 place-items-center rounded-full font-semibold tabular-nums ${
+      className={`absolute right-2 bottom-2 grid size-11 place-items-center rounded-full font-semibold tabular-nums ${
         cantidad > 0
           ? 'bg-accent text-white hover:bg-accent-hover'
           : 'border border-line-strong bg-surface text-accent-ink hover:bg-panel'

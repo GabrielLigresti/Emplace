@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { Clock } from 'lucide-react';
 import type { DetallePlato } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useAvisos } from '../../components/AvisoEmergente';
@@ -8,7 +9,7 @@ import { SelectorCantidad } from '../../components/SelectorCantidad';
 import { VisorRA } from '../../components/VisorRA';
 import { Aviso, Boton, Campo, EstadoCarga, claseInput } from '../../components/ui';
 import { useCarrito } from '../../lib/carrito';
-import { formatoCantidad, formatoPesos } from '../../lib/formato';
+import { formatoCantidad, formatoMinutos, formatoPesos } from '../../lib/formato';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
@@ -89,7 +90,13 @@ export function PlatoPage() {
                 {formatoPesos(plato.precio)}
               </span>
             </div>
-            {plato.descripcion && <p className="mt-1 text-meta">{plato.descripcion}</p>}
+            {plato.tiempoPromedioMin !== null && (
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-meta">
+                <Clock aria-hidden className="size-4 text-accent-ink" />
+                Espera promedio: {formatoMinutos(plato.tiempoPromedioMin)}
+              </p>
+            )}
+            {plato.descripcion && <p className="mt-2 text-meta">{plato.descripcion}</p>}
             {plato.modeloRa && (
               <p className="mt-1 text-sm text-meta">
                 Porción: {formatoCantidad(plato.modeloRa.porcionGramos, 'GRAMO')}

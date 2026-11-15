@@ -205,7 +205,7 @@ components:
 
 Todo a mano y en su lugar. Las superficies son blancas y limpias, los grupos se arman con hojas de un verde muy claro, y el Verde Albahaca aparece solo donde se puede tocar o donde algo está pasando. Nada decora: la foto del plato, el precio y la acción siguiente son el contenido.
 
-El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y el comensal usa los tokens verdes; el staff usa los mismos nombres de token con la paleta Clásica (ver "Tema del staff"). **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px (la carta nueva está pendiente; hoy el comensal usa la lista anterior). **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
+El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y el comensal usa los tokens verdes; el staff usa los mismos nombres de token con la paleta Clásica (ver "Tema del staff"). **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px. La carta ya la usa: pestañas de categoría en texto, grilla de dos columnas y, en cada tarjeta, la espera promedio del plato cuando hay pedidos suficientes. **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
 Tema claro único. En el comensal, nada de beige, piedra ni crema: el blanco es blanco y los grises son fríos. La landing y el staff son la excepción, con el papel gris cálido del registro Clásico.
 
@@ -224,7 +224,7 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 - **Verde Albahaca** (#16756b): acción principal, navegación activa, foco, chip seleccionado y todo lo que está "en curso" (En preparación, Mesa en curso, Cuenta abierta). Blanco encima pasa AA.
 - **Verde Albahaca Hondo** (#125e56): hover de la acción y texto sobre fondos verdes suaves.
 - **Verde Albahaca Suave** (#e3eeed): fondo de la opción activa, del botón tonal y de la etiqueta "en curso".
-- **Hoja de Albahaca** (#dceae9): hoja tintada que agrupa contenido detrás de tarjetas blancas en el comensal. Hoy no lo usa ninguna pantalla: llega con la carta nueva del comensal.
+- **Hoja de Albahaca** (#dceae9): hoja tintada que agrupa contenido detrás de tarjetas blancas en el comensal. La usa la carta del comensal.
 
 ### Neutral
 - **Blanco Mantel** (#ffffff): fondo de página y de tarjetas.
@@ -371,7 +371,7 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 - **Do** usar el acento (Verde Albahaca en el comensal, Dorado Hondo en el staff) solo en acciones, navegación activa, foco y estados en curso.
 - **Do** acompañar cada estado con ícono y texto, y usar Azul Listo (#1d5fb4) para OK.
 - **Do** escribir la acción siguiente en el restaurante ("Marcar listo", "Activar mesa") en lugar de dejar un ícono solo.
-- **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (llega con la carta nueva).
+- **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (la carta ya lo hace).
 - **Do** usar el registro Clásico solo en la landing pública y sus colores y serifs solo ahí.
 - **Do** respetar las alturas por densidad: 36, 44 y 48 px.
 

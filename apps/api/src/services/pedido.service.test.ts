@@ -31,6 +31,7 @@ function platoVisible(id: string, precio: number, insumos: Map<string, number> |
       admiteObservaciones: id !== 'agua',
       modeloRa: null,
       hayStock: true,
+      tiempoPromedioMin: null,
     },
     insumos,
   } satisfies PlatoVisible;
