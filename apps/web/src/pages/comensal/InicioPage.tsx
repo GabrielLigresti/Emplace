@@ -5,7 +5,7 @@ import { BuscadorSucursales } from '../../components/BuscadorSucursales';
 export function InicioPage() {
   return (
     <LayoutComensal>
-      <div className="landing-clasica font-lora text-tinta-clasica">
+      <div className="landing-clasica tipografia-app text-tinta-clasica">
         <BuscadorSucursales compacto />
       </div>
     </LayoutComensal>
