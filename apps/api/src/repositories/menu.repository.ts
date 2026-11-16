@@ -101,7 +101,9 @@ function columnasPlato(datos: PlatoInput) {
     nombre: datos.nombre,
     descripcion: datos.descripcion || null,
     precio: datos.precio,
-    fotoUrl: datos.fotoUrl || null,
+    // Sin el dato, la foto queda como estaba (la subida desde la computadora
+    // ya la guardó); vacía o null, se quita.
+    ...(datos.fotoUrl !== undefined && { fotoUrl: datos.fotoUrl || null }),
     disponible: datos.disponible,
     // Sin el dato, la reventa queda como estaba.
     ...(datos.insumoReventaId !== undefined && { insumoId: datos.insumoReventaId }),

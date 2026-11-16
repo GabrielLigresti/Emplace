@@ -25,6 +25,7 @@ import { useConfirmar } from '../../components/Confirmacion';
 
 // CU-16: platos (con su modelo 3D) y categorías. Los menús van en su propia pantalla.
 const LIMITE_FOTO_MB = 5;
+const PREFIJO_FOTO_SUBIDA = '/api/uploads/fotos/';
 
 export function PlatosPage() {
   const { tienePermiso } = useSesion();
@@ -314,7 +315,8 @@ function FormularioPlato({
       nombre,
       descripcion: descripcion || null,
       precio: aNumero(precio),
-      fotoUrl: fotoUrl.trim() || null,
+      // La foto subida ya está guardada y la API no acepta su ruta: se omite.
+      fotoUrl: fotoUrl.startsWith(PREFIJO_FOTO_SUBIDA) ? undefined : fotoUrl.trim() || null,
       disponible,
       // Sin permiso para ver insumos el campo no se muestra: no se toca.
       ...(porUnidad && { insumoReventaId: insumoReventaId || null }),
