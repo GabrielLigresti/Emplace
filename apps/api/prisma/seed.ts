@@ -34,7 +34,7 @@ const SUCURSALES = [
 type NombreSucursal = (typeof SUCURSALES)[number]['nombre'];
 
 // Salón de cada sucursal (CU-14): capacidades en orden de número de mesa,
-// ubicadas en una grilla sobre el lienzo de 100 × 60.
+// ubicadas en el primer lugar libre del lienzo de 100 × 60.
 const SALONES: Record<NombreSucursal, SalonSeed> = {
   Centro: { capacidades: [2, 2, 4, 4, 4, 6, 6, 8, 2, 4] },
   Palermo: { capacidades: [2, 4, 4, 6, 2, 8] },
