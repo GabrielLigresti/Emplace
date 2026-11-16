@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { Star } from 'lucide-react';
 import type { ProgramaInput, ProgramaPanel } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useConfirmar } from '../../components/Confirmacion';
@@ -7,10 +6,8 @@ import {
   Aviso,
   Boton,
   Campo,
-  EncabezadoPagina,
   EstadoCarga,
   Panel,
-  Vacio,
   claseInput,
   propsDecimal,
 } from '../../components/ui';
@@ -29,18 +26,18 @@ const tasaDe = (pesos: number) => Math.round((1 / pesos) * 10_000) / 10_000;
 
 // Programa de puntos del restaurante. Es permanente: una vez creado siempre
 // acumula, la tasa no cambia y los puntos no vencen.
-export function ProgramaPuntosPage() {
+export function ProgramaPuntos() {
   const { tienePermiso } = useSesion();
   const { datos, cargando, error, recargar } = useRecurso<ProgramaPanel | null>(
     '/fidelizacion/programa',
   );
 
   return (
-    <section className="max-w-2xl">
-      <EncabezadoPagina
-        titulo="Programa de puntos"
-        descripcion="Cada pago aprobado desde la app suma puntos en este restaurante."
-      />
+    <section className="mb-6 max-w-2xl">
+      <h2 className="text-base font-semibold text-ink">Programa de puntos</h2>
+      <p className="mb-3 text-sm text-meta">
+        Cada pago aprobado desde la app suma puntos en este restaurante.
+      </p>
       <EstadoCarga cargando={cargando && datos === null} error={error} />
       {datos ? (
         <Panel>
@@ -69,11 +66,9 @@ export function ProgramaPuntosPage() {
         (tienePermiso('beneficio.crear') ? (
           <FormularioPrograma onCreado={recargar} />
         ) : (
-          <Vacio
-            icono={Star}
-            titulo="Todavía no hay programa de puntos"
-            texto="Lo puede crear quien administra los beneficios del restaurante."
-          />
+          <p className="text-sm text-meta">
+            Todavía no hay programa de puntos. Lo puede crear quien administra los beneficios.
+          </p>
         ))
       )}
     </section>
@@ -103,7 +98,7 @@ function FormularioPrograma({ onCreado }: { onCreado(): void }) {
   }
 
   return (
-    <Panel titulo="Crear el programa">
+    <Panel>
       <form onSubmit={onSubmit} className="space-y-4">
         <Campo
           etiqueta="Cada cuántos pesos se suma 1 punto"

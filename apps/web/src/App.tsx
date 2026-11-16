@@ -23,7 +23,6 @@ import { PlatoPage } from './pages/comensal/PlatoPage';
 import { ReservarPage } from './pages/comensal/ReservarPage';
 import { SeleccionarSucursalPage } from './pages/SeleccionarSucursalPage';
 import { BeneficiosPage } from './pages/panel/BeneficiosPage';
-import { ProgramaPuntosPage } from './pages/panel/ProgramaPuntosPage';
 import { MiCuentaPanelPage } from './pages/panel/MiCuentaPanelPage';
 import { MetricasPage } from './pages/panel/MetricasPage';
 import { MisTurnosPage } from './pages/panel/MisTurnosPage';
@@ -133,7 +132,7 @@ export default function App() {
                   />
                   <Route
                     path="programa-puntos"
-                    element={conPermiso('beneficio.ver', <ProgramaPuntosPage />)}
+                    element={<Navigate to="/panel/beneficios" replace />}
                   />
                   <Route
                     path="beneficios"
