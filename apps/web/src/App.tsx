@@ -35,7 +35,6 @@ import { MenusPage } from './pages/panel/MenusPage';
 import { PersonalPage } from './pages/panel/PersonalPage';
 import { PlatosPage } from './pages/panel/PlatosPage';
 import { RecetaEditorPage } from './pages/panel/RecetaEditorPage';
-import { RecetasPage } from './pages/panel/RecetasPage';
 import { ReservasPage } from './pages/panel/ReservasPage';
 import { RolesPage } from './pages/panel/RolesPage';
 import { SalonEnVivoPage } from './pages/panel/SalonEnVivoPage';
@@ -145,9 +144,15 @@ export default function App() {
                   <Route path="insumos" element={<Navigate to="/panel/stock" replace />} />
                   <Route
                     path="stock"
-                    element={conAlgunPermiso(['insumo.ver', 'stock.registrar'], <StockPage />)}
+                    element={conAlgunPermiso(
+                      ['insumo.ver', 'stock.registrar', 'receta.ver'],
+                      <StockPage />,
+                    )}
                   />
-                  <Route path="recetas" element={conPermiso('receta.ver', <RecetasPage />)} />
+                  <Route
+                    path="recetas"
+                    element={<Navigate to="/panel/stock?pestaña=preparaciones" replace />}
+                  />
                   <Route
                     path="recetas/:tipo/:id"
                     element={conPermiso('receta.ver', <RecetaEditorPage />)}

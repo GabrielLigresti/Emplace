@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import {
-  BookOpen,
   BarChart3,
   Boxes,
   CalendarDays,
@@ -110,18 +109,10 @@ export const SECCIONES: SeccionPanel[] = [
     icono: ScrollText,
   },
   {
-    ruta: 'recetas',
-    titulo: 'Recetas',
-    descripcion: 'Recetas, preparaciones y costos',
-    permisos: ['receta.ver'],
-    grupo: 'Menú',
-    icono: BookOpen,
-  },
-  {
     ruta: 'stock',
     titulo: 'Stock',
-    descripcion: 'Existencias, producción y movimientos',
-    permisos: ['insumo.ver', 'stock.registrar'],
+    descripcion: 'Existencias, producción, preparaciones y movimientos',
+    permisos: ['insumo.ver', 'stock.registrar', 'receta.ver'],
     grupo: 'Stock',
     icono: Boxes,
   },

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
+import { useSesion } from '../../../auth/SesionProvider';
 import { ArrowLeft, ChefHat, Plus, X } from 'lucide-react';
 import {
   CONVERSION,
@@ -74,6 +75,7 @@ export function FormTanda({
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
   const [registrada, setRegistrada] = useState<TandaDetalle | null>(null);
   const guardar = useGuardar();
+  const { tienePermiso } = useSesion();
 
   const preparacion = preparaciones.find((p) => p.id === intermedioId);
   const unidades = preparacion ? unidadesCompatibles(preparacion.unidadBase) : [];
@@ -233,12 +235,14 @@ export function FormTanda({
           titulo="Ninguna preparación se produce por tandas"
           texto="Para registrar una tanda, activá “Lleva stock (se produce por tandas)” en la receta de la preparación."
           accion={
-            <Link
-              to="/panel/recetas"
-              className="text-sm font-medium text-accent-ink underline underline-offset-2"
-            >
-              Ir a Recetas
-            </Link>
+            tienePermiso('receta.ver') && (
+              <Link
+                to="/panel/stock?pestaña=preparaciones"
+                className="text-sm font-medium text-accent-ink underline underline-offset-2"
+              >
+                Ir a Preparaciones
+              </Link>
+            )
           }
         />
       </div>
