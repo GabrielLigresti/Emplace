@@ -462,7 +462,7 @@ function Editor({
       <div className="rounded-panel border border-line bg-surface p-4 text-sm">
         <p className="font-medium text-ink">Costo</p>
         <p className="text-meta">
-          {costoEstimado > 0 && rinde > 0
+          {lineas.length > 0 && rinde > 0
             ? `Estimado: ${formatoPesos(costoEstimado)} en total · ${formatoPesos(costoEstimado / rinde)} por ${medidaCosto}`
             : 'Cargá ingredientes y rendimiento para ver el costo.'}
         </p>
