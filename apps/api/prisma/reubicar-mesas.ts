@@ -16,8 +16,19 @@ import { planificarReubicacion } from '../src/domain/reubicacion-mesas';
 
 const formato = (p: { posX: number; posY: number }) => `(${p.posX}, ${p.posY})`;
 
+// Host y nombre de la base a la que apunta DATABASE_URL, sin usuario ni clave.
+function destino(): string {
+  try {
+    const url = new URL(process.env.DATABASE_URL ?? '');
+    return `${url.host}${url.pathname}`;
+  } catch {
+    return '(DATABASE_URL no definida o inválida)';
+  }
+}
+
 async function main() {
   const aplicar = process.argv.includes('--aplicar');
+  console.log(`Base: ${destino()}`);
   console.log(
     aplicar ? 'Reubicando mesas (se escribe en la base).' : 'SIMULACRO: no se escribe nada.',
   );

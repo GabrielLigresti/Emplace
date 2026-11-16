@@ -33,16 +33,23 @@ export interface PlanReubicacion {
 }
 
 // Decide qué mesas de una sucursal hay que mover tras el cambio de tamaños del
-// plano. Recibe solo las mesas activas. Recorre por número: se queda en su lugar
-// la que entra en el lienzo y no pisa a otra ya conservada; el resto se ubica en
-// el primer lugar libre. Una mesa con reserva activa no se mueve (hay gente
-// sentada) y una sin lugar libre tampoco; las dos se avisan y siguen ocupando su
-// rectángulo actual. Es función pura: no toca la base.
+// plano. Recibe solo las mesas activas. Las mesas con reserva activa (hay gente
+// sentada) no se mueven nunca: se procesan primero y quedan como ancla, así una
+// mesa sin reserva que las pisa es la que se mueve. Después se recorre el resto
+// por número: se queda en su lugar la que entra en el lienzo y no pisa a otra ya
+// conservada; las demás se ubican en el primer lugar libre. Una mesa con reserva
+// activa que no entra o pisa a otra ancla, y una sin lugar libre, no se mueven:
+// se avisan y siguen ocupando su rectángulo actual. Es función pura: no toca la
+// base.
 export function planificarReubicacion(
   mesas: readonly MesaParaReubicar[],
   mesasConReservaActiva: ReadonlySet<string>,
 ): PlanReubicacion {
-  const ordenadas = [...mesas].sort((a, b) => a.numero - b.numero);
+  const porNumero = [...mesas].sort((a, b) => a.numero - b.numero);
+  const ordenadas = [
+    ...porNumero.filter((m) => mesasConReservaActiva.has(m.id)),
+    ...porNumero.filter((m) => !mesasConReservaActiva.has(m.id)),
+  ];
   const ocupadas: RectanguloMesa[] = [];
   const aMover: MesaParaReubicar[] = [];
 

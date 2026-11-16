@@ -54,19 +54,35 @@ describe('planificarReubicacion', () => {
     expect(new Set(destinos).size).toBe(2);
   });
 
-  it('no mueve una mesa con reserva activa y avisa', () => {
+  it('mueve la mesa sin reserva que pisa a una con reserva activa, aunque tenga número menor', () => {
     const mesas = [mesa(1, 10, 10), mesa(2, 12, 10)];
+    const plan = planificarReubicacion(mesas, new Set(['m2']));
+    expect(plan.avisos).toEqual([]);
+    expect(plan.movimientos.map((m) => m.numero)).toEqual([1]);
+  });
+
+  it('no mueve una mesa con reserva activa que no entra en el lienzo y avisa', () => {
+    const mesas = [mesa(1, 10, 10), mesa(2, 130, 10)];
     const plan = planificarReubicacion(mesas, new Set(['m2']));
     expect(plan.movimientos).toEqual([]);
     expect(plan.avisos).toEqual([{ numero: 2, motivo: 'RESERVA_ACTIVA' }]);
   });
 
+  it('dos mesas con reserva activa que se pisan: se avisa de la de número mayor y ninguna se mueve', () => {
+    const mesas = [mesa(1, 10, 10), mesa(2, 12, 10)];
+    const plan = planificarReubicacion(mesas, new Set(['m1', 'm2']));
+    expect(plan.movimientos).toEqual([]);
+    expect(plan.avisos).toEqual([{ numero: 2, motivo: 'RESERVA_ACTIVA' }]);
+  });
+
   it('la mesa con reserva activa sigue ocupando su lugar para las demás', () => {
-    // La 2 queda quieta (fuera del lienzo no importa); la 3 no puede caer encima.
+    // La 2 queda quieta; la 1 y la 3 se la pisaban y no pueden caer encima.
     const mesas = [mesa(1, 10, 10), mesa(2, 12, 10), mesa(3, 12, 10)];
     const plan = planificarReubicacion(mesas, new Set(['m2']));
-    expect(plan.movimientos.map((m) => m.numero)).toEqual([3]);
-    expect(plan.movimientos[0]!.hasta).not.toEqual({ posX: 12, posY: 10 });
+    expect(plan.movimientos.map((m) => m.numero)).toEqual([1, 3]);
+    for (const mov of plan.movimientos) {
+      expect(mov.hasta).not.toEqual({ posX: 12, posY: 10 });
+    }
   });
 
   it('avisa y sigue si el salón está lleno', () => {
