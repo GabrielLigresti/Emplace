@@ -15,6 +15,8 @@ export interface MesaDibujo {
   inactiva?: boolean;
   // Mesa fuera del filtro activo: se dibuja en gris y no se puede elegir.
   atenuada?: boolean;
+  // Mesa movida y todavía sin confirmar: se dibuja con un contorno de acento.
+  pendiente?: boolean;
 }
 
 export type EstadoMesaDibujo = 'LIBRE' | 'RESERVADA' | 'OCUPADA' | 'INASISTENCIA' | 'CHICA';
@@ -60,12 +62,15 @@ export function LeyendaSalon({
   inactiva,
   vistaComensal,
   conPersonas,
+  sinConfirmar,
 }: {
   estados: EstadoMesaDibujo[];
   inactiva?: boolean;
   vistaComensal?: boolean;
   // Explica «2/4» (personas / capacidad); solo para pantallas que muestran personas.
   conPersonas?: boolean;
+  // Suma el ítem de las mesas movidas y todavía sin confirmar (editor del salón).
+  sinConfirmar?: boolean;
 }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-meta">
@@ -114,6 +119,22 @@ export function LeyendaSalon({
           Dada de baja
         </li>
       )}
+      {sinConfirmar && (
+        <li className="flex items-center gap-1.5">
+          <svg viewBox="0 0 10 10" className="size-3.5" aria-hidden>
+            <rect
+              x={0.8}
+              y={0.8}
+              width={8.4}
+              height={8.4}
+              rx={1.6}
+              strokeWidth={0.8}
+              className="fill-none stroke-accent"
+            />
+          </svg>
+          Sin confirmar
+        </li>
+      )}
       {conPersonas && !vistaComensal && <li>2/4 = personas / capacidad</li>}
     </ul>
   );
@@ -133,6 +154,7 @@ export function MapaSalon({
   seleccionadaId,
   onElegir,
   todasElegibles,
+  inactivasElegibles,
   ajustarAncho,
   onMover,
   horaReservada,
@@ -146,6 +168,8 @@ export function MapaSalon({
   onElegir?(id: string): void;
   // Con esta prop toda mesa no dada de baja es elegible, no solo las libres.
   todasElegibles?: boolean;
+  // Con esta prop las mesas dadas de baja también son elegibles (editor del salón).
+  inactivasElegibles?: boolean;
   // En pantallas anchas deja que el plano se achique al ancho de su columna.
   ajustarAncho?: boolean;
   onMover?(id: string, posX: number, posY: number): void;
@@ -322,7 +346,7 @@ export function MapaSalon({
             const estado = estadoVisible(mesa.estado ?? 'LIBRE', vistaComensal);
             const elegible =
               Boolean(onElegir) &&
-              !mesa.inactiva &&
+              (!mesa.inactiva || Boolean(inactivasElegibles)) &&
               !mesa.atenuada &&
               (todasElegibles || estado === 'LIBRE');
             const seleccionada = mesa.id === seleccionadaId;
@@ -383,9 +407,20 @@ export function MapaSalon({
                   mesa.inactiva
                     ? ', dada de baja'
                     : `, ${nombreEstado(estado, vistaComensal).toLowerCase()}`
-                }`}
+                }${mesa.pendiente ? ', movida sin confirmar' : ''}`}
                 aria-pressed={elegible ? seleccionada : undefined}
               >
+                {mesa.pendiente && (
+                  <rect
+                    x={izquierda - 0.8}
+                    y={arriba - 0.8}
+                    width={ancho + 1.6}
+                    height={alto + 1.6}
+                    rx={2.2}
+                    className="fill-none stroke-accent"
+                    strokeWidth={0.5}
+                  />
+                )}
                 {/* La selección se marca con un contorno oscuro separado, distinto del acento de ocupada. */}
                 {seleccionada && (
                   <rect

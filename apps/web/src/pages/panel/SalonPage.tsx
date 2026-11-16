@@ -1,24 +1,22 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router';
+import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import {
   EVENTOS_SOCKET,
   buscarLugarLibre,
   rectanguloMesa,
+  type DistribucionInput,
   type Mesa,
   type MesaInput,
   type Sucursal,
 } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
-import { Lista } from '../../components/Lista';
 import { LeyendaSalon, MapaSalon } from '../../components/MapaSalon';
 import {
   Aviso,
   Boton,
   Campo,
-  Casilla,
   EncabezadoPagina,
   EstadoCarga,
-  Etiqueta,
   Modal,
   claseInput,
 } from '../../components/ui';
@@ -38,8 +36,11 @@ function datosDe(mesa: Mesa): MesaInput {
   };
 }
 
+type Pendientes = Record<string, { posX: number; posY: number }>;
+
 // CU-14: mapa del salón de una sucursal. Las mesas nuevas aparecen en un
-// lugar libre y se acomodan arrastrándolas; la posición se guarda al soltar.
+// lugar libre; las posiciones se arman como borrador arrastrando y se guardan
+// juntas al confirmar la distribución.
 export function SalonPage() {
   const { id: sucursalId } = useParams();
   const { tienePermiso } = useSesion();
@@ -48,15 +49,39 @@ export function SalonPage() {
   const { datos, cargando, error, recargar } = useRecurso<Mesa[]>(ruta);
   const sucursales = useRecurso<Sucursal[]>('/sucursales');
   const sucursal = sucursales.datos?.find((s) => s.id === sucursalId);
-  // Copia local para que la mesa quede donde se soltó mientras se guarda.
-  const [mesas, setMesas] = useState<Mesa[]>([]);
   const [editando, setEditando] = useState<Mesa | null>(null);
   const guardar = useGuardar();
+  const confirmar = useConfirmar();
+  const navegar = useNavigate();
   const [sinLugar, setSinLugar] = useState(false);
   const [conflicto, setConflicto] = useState<string | null>(null);
+  // Borrador: mesas movidas y todavía sin confirmar (id → posición nueva).
+  const [pendientes, setPendientes] = useState<Pendientes>({});
+  const cantidadPendientes = Object.keys(pendientes).length;
 
+  // Las mesas del servidor con el borrador encima.
+  const mesas = useMemo(
+    () =>
+      (datos ?? []).map((m) => {
+        const p = pendientes[m.id];
+        return p ? { ...m, ...p } : m;
+      }),
+    [datos, pendientes],
+  );
+
+  // Tras una recarga, el borrador pierde las mesas que ya no existen y las que
+  // el servidor ya tiene donde el borrador las puso (por ejemplo, tras confirmar).
   useEffect(() => {
-    if (datos) setMesas(datos);
+    if (!datos) return;
+    setPendientes((actual) => {
+      const resto = Object.fromEntries(
+        Object.entries(actual).filter(([id, p]) => {
+          const m = datos.find((x) => x.id === id);
+          return m && (m.posX !== p.posX || m.posY !== p.posY);
+        }),
+      );
+      return Object.keys(resto).length === Object.keys(actual).length ? actual : resto;
+    });
   }, [datos]);
 
   // «No hay lugar» vale para el salón de ese momento: si las mesas cambian, se descarta.
@@ -64,8 +89,17 @@ export function SalonPage() {
     setSinLugar(false);
   }, [mesas]);
 
-  // Mesa vigente del formulario: otro gerente pudo moverla o quitarla mientras está abierto.
-  const vigente = editando ? mesas.find((m) => m.id === editando.id) : undefined;
+  // Con borrador, el navegador avisa antes de cerrar o recargar la pestaña.
+  useEffect(() => {
+    if (cantidadPendientes === 0) return;
+    const avisar = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', avisar);
+    return () => window.removeEventListener('beforeunload', avisar);
+  }, [cantidadPendientes]);
+
+  // Mesa vigente del formulario, tal como está guardada: otro gerente pudo
+  // moverla o quitarla mientras está abierto, y el borrador no se guarda desde ahí.
+  const vigente = editando ? datos?.find((m) => m.id === editando.id) : undefined;
   useEffect(() => {
     if (editando && datos && !vigente) {
       setEditando(null);
@@ -76,25 +110,62 @@ export function SalonPage() {
   function limpiarAvisos() {
     setSinLugar(false);
     setConflicto(null);
+    guardar.setError(null);
   }
 
-  async function mover(id: string, posX: number, posY: number) {
-    const mesa = mesas.find((m) => m.id === id);
-    if (!mesa) return;
+  // Mover solo arma el borrador; si la mesa vuelve a su lugar guardado, sale de él.
+  function mover(id: string, posX: number, posY: number) {
+    const guardada = datos?.find((m) => m.id === id);
+    if (!guardada) return;
     limpiarAvisos();
-    setMesas((actual) => actual.map((m) => (m.id === id ? { ...m, posX, posY } : m)));
-    if (!(await guardar.enviar(`${ruta}/${id}`, 'PUT', { ...datosDe(mesa), posX, posY }))) {
-      recargar();
-    }
+    setPendientes((actual) => {
+      const { [id]: _, ...resto } = actual;
+      return guardada.posX === posX && guardada.posY === posY
+        ? resto
+        : { ...resto, [id]: { posX, posY } };
+    });
+  }
+
+  // BrowserRouter no permite bloquear la navegación: solo se cubre este enlace.
+  async function volverASucursales(e: MouseEvent<HTMLAnchorElement>) {
+    if (cantidadPendientes === 0) return;
+    e.preventDefault();
+    const sale = await confirmar({
+      mensaje:
+        cantidadPendientes === 1
+          ? 'Tenés 1 mesa sin confirmar'
+          : `Tenés ${cantidadPendientes} mesas sin confirmar`,
+      detalle: 'Si salís ahora, se pierde su nueva ubicación.',
+      accion: 'Salir sin confirmar',
+    });
+    if (sale) navegar('/panel/sucursales');
+  }
+
+  function descartar() {
+    limpiarAvisos();
+    setPendientes({});
+  }
+
+  async function confirmarDistribucion() {
+    limpiarAvisos();
+    const cuerpo: DistribucionInput = {
+      mesas: Object.entries(pendientes).map(([id, p]) => ({ id, ...p })),
+    };
+    // El borrador no se vacía a mano: al llegar las mesas guardadas, el efecto
+    // de depuración lo vacía y las mesas no vuelven un instante a su lugar viejo.
+    if (await guardar.enviar(`${ruta}/distribucion`, 'PUT', cuerpo)) recargar();
   }
 
   // Otro gerente puede editar el mapa: se recarga al recibir el aviso. El
-  // arrastre en curso vive en el estado local de MapaSalon y no se interrumpe.
+  // arrastre en curso vive en el estado local de MapaSalon y el borrador queda.
   useEventoSocket(EVENTOS_SOCKET.mapaEditado, recargar, sucursalId);
 
   async function agregar() {
     limpiarAvisos();
-    const lugar = buscarLugarLibre(4, false, mesas.filter((m) => m.activa).map(rectanguloMesa));
+    // El servidor valida contra lo guardado y el borrador se confirmará después:
+    // el lugar libre debe serlo en ambas distribuciones.
+    const ocupados = [...(datos ?? []), ...mesas].filter((m) => m.activa).map(rectanguloMesa);
+    const lugar = buscarLugarLibre(4, false, ocupados);
     if (!lugar) {
       setSinLugar(true);
       return;
@@ -104,25 +175,10 @@ export function SalonPage() {
     if (await guardar.enviar(ruta, 'POST', nueva)) recargar();
   }
 
-  const confirmar = useConfirmar();
-
-  async function darDeBaja(mesa: Mesa) {
-    if (
-      !(await confirmar({
-        mensaje: `¿Dar de baja la mesa ${mesa.numero}?`,
-        detalle: 'Deja de poder reservarse. Su historial se conserva.',
-        accion: 'Dar de baja',
-      }))
-    )
-      return;
-    limpiarAvisos();
-    if (await guardar.enviar(`${ruta}/${mesa.id}`, 'DELETE')) recargar();
-  }
-
   return (
     <section>
       <p className="mb-2 text-sm">
-        <Link to="/panel/sucursales" className="text-meta underline">
+        <Link to="/panel/sucursales" onClick={volverASucursales} className="text-meta underline">
           ← Sucursales
         </Link>
       </p>
@@ -130,12 +186,12 @@ export function SalonPage() {
         titulo={`Salón${sucursal ? ` de ${sucursal.nombre}` : ''}`}
         descripcion={
           editable
-            ? 'Arrastrá las mesas para ubicarlas; la posición se guarda al soltar. Tocá una mesa para editarla.'
+            ? 'Arrastrá las mesas para ubicarlas y confirmá la distribución. Tocá una mesa para editarla.'
             : 'Ubicación y capacidad de las mesas.'
         }
         accion={
           editable && (
-            <Boton onClick={agregar} disabled={guardar.enviando}>
+            <Boton variante="secundario" onClick={agregar} disabled={guardar.enviando}>
               Agregar mesa
             </Boton>
           )
@@ -145,50 +201,48 @@ export function SalonPage() {
       {datos && (
         <div className="space-y-4">
           <MapaSalon
-            mesas={mesas.map((m) => ({ ...m, inactiva: !m.activa }))}
-            onMover={editable ? mover : undefined}
+            mesas={mesas.map((m) => ({
+              ...m,
+              inactiva: !m.activa,
+              pendiente: m.id in pendientes,
+            }))}
+            onMover={editable && !guardar.enviando ? mover : undefined}
             onConflicto={(_, otra) =>
               setConflicto(`No se puede ubicar ahí: se superpone con la mesa ${otra.numero}`)
             }
             onElegir={
-              editable ? (id) => setEditando(mesas.find((m) => m.id === id) ?? null) : undefined
+              editable ? (id) => setEditando(datos.find((m) => m.id === id) ?? null) : undefined
             }
+            inactivasElegibles={editable}
           />
-          {/* Debajo del plano: al aparecer empuja la lista y no corre el plano. */}
+          {/* Debajo del plano: al aparecer empuja lo de abajo y no corre el plano. */}
+          {cantidadPendientes > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+              <p role="status" className="text-sm font-semibold text-ink">
+                {cantidadPendientes === 1
+                  ? '1 mesa movida sin confirmar'
+                  : `${cantidadPendientes} mesas movidas sin confirmar`}
+              </p>
+              <div className="flex gap-2">
+                <Boton variante="secundario" onClick={descartar} disabled={guardar.enviando}>
+                  Descartar
+                </Boton>
+                <Boton onClick={confirmarDistribucion} disabled={guardar.enviando}>
+                  {guardar.enviando ? 'Guardando…' : 'Confirmar distribución'}
+                </Boton>
+              </div>
+            </div>
+          )}
           <Aviso>
             {conflicto ?? (sinLugar ? 'No hay lugar libre en el salón' : null) ?? guardar.error}
           </Aviso>
-          {mesas.some((m) => !m.activa) && <LeyendaSalon estados={[]} inactiva />}
-          <Lista
-            filas={mesas}
-            clave={(m) => m.id}
-            inactiva={(m) => !m.activa}
-            columnas={[
-              {
-                titulo: 'Mesa',
-                valor: (m) => (
-                  <span>
-                    {m.numero} {!m.activa && <Etiqueta>Dada de baja</Etiqueta>}
-                  </span>
-                ),
-              },
-              { titulo: 'Capacidad', valor: (m) => `${m.capacidad} personas` },
-            ]}
-            acciones={(m) =>
-              editable && (
-                <span className="inline-flex flex-wrap justify-end gap-x-6 gap-y-2">
-                  <Boton variante="secundario" onClick={() => setEditando(m)}>
-                    Editar
-                  </Boton>
-                  {m.activa && (
-                    <Boton variante="peligro" onClick={() => darDeBaja(m)}>
-                      Dar de baja
-                    </Boton>
-                  )}
-                </span>
-              )
-            }
-          />
+          {(mesas.some((m) => !m.activa) || cantidadPendientes > 0) && (
+            <LeyendaSalon
+              estados={[]}
+              inactiva={mesas.some((m) => !m.activa)}
+              sinConfirmar={cantidadPendientes > 0}
+            />
+          )}
         </div>
       )}
 
@@ -198,6 +252,12 @@ export function SalonPage() {
           ruta={ruta}
           mesa={editando}
           vigente={vigente}
+          pendiente={editando.id in pendientes}
+          onVolver={() => {
+            const { [editando.id]: _, ...resto } = pendientes;
+            setPendientes(resto);
+            setEditando(null);
+          }}
           onCerrar={() => setEditando(null)}
           onGuardado={() => {
             limpiarAvisos();
@@ -214,12 +274,17 @@ function FormularioMesa({
   ruta,
   mesa,
   vigente,
+  pendiente,
+  onVolver,
   onCerrar,
   onGuardado,
 }: {
   ruta: string;
   mesa: Mesa;
   vigente?: Mesa;
+  // La mesa está movida en el borrador: se puede devolver a su lugar guardado.
+  pendiente: boolean;
+  onVolver(): void;
   onCerrar(): void;
   onGuardado(): void;
 }) {
@@ -229,20 +294,41 @@ function FormularioMesa({
   const opciones = [2, 4, 6, 8].includes(mesa.capacidad)
     ? [2, 4, 6, 8]
     : [...[2, 4, 6, 8, mesa.capacidad]].sort((a, b) => a - b);
-  const [activa, setActiva] = useState(mesa.activa);
   const { enviar, enviando, error } = useGuardar();
+  const confirmar = useConfirmar();
+  // Posición y estado salen de la mesa vigente del servidor: la copia pudo quedar
+  // vieja si la movieron, y un movimiento del borrador no se guarda desde acá.
+  const base = vigente ?? mesa;
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const datos: MesaInput = {
-      // La posición sale de la mesa vigente: la copia pudo quedar vieja si la movieron.
-      ...datosDe(vigente ?? mesa),
+  function datosFormulario(activa: boolean): MesaInput {
+    return {
+      ...datosDe(base),
       numero: aNumero(numero),
       capacidad,
       vertical,
       activa,
     };
-    if (await enviar(`${ruta}/${mesa.id}`, 'PUT', datos)) onGuardado();
+  }
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (await enviar(`${ruta}/${mesa.id}`, 'PUT', datosFormulario(base.activa))) onGuardado();
+  }
+
+  async function reactivar() {
+    if (await enviar(`${ruta}/${mesa.id}`, 'PUT', datosFormulario(true))) onGuardado();
+  }
+
+  async function darDeBaja() {
+    if (
+      !(await confirmar({
+        mensaje: `¿Dar de baja la mesa ${mesa.numero}?`,
+        detalle: 'Deja de poder reservarse. Su historial se conserva.',
+        accion: 'Dar de baja',
+      }))
+    )
+      return;
+    if (await enviar(`${ruta}/${mesa.id}`, 'DELETE')) onGuardado();
   }
 
   return (
@@ -302,7 +388,8 @@ function FormularioMesa({
                 role="radio"
                 aria-checked={vertical === o.valor}
                 tabIndex={vertical === o.valor ? 0 : -1}
-                variante={vertical === o.valor ? 'principal' : 'secundario'}
+                variante={vertical === o.valor ? 'tonal' : 'secundario'}
+                className={vertical === o.valor ? 'border-accent!' : ''}
                 densidad="tactil"
                 onClick={() => setVertical(o.valor)}
               >
@@ -311,15 +398,37 @@ function FormularioMesa({
             ))}
           </div>
         </div>
-        <Casilla etiqueta="Mesa activa" checked={activa} onChange={setActiva} />
-        <Aviso>{error}</Aviso>
-        <div className="flex justify-end gap-2">
-          <Boton variante="secundario" onClick={onCerrar}>
-            Cancelar
-          </Boton>
-          <Boton type="submit" disabled={enviando}>
-            {enviando ? 'Guardando…' : 'Guardar'}
-          </Boton>
+        <Aviso>
+          {error && pendiente && /superpon/i.test(error)
+            ? `${error}. Confirmá primero la distribución.`
+            : error}
+        </Aviso>
+        {pendiente && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Boton variante="secundario" onClick={onVolver} disabled={enviando}>
+              Volver a su lugar
+            </Boton>
+            <span className="text-sm text-meta">Está movida sin confirmar.</span>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          {base.activa ? (
+            <Boton variante="peligro" onClick={darDeBaja} disabled={enviando}>
+              Dar de baja
+            </Boton>
+          ) : (
+            <Boton variante="secundario" onClick={reactivar} disabled={enviando}>
+              Reactivar
+            </Boton>
+          )}
+          <div className="flex gap-2">
+            <Boton variante="secundario" onClick={onCerrar}>
+              Cancelar
+            </Boton>
+            <Boton type="submit" disabled={enviando}>
+              {enviando ? 'Guardando…' : 'Guardar'}
+            </Boton>
+          </div>
         </div>
       </form>
     </Modal>
