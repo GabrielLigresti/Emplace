@@ -135,6 +135,7 @@ package "2. Salón, reservas, consumo y pago" as P2 {
     -capacidad : Integer
     -posicionX : Decimal
     -posicionY : Decimal
+    -vertical : Boolean
     -activa : Boolean
     +estaDisponible(inicio : DateTime) : Boolean
   }
