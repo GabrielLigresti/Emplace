@@ -48,14 +48,18 @@ export function RecetaEditorPage() {
   const componentes = useRecurso<ComponenteReceta[]>('/recetas/componentes');
   const detalle = useRecurso<RecetaDetalle>(esNuevo ? null : `/recetas/${tipo}/${id}`);
 
+  const { tienePermiso } = useSesion();
+  // Un rol con recetas pero sin menú no puede entrar a Platos.
+  const volverAPlatos = tipo === 'plato' && tienePermiso('menu.ver');
+
   const listo = componentes.datos && (esNuevo || detalle.datos);
   return (
     <section>
       <Link
-        to={tipo === 'plato' ? '/panel/platos' : '/panel/stock?pestaña=preparaciones'}
+        to={volverAPlatos ? '/panel/platos' : '/panel/stock?pestaña=preparaciones'}
         className="inline-block py-2 text-sm text-meta hover:text-text"
       >
-        {tipo === 'plato' ? '← Volver a platos' : '← Volver a preparaciones'}
+        {volverAPlatos ? '← Volver a platos' : '← Volver a preparaciones'}
       </Link>
       <EstadoCarga
         cargando={!listo && (componentes.cargando || detalle.cargando)}
@@ -134,16 +138,27 @@ function Editor({
   }, 0);
   const rinde = aNumero(rendimiento);
   const unidadBase = CONVERSION[unidadRendimiento].base;
-  const medidaCosto = tipo === 'plato' ? 'porción' : ETIQUETA_UNIDAD[unidadRendimiento];
+  const medidaCosto =
+    tipo === 'plato'
+      ? 'porción'
+      : unidadRendimiento === 'UNIDAD'
+        ? 'unidad'
+        : ETIQUETA_UNIDAD[unidadRendimiento];
+  const unidadLegible = (u: UnidadMedida) => (u === 'UNIDAD' ? 'unidades' : ETIQUETA_UNIDAD[u]);
 
-  // Cambia la unidad sin alterar la cantidad real; si cambia de dimensión, no hay conversión.
+  // En el alta el número tipeado se interpreta en la unidad nueva; en una preparación
+  // existente se convierte para no alterar la cantidad real. Si cambia de dimensión, se vacía.
   function cambiarUnidadRendimiento(nueva: UnidadMedida) {
     setGuardada(false);
-    const actual = aNumero(rendimiento);
-    if (rendimiento.trim() !== '' && actual > 0 && CONVERSION[nueva].base === unidadBase) {
-      setRendimiento(String(Number(convertirUnidad(actual, unidadRendimiento, nueva).toFixed(6))));
-    } else if (CONVERSION[nueva].base !== unidadBase) {
+    if (CONVERSION[nueva].base !== unidadBase) {
       setRendimiento('');
+    } else if (!esNuevo) {
+      const actual = aNumero(rendimiento);
+      if (rendimiento.trim() !== '' && actual > 0) {
+        setRendimiento(
+          String(Number(convertirUnidad(actual, unidadRendimiento, nueva).toFixed(6))),
+        );
+      }
     }
     setUnidadRendimiento(nueva);
   }
@@ -177,7 +192,7 @@ function Editor({
       rendimiento:
         tipo === 'plato'
           ? aNumero(rendimiento)
-          : convertirUnidad(aNumero(rendimiento), unidadRendimiento, unidadBase),
+          : Number(convertirUnidad(aNumero(rendimiento), unidadRendimiento, unidadBase).toFixed(6)),
       instrucciones: instrucciones || null,
     };
     if (lineas.some((l) => !l.componenteId)) {
@@ -232,7 +247,7 @@ function Editor({
     });
     if (!ok) return;
     if (await borrar.enviar(`/recetas/plato/${detalle.dueno.id}`, 'DELETE')) {
-      navigate('/panel/platos');
+      navigate(tienePermiso('menu.ver') ? '/panel/platos' : '/panel/stock?pestaña=preparaciones');
     }
   }
 
@@ -244,7 +259,7 @@ function Editor({
         <h1 className="text-xl font-semibold text-ink">{titulo}</h1>
         <p className="text-sm text-meta">
           {tipo === 'plato'
-            ? 'La cantidad bruta que se descuenta del stock es la neta ÷ (1 − merma).'
+            ? 'Se descuenta del stock un poco más de lo que lleva el plato, por la merma.'
             : detalle?.dueno.llevaStock
               ? 'Su costo es el de la última tanda; esta receta fija lo que se espera usar y obtener.'
               : 'El costo por unidad de la preparación es el costo de la receta ÷ lo que rinde.'}
@@ -393,34 +408,47 @@ function Editor({
         </Boton>
       </fieldset>
 
-      <fieldset disabled={!puedeGuardar} className="grid gap-3 sm:grid-cols-[16rem_1fr]">
-        <Campo
-          etiqueta={`Rendimiento (${tipo === 'plato' ? 'porciones' : ETIQUETA_UNIDAD[unidadRendimiento]})`}
-        >
-          <div className="flex gap-2">
-            <input
-              {...propsDecimal}
-              required
-              value={rendimiento}
-              onChange={(e) => setRendimiento(e.target.value)}
-              className={claseInput}
-            />
-            {tipo === 'intermedio' && (
-              <select
-                aria-label="Unidad del rendimiento"
-                value={unidadRendimiento}
-                onChange={(e) => cambiarUnidadRendimiento(e.target.value as UnidadMedida)}
-                className={claseInput}
-              >
-                {unidadesCompatibles(unidadBase).map((u) => (
-                  <option key={u} value={u}>
-                    {NOMBRE_UNIDAD[u]}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        </Campo>
+      <fieldset disabled={!puedeGuardar} className="grid gap-3 sm:grid-cols-[22rem_1fr]">
+        <div>
+          <Campo
+            etiqueta={
+              tipo === 'plato'
+                ? 'Rendimiento (porciones)'
+                : esNuevo
+                  ? `Rendimiento (${unidadLegible(unidadRendimiento)})`
+                  : 'Rendimiento'
+            }
+          >
+            <div className="flex gap-2">
+              <input
+                {...propsDecimal}
+                required
+                value={rendimiento}
+                onChange={(e) => setRendimiento(e.target.value)}
+                className={`${claseInput} min-w-0 ${tipo === 'intermedio' && !esNuevo ? 'w-28 shrink-0' : ''}`}
+              />
+              {tipo === 'intermedio' && !esNuevo && (
+                <select
+                  aria-label="Unidad del rendimiento"
+                  value={unidadRendimiento}
+                  onChange={(e) => cambiarUnidadRendimiento(e.target.value as UnidadMedida)}
+                  className={`${claseInput} min-w-0 flex-1`}
+                >
+                  {unidadesCompatibles(unidadBase).map((u) => (
+                    <option key={u} value={u}>
+                      {NOMBRE_UNIDAD[u]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </Campo>
+          {tipo === 'intermedio' && !esNuevo && (
+            <p className="mt-1 text-xs text-meta">
+              Rinde en esta unidad; al cambiarla se convierte la cantidad.
+            </p>
+          )}
+        </div>
         <Campo etiqueta="Instrucciones">
           <textarea
             rows={3}
@@ -434,8 +462,9 @@ function Editor({
       <div className="rounded-panel border border-line bg-surface p-4 text-sm">
         <p className="font-medium text-ink">Costo</p>
         <p className="text-meta">
-          Estimado: {formatoPesos(costoEstimado)} en total
-          {rinde > 0 && ` · ${formatoPesos(costoEstimado / rinde)} por ${medidaCosto}`}
+          {costoEstimado > 0 && rinde > 0
+            ? `Estimado: ${formatoPesos(costoEstimado)} en total · ${formatoPesos(costoEstimado / rinde)} por ${medidaCosto}`
+            : 'Cargá ingredientes y rendimiento para ver el costo.'}
         </p>
         {receta && (
           <>
@@ -472,7 +501,7 @@ function Editor({
         <Aviso>{borrar.error}</Aviso>
         {guardada && (
           <p role="status" className="rounded-control bg-ok-soft px-3 py-2 text-sm text-ok">
-            Receta guardada.
+            {tipo === 'intermedio' ? 'Preparación guardada.' : 'Receta guardada.'}
           </p>
         )}
       </div>
@@ -487,7 +516,11 @@ function Editor({
         </div>
         {puedeGuardar && (
           <Boton type="submit" disabled={guardar.enviando}>
-            {guardar.enviando ? 'Guardando…' : 'Guardar receta'}
+            {guardar.enviando
+              ? 'Guardando…'
+              : tipo === 'intermedio'
+                ? 'Guardar preparación'
+                : 'Guardar receta'}
           </Boton>
         )}
       </div>
