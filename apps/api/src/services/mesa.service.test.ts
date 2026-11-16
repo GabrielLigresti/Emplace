@@ -608,16 +608,68 @@ describe('mesaService', () => {
       expect(repo.actualizarPosiciones).toHaveBeenCalled();
     });
 
-    it('una mesa inactiva se mueve sin validar y no ocupa lugar para las demás', async () => {
+    it('una mesa inactiva se mueve sin validar su geometría', async () => {
       const baja: Mesa = { ...c, activa: false };
       const repo = salon([a, b, baja]);
 
-      await createMesaService(repo).distribuir(R, 'centro', [
+      await createMesaService(repo).distribuir(R, 'centro', [{ id: 'c', posX: 1, posY: 1 }]);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalledWith(R, 'centro', [
         { id: 'c', posX: 1, posY: 1 },
+      ]);
+    });
+
+    it('una mesa activa puede quedar sobre la posición final de una inactiva', async () => {
+      const baja: Mesa = { ...c, activa: false };
+      const repo = salon([a, b, baja]);
+      const cambios = [
+        { id: 'c', posX: 20, posY: 40 },
         { id: 'a', posX: 20, posY: 40 },
+      ];
+
+      await createMesaService(repo).distribuir(R, 'centro', cambios);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalledWith(R, 'centro', cambios);
+    });
+
+    it('si todas las mesas quedan en su lugar no escribe, no publica y devuelve las actuales', async () => {
+      const bus = busFalso();
+      const repo = salon();
+
+      const res = await createMesaService(repo, undefined, bus).distribuir(R, 'centro', [
+        { id: 'a', posX: 20, posY: 15 },
+        { id: 'b', posX: 60, posY: 15 },
+        { id: 'c', posX: 20, posY: 45 },
       ]);
 
-      expect(repo.actualizarPosiciones).toHaveBeenCalled();
+      expect(res).toEqual([a, b, c]);
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+      expect(bus.publicar).not.toHaveBeenCalled();
+    });
+
+    it('una posición con más de dos decimales equivalente a la guardada no cuenta como movida', async () => {
+      const bus = busFalso();
+      const repo = salon([a, b, c], { reservasVigentes: jest.fn().mockResolvedValue([activa]) });
+
+      await createMesaService(repo, undefined, bus).distribuir(R, 'centro', [
+        { id: 'a', posX: 20.004, posY: 14.996 },
+      ]);
+
+      expect(repo.reservasVigentes).not.toHaveBeenCalled();
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+      expect(bus.publicar).not.toHaveBeenCalled();
+    });
+
+    it('una posición que difiere se guarda redondeada a dos decimales', async () => {
+      const repo = salon();
+
+      await createMesaService(repo).distribuir(R, 'centro', [
+        { id: 'a', posX: 30.126, posY: 15.004 },
+      ]);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalledWith(R, 'centro', [
+        { id: 'a', posX: 30.13, posY: 15 },
+      ]);
     });
 
     it('un par ya superpuesto que no se movió no bloquea el guardado', async () => {

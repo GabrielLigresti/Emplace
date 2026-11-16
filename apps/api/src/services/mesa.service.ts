@@ -154,8 +154,14 @@ export function createMesaService(
     async distribuir(
       restauranteId: string,
       sucursalId: string,
-      cambios: DistribucionInput['mesas'],
+      pedidos: DistribucionInput['mesas'],
     ) {
+      // La base guarda dos decimales: se compara y valida con el valor ya redondeado.
+      const cambios = pedidos.map((p) => ({
+        id: p.id,
+        posX: Math.round(p.posX * 100) / 100,
+        posY: Math.round(p.posY * 100) / 100,
+      }));
       await verificarSucursal(restauranteId, sucursalId);
       const actuales = await repo.listar(restauranteId, sucursalId);
       const porId = new Map(actuales.map((m) => [m.id, m]));
