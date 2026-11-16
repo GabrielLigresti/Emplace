@@ -54,7 +54,8 @@ export interface PedidoRepository {
   confirmar(cuenta: CuentaParaPedido, lineas: LineaAConfirmar[]): Promise<PedidoCola>;
   // componenteId → cantidad actual en la sucursal.
   existencias(sucursalId: string): Promise<Map<string, number>>;
-  // platoId → minutos promedio entre que se confirma un pedido y queda listo,
+  // platoId → mediana de minutos entre que se confirma un pedido y queda listo
+  // (la mediana no se deja arrastrar por un pedido que se marcó listo horas después),
   // sobre los últimos 90 días. Solo platos con al menos MIN_PEDIDOS_TIEMPO pedidos.
   tiemposPreparacion(sucursalId: string): Promise<Map<string, number>>;
   // CU-05: pedidos activos de la sucursal de trabajo, por orden de llegada.
@@ -275,10 +276,13 @@ export const pedidoRepository: PedidoRepository = {
     return new Map(filas.map((f) => [f.componenteId, Number(f.cantidadActual)]));
   },
 
+  // Ruta pública: el id de la sucursal ya viene validado y solo se cruza con los platos
+  // de su carta, por eso no lleva restaurante_id como las consultas del staff.
   async tiemposPreparacion(sucursalId) {
     const filas = await prisma.$queryRaw<{ plato_id: string; minutos: number }[]>`
       SELECT l.item_menu_id AS plato_id,
-             AVG(EXTRACT(EPOCH FROM (p.listo_en - p.creado_en)) / 60)::float8 AS minutos
+             (percentile_cont(0.5) WITHIN GROUP (
+               ORDER BY EXTRACT(EPOCH FROM (p.listo_en - p.creado_en)) / 60))::float8 AS minutos
       FROM pedido p
       JOIN linea_pedido l ON l.pedido_id = p.id
       WHERE p.sucursal_id = ${sucursalId}::uuid

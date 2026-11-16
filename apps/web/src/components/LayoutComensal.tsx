@@ -15,6 +15,10 @@ const PESTANIAS = [
 
 const CUENTA = { a: '/cuenta', texto: 'Mi cuenta', icono: UserRound };
 
+// Acción principal fija de la carta y la ficha (botón de 56 px del diseño).
+export const claseAccionClasica =
+  'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-semibold text-white hover:bg-dorado-800';
+
 // Título de las pantallas del comensal.
 export function TituloComensal({ children }: { children: ReactNode }) {
   return (
@@ -59,9 +63,7 @@ export function LayoutComensal({
 
   return (
     <div className={`min-h-screen ${clasico ? 'bg-papel' : 'bg-bg'}`}>
-      <header
-        className={`sticky top-0 z-10 border-b border-line bg-surface ${clasico ? 'tema-staff' : ''}`}
-      >
+      <header className="sticky top-0 z-10 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-2 px-4 py-1">
           {volver ? (
             <Link
@@ -107,7 +109,7 @@ export function LayoutComensal({
       <main
         className={
           clasico
-            ? 'tema-staff mx-auto max-w-[480px] bg-bg font-lora'
+            ? 'mx-auto max-w-[480px] bg-bg font-lora'
             : `mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`
         }
       >
@@ -116,7 +118,7 @@ export function LayoutComensal({
 
       <div className="fixed inset-x-0 bottom-0 z-10">
         {accionFija && (
-          <div className={`border-t border-line bg-bg ${clasico ? 'tema-staff' : ''}`}>
+          <div className="border-t border-line bg-bg">
             <div
               className={`mx-auto flex max-w-[480px] flex-wrap gap-2 ${clasico ? 'px-5 py-3' : 'px-4 py-2'}`}
             >

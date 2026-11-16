@@ -132,20 +132,34 @@ describe('pedidoRepository.confirmar', () => {
 });
 
 describe('pedidoRepository.tiemposPreparacion', () => {
-  async function pedidoListo(minutos: number) {
+  async function pedidoListo(
+    minutos: number,
+    { estado = 'LISTO', haceDias = 0 }: { estado?: 'LISTO' | 'CONFIRMADO'; haceDias?: number } = {},
+  ) {
     const pedido = await pedidoRepository.confirmar(cuenta, [agua()]);
-    const creado = new Date(Date.now() - 3_600_000);
+    const creado = new Date(Date.now() - 3_600_000 - haceDias * 86_400_000);
     await prisma.pedido.update({
       where: { id: pedido.id },
       data: {
-        estado: 'LISTO',
+        estado,
         creadoEn: creado,
         listoEn: new Date(creado.getTime() + minutos * 60_000),
       },
     });
   }
 
-  it('promedia en minutos solo con tres pedidos listos o más', async () => {
+  it('usa la mediana y deja afuera pedidos viejos o que no están listos', async () => {
+    await pedidoListo(10);
+    await pedidoListo(20);
+    await pedidoListo(500); // un valor extremo no mueve la mediana
+    await pedidoListo(900, { haceDias: 100 });
+    await pedidoListo(900, { estado: 'CONFIRMADO' });
+
+    const tiempos = await pedidoRepository.tiemposPreparacion(e.sucursalId);
+    expect(tiempos.get(e.aguaId)).toBe(20);
+  });
+
+  it('con tres pedidos listos o más devuelve la mediana en minutos', async () => {
     await pedidoListo(10);
     await pedidoListo(20);
     expect((await pedidoRepository.tiemposPreparacion(e.sucursalId)).size).toBe(0);

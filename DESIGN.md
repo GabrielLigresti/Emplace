@@ -205,7 +205,7 @@ components:
 
 Todo a mano y en su lugar. Las superficies son blancas y limpias, los grupos se arman con hojas de un verde muy claro, y el Verde Albahaca aparece solo donde se puede tocar o donde algo está pasando. Nada decora: la foto del plato, el precio y la acción siguiente son el contenido.
 
-El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y el comensal y el staff usan los mismos nombres de token con la paleta Clásica (ver "Tema del staff"); el verde Albahaca queda como valor base de los tokens, sin pantalla que lo muestre. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px La carta y la ficha del plato siguen al pie de la letra el diseño de Claude Design (hoja de papel y dorado, Cormorant Garamond y Lora) y muestran la espera promedio del plato cuando hay pedidos suficientes. **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
+El sistema tiene tres registros. **La landing pública** usa el registro Clásico (ver más abajo) y el comensal y el staff usan los mismos nombres de token con la paleta Clásica (ver "Tema del staff"); el verde Albahaca queda como valor base de los tokens, sin pantalla que lo muestre. **El comensal** es "La mesa puesta" en estado puro: carta sobre hoja tintada, tarjetas blancas con la foto arriba, densidad cómoda de 44 px. La carta y la ficha del plato siguen al pie de la letra el diseño de Claude Design (hoja de papel y dorado, Cormorant Garamond y Lora) y muestran la espera promedio del plato cuando hay pedidos suficientes. **El restaurante** (panel, cocina y salón; paleta Clásica, ver "Tema del staff") sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
 Tema claro único. En el comensal, nada de beige, piedra ni crema: el blanco es blanco y los grises son fríos. La landing y el staff son la excepción, con el papel gris cálido del registro Clásico.
 
@@ -261,10 +261,10 @@ Desde esta versión el staff (y el login) usa la paleta del registro Clásico, s
 
 ## Registro Clásico (landing pública)
 
-La landing (`/`) tiene su propia dirección visual, más editorial que la del resto: papel gris cálido, tinta, un dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design; sus tokens viven en `apps/web/src/index.css` junto a los verdes, con otros nombres, y el panel los usa a través del tema del staff y el comensal no. Cuando el comensal entra a una sucursal, deja de aplicar (manda la marca del restaurante).
+La landing (`/`) tiene su propia dirección visual, más editorial que la del resto: papel gris cálido, tinta, un dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design; sus tokens viven en `apps/web/src/index.css` junto a los verdes, con otros nombres, y el panel y el comensal los usan a través del tema del staff (ver "Tema del staff").
 
 ### Colores
-En CSS los nombres siguen la escala numérica: `papel`, `papel-hondo`, `tinta-clasica`, `linea-clasica`, `dorado`, `dorado-700` (Dorado Hondo) y `dorado-800` (Dorado Oscuro). Los radios son `radius-clasico` (4 px) y `radius-hero` (20 px).
+En CSS los nombres siguen la escala numérica: `papel`, `papel-hondo`, `tinta-clasica`, `linea-clasica`, `dorado`, `dorado-100` (hoja de la carta del comensal, #fff3e4), `dorado-700` (Dorado Hondo) y `dorado-800` (Dorado Oscuro). Los radios son `radius-clasico` (4 px) y `radius-hero` (20 px).
 
 - **Papel** (#f3f2f2): fondo de la landing. **Papel Hondo** (#eae9e9): fondos de campos, fichas de modelos y botón secundario.
 - **Tinta Clásica** (#201f1d): texto y títulos; las líneas son esta tinta al 16 %.
@@ -277,7 +277,7 @@ En CSS los nombres siguen la escala numérica: `papel`, `papel-hondo`, `tinta-cl
 - Se cargan con `@fontsource` (peso 400 y 600); la pila de respaldo es Georgia.
 
 ### Formas y componentes
-- **Botones:** esquinas de 12 px (`rounded-cuadrado`), 44 px de alto, texto en Cormorant 600 de 16 px. Principal en Dorado Hondo con texto blanco; secundario en Papel Hondo con texto Dorado Hondo y flecha "→". Sin sombra, sin borde.
+- **Botones:** esquinas de 12 px (`rounded-cuadrado`), 44 px de alto, texto en Cormorant 600 de 16 px (la acción fija de la carta y la ficha: 56 px y 18 px, como el diseño de Claude Design). Principal en Dorado Hondo con texto blanco; secundario en Papel Hondo con texto Dorado Hondo y flecha "→". Sin sombra, sin borde.
 - **Campos y fichas:** borde de 1 px en la línea clásica y esquina de 4 px, fondo transparente; el campo enfocado toma borde Dorado.
 - **Héroe:** foto a la derecha con esquinas de 20 px a la izquierda en escritorio; en celular, la foto ocupa todo el fondo con un velo oscuro y el texto va en blanco.
 - **Fichas de modelos 3D:** 300 px de alto, nombre debajo en Cormorant 24 px y botón "Ver en mi mesa" dentro del recuadro. El carrusel se desliza con el dedo en celular; las flechas existen solo en escritorio.
@@ -372,7 +372,7 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 - **Do** acompañar cada estado con ícono y texto, y usar Azul Listo (#1d5fb4) para OK.
 - **Do** escribir la acción siguiente en el restaurante ("Marcar listo", "Activar mesa") en lugar de dejar un ícono solo.
 - **Do** agrupar el contenido del comensal sobre Hoja de Albahaca (#dceae9) con tarjetas blancas encima (hoy el comensal va en Clásico: la carta usa una hoja dorada clara).
-- **Do** usar el registro Clásico solo en la landing pública y sus colores y serifs solo ahí.
+- **Do** usar el registro Clásico en la landing, el staff y el comensal; el verde Albahaca ya no se muestra en ninguna pantalla.
 - **Do** respetar las alturas por densidad: 36, 44 y 48 px.
 
 ### Don't:

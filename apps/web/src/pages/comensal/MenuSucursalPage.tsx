@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Clock, Search, ShoppingBasket, Utensils } from 'lucide-react';
 import type { MenuSucursal } from '@pgim/shared';
-import { LayoutComensal } from '../../components/LayoutComensal';
+import { LayoutComensal, claseAccionClasica } from '../../components/LayoutComensal';
 import { useSesion } from '../../auth/SesionProvider';
 import { EstadoCarga } from '../../components/ui';
 import { useCarrito } from '../../lib/carrito';
@@ -28,10 +28,7 @@ export function MenuSucursalPage() {
   // Sin mesa, la acción es reservar; con mesa, el pedido está en el botón de la cabecera.
   const accion =
     datos && !mesa ? (
-      <Link
-        to={`/s/${datos.sucursal.id}/reservar`}
-        className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-control bg-accent px-4 text-sm font-semibold text-white hover:bg-accent-hover"
-      >
+      <Link to={`/s/${datos.sucursal.id}/reservar`} className={claseAccionClasica}>
         Reservar mesa
       </Link>
     ) : null;
@@ -52,7 +49,9 @@ export function MenuSucursalPage() {
       }}
       accionFija={accion || undefined}
     >
-      <EstadoCarga cargando={cargando && !datos} error={error} />
+      <div className="px-5 empty:hidden [&:not(:empty)]:pt-5">
+        <EstadoCarga cargando={cargando && !datos} error={error} />
+      </div>
       {datos && (
         <div className="text-tinta-clasica">
           <div className="flex flex-col gap-3.5 px-5 pt-[22px] pb-3.5">
@@ -84,17 +83,22 @@ export function MenuSucursalPage() {
                 </Link>
               )}
             </div>
-            <label className="flex items-center gap-2.5 border-b border-linea-clasica pt-1.5 pb-2.5 text-tinta-clasica/60">
-              <Search aria-hidden className="size-[18px]" strokeWidth={1.5} />
-              <input
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar en la carta"
-                aria-label="Buscar en la carta"
-                className="min-w-0 flex-1 border-0 bg-transparent font-lora text-[16px] leading-6 text-tinta-clasica outline-none placeholder:text-tinta-clasica/55"
-              />
-            </label>
+            {datos.menu && (
+              <label className="flex items-center gap-2.5 border-b border-linea-clasica focus-within:border-dorado-700 pt-1.5 pb-2.5 text-tinta-clasica/60">
+                <Search aria-hidden className="size-[18px]" strokeWidth={1.5} />
+                <input
+                  type="search"
+                  value={busqueda}
+                  onChange={(e) => {
+                    setBusqueda(e.target.value);
+                    setCategoria(null);
+                  }}
+                  placeholder="Buscar en la carta"
+                  aria-label="Buscar en la carta"
+                  className="min-w-0 flex-1 border-0 bg-transparent font-lora text-[16px] leading-6 text-tinta-clasica outline-none placeholder:text-tinta-clasica/65 [&::-webkit-search-cancel-button]:appearance-none"
+                />
+              </label>
+            )}
           </div>
 
           {!datos.menu ? (
@@ -116,8 +120,16 @@ export function MenuSucursalPage() {
                         key={c.id ?? 'todo'}
                         type="button"
                         aria-pressed={activa}
-                        onClick={() => setCategoria(c.id)}
-                        className={`shrink-0 border-b-2 bg-transparent pb-1 ${
+                        onClick={(e) => {
+                          setCategoria(c.id);
+                          setBusqueda('');
+                          e.currentTarget.scrollIntoView({
+                            inline: 'center',
+                            block: 'nearest',
+                            behavior: 'smooth',
+                          });
+                        }}
+                        className={`-mt-[18px] shrink-0 border-b-2 bg-transparent pt-[18px] pb-1 ${
                           activa
                             ? 'border-dorado font-titulo text-[28px] leading-none font-semibold text-tinta-clasica'
                             : 'border-transparent font-lora text-[16px] leading-[1.2] text-tinta-clasica/75'
@@ -185,6 +197,15 @@ export function MenuSucursalPage() {
                     {categorias.length === 0
                       ? 'El menú no tiene platos disponibles.'
                       : 'No hay platos para esa búsqueda.'}
+                    {termino && (
+                      <button
+                        type="button"
+                        onClick={() => setBusqueda('')}
+                        className="mt-1 block min-h-11 text-sm font-semibold text-dorado-700 hover:underline"
+                      >
+                        Borrar búsqueda
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

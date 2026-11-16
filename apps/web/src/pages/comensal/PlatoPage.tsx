@@ -4,7 +4,7 @@ import { Clock, Utensils } from 'lucide-react';
 import type { DetallePlato, MenuSucursal } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useAvisos } from '../../components/AvisoEmergente';
-import { LayoutComensal } from '../../components/LayoutComensal';
+import { LayoutComensal, claseAccionClasica } from '../../components/LayoutComensal';
 import { SelectorCantidad } from '../../components/SelectorCantidad';
 import { VisorRA } from '../../components/VisorRA';
 import { Aviso, Campo, EstadoCarga, claseInput } from '../../components/ui';
@@ -21,11 +21,13 @@ export function PlatoPage() {
   const { datos, cargando, error } = useRecurso<DetallePlato>(
     `/publico/sucursales/${sucursalId}/platos/${id}`,
   );
-  const plato = datos?.plato;
-  // La carta da nombre y foto de los platos vistos antes.
-  const menu = useRecurso<MenuSucursal>(`/publico/sucursales/${sucursalId}/menu`);
+  // Al pasar de un plato a otro la respuesta anterior sigue en memoria hasta que llega la nueva.
+  const plato = datos?.plato?.id === id ? datos?.plato : undefined;
   const { ids, registrar: registrarVisto } = useVistosRecientemente(sucursalId);
-  const vistos = { ids };
+  // La carta da nombre y foto de los platos vistos antes; sin vistos no se pide.
+  const menu = useRecurso<MenuSucursal>(
+    ids.some((v) => v !== id) ? `/publico/sucursales/${sucursalId}/menu` : null,
+  );
   const { sesion } = useSesion();
   const miMesa = useMiMesa(sucursalId ?? null, sesion?.usuario.tipo === 'COMENSAL');
   const mesa = miMesa.datos;
@@ -59,14 +61,12 @@ export function PlatoPage() {
 
   // Sin sesión de comensal no hay mesa: la acción es reservar, como en la carta.
   // Mientras se consulta la mesa no se ofrece nada, para que no parpadee.
-  const claseAccion =
-    'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-semibold text-white hover:bg-dorado-800';
   const accion = !plato ? null : puedePedir ? (
-    <button type="button" className={claseAccion} onClick={agregarDesdeFicha}>
+    <button type="button" className={claseAccionClasica} onClick={agregarDesdeFicha}>
       Agregar al pedido
     </button>
   ) : !mesa && !miMesa.cargando ? (
-    <Link to={`/s/${sucursalId}/reservar`} className={claseAccion}>
+    <Link to={`/s/${sucursalId}/reservar`} className={claseAccionClasica}>
       Reservar mesa
     </Link>
   ) : null;
@@ -74,11 +74,12 @@ export function PlatoPage() {
   const platoId = plato?.id;
   useEffect(() => {
     if (platoId) registrarVisto(platoId);
+    window.scrollTo(0, 0);
     setCantidad(1);
     setObservaciones('');
   }, [platoId, registrarVisto]);
 
-  const recientes = vistos.ids
+  const recientes = ids
     .filter((v) => v !== platoId)
     .flatMap((v) => {
       const p = menu.datos?.menu?.categorias.flatMap((c) => c.platos).find((x) => x.id === v);
@@ -91,7 +92,9 @@ export function PlatoPage() {
       volver={{ a: `/s/${sucursalId}/menu`, texto: 'Menú' }}
       accionFija={accion ?? undefined}
     >
-      <EstadoCarga cargando={cargando && !datos} error={error} />
+      <div className="px-5 empty:hidden [&:not(:empty)]:pt-5">
+        <EstadoCarga cargando={cargando && !plato} error={error} />
+      </div>
       {plato && (
         <article className="text-tinta-clasica">
           <div className="relative h-[280px]">
@@ -189,11 +192,9 @@ export function PlatoPage() {
                       {r.fotoUrl ? (
                         <img src={r.fotoUrl} alt="" className="block size-full object-cover" />
                       ) : (
-                        <span
-                          aria-hidden
-                          className="grid size-full place-items-center bg-papel-hondo text-tinta-clasica/55"
-                        >
-                          <Utensils className="size-7" strokeWidth={1.5} />
+                        <span className="grid size-full place-items-center content-center gap-1 bg-papel-hondo p-2 text-center text-tinta-clasica/75">
+                          <Utensils aria-hidden className="size-6" strokeWidth={1.5} />
+                          <span className="line-clamp-2 text-xs leading-4">{r.nombre}</span>
                         </span>
                       )}
                     </Link>
