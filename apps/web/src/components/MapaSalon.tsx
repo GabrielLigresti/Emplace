@@ -15,6 +15,8 @@ export interface MesaDibujo {
   inactiva?: boolean;
   // Mesa fuera del filtro activo: se dibuja en gris y no se puede elegir.
   atenuada?: boolean;
+  // Mesa movida y todavía sin confirmar: se dibuja con un contorno de acento.
+  pendiente?: boolean;
 }
 
 export type EstadoMesaDibujo = 'LIBRE' | 'RESERVADA' | 'OCUPADA' | 'INASISTENCIA' | 'CHICA';
@@ -133,6 +135,7 @@ export function MapaSalon({
   seleccionadaId,
   onElegir,
   todasElegibles,
+  inactivasElegibles,
   ajustarAncho,
   onMover,
   horaReservada,
@@ -146,6 +149,8 @@ export function MapaSalon({
   onElegir?(id: string): void;
   // Con esta prop toda mesa no dada de baja es elegible, no solo las libres.
   todasElegibles?: boolean;
+  // Con esta prop las mesas dadas de baja también son elegibles (editor del salón).
+  inactivasElegibles?: boolean;
   // En pantallas anchas deja que el plano se achique al ancho de su columna.
   ajustarAncho?: boolean;
   onMover?(id: string, posX: number, posY: number): void;
@@ -322,7 +327,7 @@ export function MapaSalon({
             const estado = estadoVisible(mesa.estado ?? 'LIBRE', vistaComensal);
             const elegible =
               Boolean(onElegir) &&
-              !mesa.inactiva &&
+              (!mesa.inactiva || Boolean(inactivasElegibles)) &&
               !mesa.atenuada &&
               (todasElegibles || estado === 'LIBRE');
             const seleccionada = mesa.id === seleccionadaId;
@@ -386,6 +391,17 @@ export function MapaSalon({
                 }`}
                 aria-pressed={elegible ? seleccionada : undefined}
               >
+                {mesa.pendiente && (
+                  <rect
+                    x={izquierda - 0.8}
+                    y={arriba - 0.8}
+                    width={ancho + 1.6}
+                    height={alto + 1.6}
+                    rx={2.2}
+                    className="fill-none stroke-accent"
+                    strokeWidth={0.5}
+                  />
+                )}
                 {/* La selección se marca con un contorno oscuro separado, distinto del acento de ocupada. */}
                 {seleccionada && (
                   <rect
