@@ -191,11 +191,10 @@ export function MapaSalon({
       arrastrando: false,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
-    setArrastre({ id: mesa.id, x: mesa.posX, y: mesa.posY });
   }
 
   function alMover(e: PointerEvent<SVGGElement>, mesa: MesaDibujo) {
-    if (!arrastre || !gesto.current) return;
+    if (!gesto.current) return;
     const punto = punteroEnLienzo(e);
     if (!punto) return;
     const { agarre, offset } = gesto.current;
@@ -206,8 +205,9 @@ export function MapaSalon({
       huboMovimiento.current = true;
     }
     const { ancho, alto } = dimensionesMesa(mesa.capacidad, mesa.vertical);
+    // El arrastre nace al superar el umbral: apretar sin mover no pinta conflicto.
     setArrastre({
-      ...arrastre,
+      id: mesa.id,
       x:
         Math.round(limitar(punto.x + offset.x, ancho / 2, LIENZO_SALON.ancho - ancho / 2) * 10) /
         10,
@@ -215,12 +215,15 @@ export function MapaSalon({
     });
   }
 
-  function alSoltar(mesa: MesaDibujo) {
-    if (!arrastre) return;
-    setArrastre(null);
-    const arrastrando = gesto.current?.arrastrando;
+  function cancelarGesto() {
     gesto.current = null;
-    if (!arrastrando) return;
+    setArrastre(null);
+  }
+
+  function alSoltar(mesa: MesaDibujo) {
+    const arrastrando = gesto.current?.arrastrando;
+    cancelarGesto();
+    if (!arrastrando || !arrastre) return;
     const movida = arrastre.x !== mesa.posX || arrastre.y !== mesa.posY;
     if (!movida) return;
     const otra = conflictoCon(mesa, arrastre.x, arrastre.y);
@@ -334,10 +337,8 @@ export function MapaSalon({
                 onPointerDown={(e) => alApretar(e, mesa)}
                 onPointerMove={(e) => alMover(e, mesa)}
                 onPointerUp={() => alSoltar(mesa)}
-                onPointerCancel={() => {
-                  gesto.current = null;
-                  setArrastre(null);
-                }}
+                onPointerCancel={cancelarGesto}
+                onLostPointerCapture={cancelarGesto}
                 onClick={
                   elegible
                     ? () => {
