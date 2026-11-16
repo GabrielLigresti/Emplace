@@ -13,13 +13,23 @@ import {
   type ReservaComensal,
 } from '@pgim/shared';
 import { LayoutComensal, TituloComensal } from '../../components/LayoutComensal';
-import { LeyendaSalon, MapaSalon } from '../../components/MapaSalon';
+import { LeyendaSalon, MapaSalon, type EstadoMesaDibujo } from '../../components/MapaSalon';
 import { Aviso, Boton, Campo, Chip, EstadoCarga, claseInput } from '../../components/ui';
 import { formatoDiaYHora, formatoHora, sumarDias } from '../../lib/formato';
 import { useEventoSocket } from '../../lib/socket';
 import { useAhora } from '../../lib/useAhora';
 import { useGuardar } from '../../lib/useGuardar';
 import { useRecurso } from '../../lib/useRecurso';
+
+// La leyenda lista solo los estados que el plano muestra. Para el comensal,
+// ocupada e inasistencia se ven como «No disponible» (reservada).
+function estadosPresentes(mesas: MapaDeFranja['mesas']): EstadoMesaDibujo[] {
+  const hay = (f: (m: MapaDeFranja['mesas'][number]) => boolean) => mesas.some(f);
+  const estados: EstadoMesaDibujo[] = ['LIBRE'];
+  if (hay((m) => m.estado !== 'LIBRE' && m.estado !== 'CHICA')) estados.push('RESERVADA');
+  if (hay((m) => m.estado === 'CHICA')) estados.push('CHICA');
+  return estados;
+}
 
 // CU-03: fecha y personas → franja → mesa en el mapa (o asignación automática).
 export function ReservarPage() {
@@ -240,7 +250,7 @@ export function ReservarPage() {
                 ajustarAncho
                 vistaComensal
               />
-              <LeyendaSalon estados={['LIBRE', 'RESERVADA', 'CHICA']} vistaComensal />
+              <LeyendaSalon estados={estadosPresentes(mapa.datos.mesas)} vistaComensal />
             </>
           )}
           <Aviso>{error}</Aviso>
