@@ -36,6 +36,7 @@ function SalonEnVivo() {
   const { limpiarError } = cierre;
   const columna = useRef<HTMLElement>(null);
   const plano = useRef<HTMLDivElement>(null);
+  const filtros = useRef<HTMLDivElement>(null);
   const [toques, setToques] = useState(0);
   // Filtro por estado: solo del cliente, atenúa las mesas que no coinciden.
   const [filtro, setFiltro] = useState<EstadoMesaSalon | null>(null);
@@ -116,6 +117,7 @@ function SalonEnVivo() {
         <div className="lg:flex lg:items-start lg:gap-4">
           <div ref={plano} className="min-w-0 flex-1 space-y-3">
             <div
+              ref={filtros}
               className="flex flex-wrap items-center gap-2"
               role="group"
               aria-label="Filtrar por estado"
@@ -139,7 +141,11 @@ function SalonEnVivo() {
                   densidad="tactil"
                   tabIndex={filtro ? undefined : -1}
                   disabled={!filtro}
-                  onClick={() => setFiltro(null)}
+                  onClick={() => {
+                    // El botón se deshabilita al limpiar: el foco pasa al chip «Todas».
+                    filtros.current?.querySelector('button')?.focus();
+                    setFiltro(null);
+                  }}
                 >
                   Ver todas
                 </Boton>
