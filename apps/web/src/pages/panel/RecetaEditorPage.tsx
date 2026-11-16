@@ -51,8 +51,11 @@ export function RecetaEditorPage() {
   const listo = componentes.datos && (esNuevo || detalle.datos);
   return (
     <section>
-      <Link to="/panel/recetas" className="inline-block py-2 text-sm text-meta hover:text-text">
-        ← Volver a recetas
+      <Link
+        to={tipo === 'plato' ? '/panel/platos' : '/panel/stock?pestaña=preparaciones'}
+        className="inline-block py-2 text-sm text-meta hover:text-text"
+      >
+        {tipo === 'plato' ? '← Volver a platos' : '← Volver a preparaciones'}
       </Link>
       <EstadoCarga
         cargando={!listo && (componentes.cargando || detalle.cargando)}
@@ -229,7 +232,7 @@ function Editor({
     });
     if (!ok) return;
     if (await borrar.enviar(`/recetas/plato/${detalle.dueno.id}`, 'DELETE')) {
-      navigate('/panel/recetas');
+      navigate('/panel/platos');
     }
   }
 
