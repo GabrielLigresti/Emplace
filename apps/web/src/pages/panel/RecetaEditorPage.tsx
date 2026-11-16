@@ -157,7 +157,7 @@ function Editor({
       instrucciones: instrucciones || null,
     };
     if (lineas.some((l) => !l.componenteId)) {
-      guardar.setError('Elegí el componente de cada línea');
+      guardar.setError('Elegí el ingrediente de cada fila');
       return;
     }
     if (tipo === 'intermedio' && esNuevo) {
@@ -280,9 +280,9 @@ function Editor({
       )}
 
       <fieldset disabled={!puedeGuardar} className="space-y-2">
-        <legend className="mb-1 text-sm font-medium text-text">Líneas</legend>
+        <legend className="mb-1 text-sm font-medium text-text">Ingredientes</legend>
         {lineas.length === 0 && (
-          <p className="text-sm text-meta">La receta todavía no tiene líneas.</p>
+          <p className="text-sm text-meta">La receta todavía no tiene ingredientes.</p>
         )}
         {lineas.map((l, indice) => {
           const componente = porId.get(l.componenteId);
@@ -294,7 +294,7 @@ function Editor({
               className={`rounded-control border bg-surface p-3 ${error ? 'border-bad/30' : 'border-line'}`}
             >
               <div className="grid gap-2 sm:grid-cols-[1fr_7rem_9rem_6rem_auto] sm:items-end">
-                <Campo etiqueta="Componente">
+                <Campo etiqueta="Ingrediente">
                   <select
                     required
                     value={l.componenteId}
@@ -358,7 +358,7 @@ function Editor({
                 </Campo>
                 <Boton
                   variante="peligro"
-                  aria-label={`Quitar línea ${indice + 1}`}
+                  aria-label={`Quitar ingrediente ${indice + 1}`}
                   onClick={() => setLineas((actual) => actual.filter((x) => x.clave !== l.clave))}
                 >
                   Quitar
@@ -369,7 +369,7 @@ function Editor({
           );
         })}
         <Boton variante="secundario" onClick={agregarLinea}>
-          Agregar línea
+          Agregar ingrediente
         </Boton>
       </fieldset>
 
