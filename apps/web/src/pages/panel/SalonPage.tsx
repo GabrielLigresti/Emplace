@@ -1,6 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
-import type { Mesa, MesaInput, Sucursal } from '@pgim/shared';
+import {
+  EVENTOS_SOCKET,
+  buscarLugarLibre,
+  rectanguloMesa,
+  type Mesa,
+  type MesaInput,
+  type Sucursal,
+} from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { Lista } from '../../components/Lista';
 import { LeyendaSalon, MapaSalon } from '../../components/MapaSalon';
@@ -17,6 +24,7 @@ import {
 } from '../../components/ui';
 import { aNumero } from '../../lib/formato';
 import { useGuardar } from '../../lib/useGuardar';
+import { useEventoSocket } from '../../lib/socket';
 import { useRecurso } from '../../lib/useRecurso';
 import { useConfirmar } from '../../components/Confirmacion';
 
@@ -26,11 +34,12 @@ function datosDe(mesa: Mesa): MesaInput {
     capacidad: mesa.capacidad,
     posX: mesa.posX,
     posY: mesa.posY,
+    vertical: mesa.vertical,
   };
 }
 
-// CU-14: mapa del salón de una sucursal. Las mesas nuevas aparecen en el
-// centro y se acomodan arrastrándolas; la posición se guarda al soltar.
+// CU-14: mapa del salón de una sucursal. Las mesas nuevas aparecen en un
+// lugar libre y se acomodan arrastrándolas; la posición se guarda al soltar.
 export function SalonPage() {
   const { id: sucursalId } = useParams();
   const { tienePermiso } = useSesion();
@@ -43,6 +52,7 @@ export function SalonPage() {
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [editando, setEditando] = useState<Mesa | null>(null);
   const guardar = useGuardar();
+  const [sinLugar, setSinLugar] = useState(false);
 
   useEffect(() => {
     if (datos) setMesas(datos);
@@ -57,9 +67,19 @@ export function SalonPage() {
     }
   }
 
+  // Otro gerente puede editar el mapa: se recarga al recibir el aviso. El
+  // arrastre en curso vive en el estado local de MapaSalon y no se interrumpe.
+  useEventoSocket(EVENTOS_SOCKET.mapaEditado, recargar, sucursalId);
+
   async function agregar() {
+    const lugar = buscarLugarLibre(4, false, mesas.filter((m) => m.activa).map(rectanguloMesa));
+    if (!lugar) {
+      setSinLugar(true);
+      return;
+    }
+    setSinLugar(false);
     const numero = Math.max(0, ...mesas.map((m) => m.numero)) + 1;
-    const nueva: MesaInput = { numero, capacidad: 4, posX: 50, posY: 30 };
+    const nueva: MesaInput = { numero, capacidad: 4, ...lugar };
     if (await guardar.enviar(ruta, 'POST', nueva)) recargar();
   }
 
@@ -101,13 +121,16 @@ export function SalonPage() {
       />
       <EstadoCarga cargando={cargando && !datos} error={error} />
       <div className="mb-3">
-        <Aviso>{guardar.error}</Aviso>
+        <Aviso>{guardar.error ?? (sinLugar ? 'No hay lugar libre en el salón' : null)}</Aviso>
       </div>
       {datos && (
         <div className="space-y-4">
           <MapaSalon
             mesas={mesas.map((m) => ({ ...m, inactiva: !m.activa }))}
             onMover={editable ? mover : undefined}
+            onElegir={
+              editable ? (id) => setEditando(mesas.find((m) => m.id === id) ?? null) : undefined
+            }
           />
           {mesas.some((m) => !m.activa) && <LeyendaSalon estados={[]} inactiva />}
           <Lista
@@ -170,7 +193,11 @@ function FormularioMesa({
   onGuardado(): void;
 }) {
   const [numero, setNumero] = useState(String(mesa.numero));
-  const [capacidad, setCapacidad] = useState(String(mesa.capacidad));
+  const [capacidad, setCapacidad] = useState(mesa.capacidad);
+  const [vertical, setVertical] = useState(mesa.vertical);
+  const opciones = [2, 4, 6, 8].includes(mesa.capacidad)
+    ? [2, 4, 6, 8]
+    : [...[2, 4, 6, 8, mesa.capacidad]].sort((a, b) => a - b);
   const [activa, setActiva] = useState(mesa.activa);
   const { enviar, enviando, error } = useGuardar();
 
@@ -179,7 +206,8 @@ function FormularioMesa({
     const datos: MesaInput = {
       ...datosDe(mesa),
       numero: aNumero(numero),
-      capacidad: aNumero(capacidad),
+      capacidad,
+      vertical,
       activa,
     };
     if (await enviar(`${ruta}/${mesa.id}`, 'PUT', datos)) onGuardado();
@@ -202,17 +230,38 @@ function FormularioMesa({
             />
           </Campo>
           <Campo etiqueta="Capacidad">
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={20}
-              required
+            <select
               value={capacidad}
-              onChange={(e) => setCapacidad(e.target.value)}
+              onChange={(e) => setCapacidad(Number(e.target.value))}
               className={claseInput}
-            />
+            >
+              {opciones.map((n) => (
+                <option key={n} value={n}>
+                  {n} personas
+                </option>
+              ))}
+            </select>
           </Campo>
+        </div>
+        <div className="space-y-1">
+          <span className="block text-sm font-medium text-text">Orientación</span>
+          <div role="tablist" aria-label="Orientación" className="grid grid-cols-2 gap-2">
+            {[
+              { valor: false, texto: 'Horizontal' },
+              { valor: true, texto: 'Vertical' },
+            ].map((o) => (
+              <Boton
+                key={o.texto}
+                role="tab"
+                aria-selected={vertical === o.valor}
+                variante={vertical === o.valor ? 'principal' : 'secundario'}
+                densidad="tactil"
+                onClick={() => setVertical(o.valor)}
+              >
+                {o.texto}
+              </Boton>
+            ))}
+          </div>
         </div>
         <Casilla etiqueta="Mesa activa" checked={activa} onChange={setActiva} />
         <Aviso>{error}</Aviso>
