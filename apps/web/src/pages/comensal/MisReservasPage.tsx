@@ -19,9 +19,17 @@ export function MisReservasPage() {
 
   const confirmar = useConfirmar();
 
+  // Por restaurante, en el orden de su reserva más reciente (la lista ya viene así).
+  const grupos: { restaurante: ReservaComensal['restaurante']; reservas: ReservaComensal[] }[] = [];
+  for (const r of datos ?? []) {
+    const g = grupos.find((x) => x.restaurante.id === r.restaurante.id);
+    if (g) g.reservas.push(r);
+    else grupos.push({ restaurante: r.restaurante, reservas: [r] });
+  }
+
   async function cancelar(r: ReservaComensal) {
     const ok = await confirmar({
-      mensaje: `¿Cancelar tu reserva en ${r.sucursal.nombre}?`,
+      mensaje: `¿Cancelar tu reserva en ${r.restaurante.nombre} (${r.sucursal.nombre})?`,
       detalle: `Mesa ${r.mesa.numero}, ${formatoDiaYHora(r.inicio)} h.`,
       accion: 'Cancelar reserva',
     });
@@ -42,54 +50,67 @@ export function MisReservasPage() {
       {datos?.length === 0 && (
         <p className="text-sm text-meta">Todavía no hiciste ninguna reserva.</p>
       )}
-      <ul className="space-y-3">
-        {datos?.map((r) => {
-          return (
-            <li key={r.id} className="space-y-2 rounded-panel border border-line bg-surface p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-ink">
-                    {r.sucursal.nombre} · Mesa {r.mesa.numero}
-                  </p>
-                  <p className="text-sm text-meta">
-                    {formatoDiaYHora(r.inicio)} h · {r.cantidadPersonas}{' '}
-                    {r.cantidadPersonas === 1 ? 'persona' : 'personas'}
-                  </p>
-                </div>
-                <Estado entidad="reserva" valor={r.estado} publico="comensal" />
-              </div>
-              {r.estado === 'PENDIENTE' && (
-                <p className="text-xs text-meta">
-                  Tolerancia de llegada hasta las {formatoHora(r.limiteLlegada)}.
-                </p>
-              )}
-              {r.estado === 'ACTIVA' && (
-                <p className="text-sm text-text">
-                  Ya estás en la mesa {r.mesa.numero}. Pronto vas a poder pedir desde acá.
-                </p>
-              )}
-              {r.estado === 'VENCIDA' && (
-                <Link
-                  to={`/s/${r.sucursal.id}/reservar`}
-                  className="inline-flex min-h-11 items-center rounded-control border border-line-strong bg-surface px-4 text-sm font-semibold text-text hover:bg-panel"
+      <div className="space-y-6">
+        {grupos.map((g) => (
+          <section key={g.restaurante.id} aria-labelledby={`rest-${g.restaurante.id}`}>
+            <h2
+              id={`rest-${g.restaurante.id}`}
+              className="mb-2 text-sm font-semibold uppercase tracking-wide text-meta"
+            >
+              {g.restaurante.nombre}
+            </h2>
+            <ul className="space-y-3">
+              {g.reservas.map((r) => (
+                <li
+                  key={r.id}
+                  className="space-y-2 rounded-panel border border-line bg-surface p-4"
                 >
-                  Reservar de nuevo
-                </Link>
-              )}
-              {esCancelable(r, ahora) && (
-                <Boton
-                  variante="peligro"
-                  densidad="comensal"
-                  disabled={cancelacion.enviando}
-                  onClick={() => cancelar(r)}
-                >
-                  Cancelar reserva
-                </Boton>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-ink">
+                        {r.sucursal.nombre} · Mesa {r.mesa.numero}
+                      </p>
+                      <p className="text-sm text-meta">
+                        {formatoDiaYHora(r.inicio)} h · {r.cantidadPersonas}{' '}
+                        {r.cantidadPersonas === 1 ? 'persona' : 'personas'}
+                      </p>
+                    </div>
+                    <Estado entidad="reserva" valor={r.estado} publico="comensal" />
+                  </div>
+                  {r.estado === 'PENDIENTE' && (
+                    <p className="text-xs text-meta">
+                      Tolerancia de llegada hasta las {formatoHora(r.limiteLlegada)}.
+                    </p>
+                  )}
+                  {r.estado === 'ACTIVA' && (
+                    <p className="text-sm text-text">
+                      Ya estás en la mesa {r.mesa.numero}. Pronto vas a poder pedir desde acá.
+                    </p>
+                  )}
+                  {r.estado === 'VENCIDA' && (
+                    <Link
+                      to={`/s/${r.sucursal.id}/reservar`}
+                      className="inline-flex min-h-11 items-center rounded-control border border-line-strong bg-surface px-4 text-sm font-semibold text-text hover:bg-panel"
+                    >
+                      Reservar de nuevo
+                    </Link>
+                  )}
+                  {esCancelable(r, ahora) && (
+                    <Boton
+                      variante="peligro"
+                      densidad="comensal"
+                      disabled={cancelacion.enviando}
+                      onClick={() => cancelar(r)}
+                    >
+                      Cancelar reserva
+                    </Boton>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </LayoutComensal>
   );
 }

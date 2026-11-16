@@ -36,6 +36,8 @@ function fila(cambios: Partial<FilaReserva> = {}): FilaReserva {
     id: 'R',
     sucursalId: S,
     sucursalNombre: 'Centro',
+    restauranteId: 'rest',
+    restauranteNombre: 'Resto',
     comensalId: C,
     mesaId: 'm2',
     mesaNumero: 2,
