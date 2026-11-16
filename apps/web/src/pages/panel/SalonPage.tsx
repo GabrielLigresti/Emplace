@@ -142,11 +142,6 @@ export function SalonPage() {
         }
       />
       <EstadoCarga cargando={cargando && !datos} error={error} />
-      <div className="mb-3">
-        <Aviso>
-          {conflicto ?? (sinLugar ? 'No hay lugar libre en el salón' : null) ?? guardar.error}
-        </Aviso>
-      </div>
       {datos && (
         <div className="space-y-4">
           <MapaSalon
@@ -159,6 +154,10 @@ export function SalonPage() {
               editable ? (id) => setEditando(mesas.find((m) => m.id === id) ?? null) : undefined
             }
           />
+          {/* Debajo del plano: al aparecer empuja la lista y no corre el plano. */}
+          <Aviso>
+            {conflicto ?? (sinLugar ? 'No hay lugar libre en el salón' : null) ?? guardar.error}
+          </Aviso>
           {mesas.some((m) => !m.activa) && <LeyendaSalon estados={[]} inactiva />}
           <Lista
             filas={mesas}
@@ -278,7 +277,22 @@ function FormularioMesa({
         </div>
         <div className="space-y-1">
           <span className="block text-sm font-medium text-text">Orientación</span>
-          <div role="radiogroup" aria-label="Orientación" className="grid grid-cols-2 gap-2">
+          <div
+            role="radiogroup"
+            aria-label="Orientación"
+            className="grid grid-cols-2 gap-2"
+            onKeyDown={(e) => {
+              const paso = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+              if (!paso) return;
+              e.preventDefault();
+              // Con dos opciones, avanzar o retroceder alterna; el foco acompaña la selección.
+              const nueva = !vertical;
+              setVertical(nueva);
+              e.currentTarget
+                .querySelectorAll<HTMLElement>('[role="radio"]')
+                [nueva ? 1 : 0]?.focus();
+            }}
+          >
             {[
               { valor: false, texto: 'Horizontal' },
               { valor: true, texto: 'Vertical' },
@@ -287,6 +301,7 @@ function FormularioMesa({
                 key={o.texto}
                 role="radio"
                 aria-checked={vertical === o.valor}
+                tabIndex={vertical === o.valor ? 0 : -1}
                 variante={vertical === o.valor ? 'principal' : 'secundario'}
                 densidad="tactil"
                 onClick={() => setVertical(o.valor)}
