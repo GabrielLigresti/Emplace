@@ -10,6 +10,31 @@ import { useGuardar } from '../../lib/useGuardar';
 import { useRecurso } from '../../lib/useRecurso';
 import { useConfirmar } from '../../components/Confirmacion';
 
+const esVigente = (r: ReservaComensal) => r.estado === 'PENDIENTE' || r.estado === 'ACTIVA';
+
+function agruparPorRestaurante(reservas: ReservaComensal[]) {
+  const grupos = new Map<
+    string,
+    { restaurante: ReservaComensal['restaurante']; reservas: ReservaComensal[] }
+  >();
+  for (const r of reservas) {
+    const g = grupos.get(r.restaurante.id);
+    if (g) g.reservas.push(r);
+    else grupos.set(r.restaurante.id, { restaurante: r.restaurante, reservas: [r] });
+  }
+  const porInicio = (a: ReservaComensal, b: ReservaComensal) => a.inicio.localeCompare(b.inicio);
+  const resultado = [...grupos.values()].map((g) => {
+    const vigentes = g.reservas.filter(esVigente).sort(porInicio);
+    const anteriores = g.reservas.filter((r) => !esVigente(r)).sort((a, b) => porInicio(b, a));
+    return { ...g, reservas: [...vigentes, ...anteriores], proxima: vigentes[0]?.inicio };
+  });
+  return resultado.sort((a, b) => {
+    if (a.proxima && b.proxima) return a.proxima.localeCompare(b.proxima);
+    if (a.proxima || b.proxima) return a.proxima ? -1 : 1;
+    return b.reservas[0]!.inicio.localeCompare(a.reservas[0]!.inicio);
+  });
+}
+
 export function MisReservasPage() {
   const { datos, cargando, error, recargar } = useRecurso<ReservaComensal[]>('/comensal/reservas');
   const cancelacion = useGuardar();
@@ -19,13 +44,10 @@ export function MisReservasPage() {
 
   const confirmar = useConfirmar();
 
-  // Por restaurante, en el orden de su reserva más reciente (la lista ya viene así).
-  const grupos: { restaurante: ReservaComensal['restaurante']; reservas: ReservaComensal[] }[] = [];
-  for (const r of datos ?? []) {
-    const g = grupos.find((x) => x.restaurante.id === r.restaurante.id);
-    if (g) g.reservas.push(r);
-    else grupos.push({ restaurante: r.restaurante, reservas: [r] });
-  }
+  // Por restaurante. Las reservas vigentes van primero, la más próxima arriba, y
+  // los grupos se ordenan por su reserva vigente más próxima; los que solo tienen
+  // historial van después, por su reserva más reciente.
+  const grupos = agruparPorRestaurante(datos ?? []);
 
   async function cancelar(r: ReservaComensal) {
     const ok = await confirmar({
@@ -50,13 +72,10 @@ export function MisReservasPage() {
       {datos?.length === 0 && (
         <p className="text-sm text-meta">Todavía no hiciste ninguna reserva.</p>
       )}
-      <div className="space-y-6">
+      <div className="space-y-8">
         {grupos.map((g) => (
           <section key={g.restaurante.id} aria-labelledby={`rest-${g.restaurante.id}`}>
-            <h2
-              id={`rest-${g.restaurante.id}`}
-              className="mb-2 text-sm font-semibold uppercase tracking-wide text-meta"
-            >
+            <h2 id={`rest-${g.restaurante.id}`} className="mb-3 text-lg font-semibold text-ink">
               {g.restaurante.nombre}
             </h2>
             <ul className="space-y-3">
@@ -68,11 +87,12 @@ export function MisReservasPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="font-semibold text-ink">
-                        {r.sucursal.nombre} · Mesa {r.mesa.numero}
+                        {r.sucursal.nombre}{' '}
+                        <span className="whitespace-nowrap">· Mesa {r.mesa.numero}</span>
                       </p>
+                      <p className="text-sm text-meta">{formatoDiaYHora(r.inicio)} h</p>
                       <p className="text-sm text-meta">
-                        {formatoDiaYHora(r.inicio)} h · {r.cantidadPersonas}{' '}
-                        {r.cantidadPersonas === 1 ? 'persona' : 'personas'}
+                        {r.cantidadPersonas} {r.cantidadPersonas === 1 ? 'persona' : 'personas'}
                       </p>
                     </div>
                     <Estado entidad="reserva" valor={r.estado} publico="comensal" />

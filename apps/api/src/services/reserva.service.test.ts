@@ -347,7 +347,12 @@ describe('reservaService', () => {
 
     const [primera] = await service.misReservas(C);
 
-    expect(primera).toMatchObject({ id: 'R', cancelable: false });
+    expect(primera).toMatchObject({
+      id: 'R',
+      cancelable: false,
+      restaurante: { id: 'rest', nombre: 'Resto' },
+      sucursal: { id: S, nombre: 'Centro' },
+    });
   });
 });
 
