@@ -114,7 +114,7 @@ export function BeneficiosPage() {
       clave={(b) => b.id}
       inactiva={(b) => b.estado === 'BAJA'}
       vacio={vacio}
-      anchos={['20%', '8%', '17%', '9%', '13%', '8%', '7%', '18%']}
+      anchos={['18%', '10%', '15%', '9%', '12%', '8%', '9%', '19%']}
       columnas={[
         { titulo: 'Beneficio', valor: (b) => b.nombre },
         {
