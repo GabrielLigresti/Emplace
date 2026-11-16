@@ -589,7 +589,8 @@ describe('planificación de turnos', () => {
           mesaId: mesa.id,
           comensalId: e.comensalId,
           inicio: new Date('2026-11-10T21:00:00Z'),
-          cantidadPersonas: 2,
+          // 5 y no 2: el escenario ya tiene una reserva ACTIVA de 2 con fecha de hoy.
+          cantidadPersonas: 5,
           modoAsignacion: 'MANUAL',
           estado: 'CANCELADA',
         },
@@ -599,7 +600,7 @@ describe('planificación de turnos', () => {
       );
       expect(ctx.capacidadMesas).toEqual([4]);
       expect(ctx.reservas.map((r) => r.cantidadPersonas).sort()).toContain(3);
-      expect(ctx.reservas.map((r) => r.cantidadPersonas)).not.toContain(2);
+      expect(ctx.reservas.map((r) => r.cantidadPersonas)).not.toContain(5);
       expect(ctx.existencias.get(e.harinaId)).toMatchObject({
         nombre: 'Harina',
         unidad: 'g',
