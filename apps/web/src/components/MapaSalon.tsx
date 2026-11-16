@@ -246,6 +246,28 @@ export function MapaSalon({
     };
   }, []);
 
+  // Con el dedo, el navegador decide si un gesto es scroll en el primer
+  // movimiento y no respeta touch-action sobre elementos del SVG. Un listener
+  // no pasivo cancela el scroll solo si el toque empezó sobre una mesa: el fondo
+  // del plano sigue desplazándose y las mesas se arrastran.
+  useEffect(() => {
+    const el = svg.current;
+    if (!el || !onMover) return;
+    let sobreMesa = false;
+    const alTocar = (e: TouchEvent) => {
+      sobreMesa = e.target instanceof Element && e.target.closest('[data-mesa]') !== null;
+    };
+    const alDesplazar = (e: TouchEvent) => {
+      if (sobreMesa && e.cancelable) e.preventDefault();
+    };
+    el.addEventListener('touchstart', alTocar, { passive: true });
+    el.addEventListener('touchmove', alDesplazar, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', alTocar);
+      el.removeEventListener('touchmove', alDesplazar);
+    };
+  }, [onMover]);
+
   // En el celular el plano no se achica más que esto: así el texto de las
   // mesas no baja de 12 px y el plano se desplaza de costado.
   return (
@@ -308,7 +330,7 @@ export function MapaSalon({
                 className={`group outline-none ${
                   onMover ? 'cursor-grab' : elegible ? 'cursor-pointer' : ''
                 }`}
-                style={onMover ? { touchAction: 'none' } : undefined}
+                data-mesa={onMover ? '' : undefined}
                 onPointerDown={(e) => alApretar(e, mesa)}
                 onPointerMove={(e) => alMover(e, mesa)}
                 onPointerUp={() => alSoltar(mesa)}
