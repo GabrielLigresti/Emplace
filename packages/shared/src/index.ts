@@ -15,6 +15,7 @@ export * from './escaneo';
 export * from './comensal';
 export * from './publico';
 export * from './salon';
+export * from './geometria-salon';
 export * from './reserva';
 export * from './pedido';
 export * from './alerta';

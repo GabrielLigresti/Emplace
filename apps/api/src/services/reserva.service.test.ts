@@ -26,7 +26,7 @@ const sucursal: SucursalReservable = {
 };
 
 function mesa(id: string, numero: number, capacidad: number): Mesa {
-  return { id, numero, capacidad, posX: 10 * numero, posY: 15, activa: true };
+  return { id, numero, capacidad, posX: 10 * numero, posY: 15, vertical: false, activa: true };
 }
 
 const mesas = [mesa('m1', 1, 2), mesa('m2', 2, 4), mesa('m3', 3, 6)];
@@ -165,6 +165,14 @@ describe('reservaService', () => {
         [2, 'RESERVADA'],
         [3, 'LIBRE'],
       ]);
+    });
+
+    it('cada mesa del mapa trae vertical', async () => {
+      const { service } = servicio(repoFalso());
+
+      const mapa = await service.mapa(S, new Date(A_LAS_21), 3);
+
+      expect(mapa.mesas.every((m) => m.vertical === false)).toBe(true);
     });
   });
 

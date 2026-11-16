@@ -10,6 +10,7 @@ const mesa = (id: string, numero: number, activa = true): Mesa => ({
   numero,
   capacidad: 4,
   posX: 10 * numero,
+  vertical: false,
   posY: 15,
   activa,
 });
@@ -55,6 +56,12 @@ describe('salonService.estado', () => {
     const { servicio } = armar([mesa('m1', 1), mesa('m2', 2, false)], [], new Map());
     const salon = await servicio.estado('R', 'S', true);
     expect(salon.map((m) => m.id)).toEqual(['m1']);
+  });
+
+  it('cada mesa trae vertical', async () => {
+    const { servicio } = armar([mesa('m1', 1)], [], new Map());
+    const salon = await servicio.estado('R', 'S', true);
+    expect(salon[0]?.vertical).toBe(false);
   });
 
   it('pide las pendientes hasta 30 minutos después de ahora', async () => {

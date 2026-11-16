@@ -54,6 +54,7 @@ export function createSalonService(
         capacidad: mesa.capacidad,
         posX: mesa.posX,
         posY: mesa.posY,
+        vertical: mesa.vertical,
         estado,
         reserva: reserva && aReservaPanel(reserva, ya),
         pedidos: (estado === 'OCUPADA' && reserva && delSalon.get(reserva.id)) || [],

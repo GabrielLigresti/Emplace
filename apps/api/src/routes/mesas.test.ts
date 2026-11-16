@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../app';
+import { mesaRepository } from '../repositories/mesa.repository';
 import { IDS } from '../test/fake-usuarios';
 import { cookieConPermisos } from '../test/sesion-falsa';
 
@@ -22,6 +23,15 @@ jest.mock('../repositories/mesa.repository', () => ({
 
 const URL = `/api/sucursales/${IDS.centro}/mesas`;
 const valida = { numero: 1, capacidad: 4, posX: 10, posY: 10 };
+const mesaGuardada = {
+  id: IDS.centro,
+  numero: 1,
+  capacidad: 4,
+  posX: 10,
+  posY: 10,
+  vertical: false,
+  activa: true,
+};
 
 describe('/api/sucursales/:sucursalId/mesas', () => {
   const app = createApp();
@@ -74,5 +84,20 @@ describe('/api/sucursales/:sucursalId/mesas', () => {
       .get('/api/sucursales/no-es-uuid/mesas')
       .set('Cookie', cookieConPermisos(['sucursal.ver']));
     expect(res.status).toBe(400);
+  });
+
+  it('PUT que choca con una vecina responde 409 con el motivo', async () => {
+    const centrada = { ...mesaGuardada, posX: 20 };
+    const vecina = { ...mesaGuardada, id: IDS.palermo, numero: 2, posX: 35 };
+    jest.mocked(mesaRepository.buscar).mockResolvedValueOnce(centrada);
+    jest.mocked(mesaRepository.listar).mockResolvedValueOnce([centrada, vecina]);
+
+    const res = await request(app)
+      .put(`${URL}/${mesaGuardada.id}`)
+      .set('Cookie', cookieConPermisos(['sucursal.editar']))
+      .send({ ...valida, posX: 20, capacidad: 8 });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('Se superpone con la mesa 2');
   });
 });

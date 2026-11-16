@@ -454,6 +454,7 @@ model Mesa {
   capacidad  Int
   posX       Decimal @map("pos_x") @db.Decimal(8, 2)
   posY       Decimal @map("pos_y") @db.Decimal(8, 2)
+  vertical   Boolean @default(false)
   activa     Boolean @default(true)
 
   sucursal Sucursal  @relation(fields: [sucursalId], references: [id])

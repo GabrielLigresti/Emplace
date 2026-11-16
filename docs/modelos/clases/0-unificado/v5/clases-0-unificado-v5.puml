@@ -135,6 +135,7 @@ package "2. Salón, reservas, consumo y pago" as P2 {
     -capacidad : Integer
     -posicionX : Decimal
     -posicionY : Decimal
+    -vertical : Boolean
     -activa : Boolean
     +estaDisponible(inicio : DateTime) : Boolean
   }
@@ -788,6 +789,11 @@ Pago "*" --> "1" EstadoPago : estado
 EstadoPago <|-- PagoPendiente
 EstadoPago <|-- PagoAprobado
 EstadoPago <|-- PagoRechazado
+note left of Mesa
+  posicionX/Y: centro de la mesa.
+  El tamaño no se guarda: se calcula
+  según la capacidad y la orientación.
+end note
 note bottom of Barrio
   48 barrios oficiales de CABA;
   lista completa en @pgim/shared.

@@ -142,12 +142,13 @@ export function createReservaService(
       const tomadas = new Set(ocupadas.map((o) => o.mesaId));
       return {
         inicio: inicio.toISOString(),
-        mesas: mesas.map(({ id, numero, capacidad, posX, posY }) => ({
+        mesas: mesas.map(({ id, numero, capacidad, posX, posY, vertical }) => ({
           id,
           numero,
           capacidad,
           posX,
           posY,
+          vertical,
           estado: tomadas.has(id) ? 'RESERVADA' : capacidad < personas ? 'CHICA' : 'LIBRE',
         })),
       };

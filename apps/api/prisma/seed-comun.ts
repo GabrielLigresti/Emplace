@@ -2,7 +2,10 @@
 // nada al importarse: lo que cambia entre una seed y otra llega por parámetro.
 import {
   PERMISOS,
+  buscarLugarLibre,
+  rectanguloMesa,
   type CodigoPermiso,
+  type RectanguloMesa,
   type RolPredeterminado,
   type Franja,
   type UnidadBase,
@@ -33,12 +36,9 @@ import { stockRepository } from '../src/repositories/stock.repository';
 export type NombreSucursal = string;
 
 // Salón de cada sucursal (CU-14): capacidades en orden de número de mesa,
-// ubicadas en una grilla sobre el lienzo de 100 × 60.
+// ubicadas en el primer lugar libre del lienzo de 100 × 60, todas horizontales.
 export interface SalonSeed {
   capacidades: number[];
-  columnas: number;
-  x0: number;
-  pasoX: number;
 }
 
 // Las columnas time se guardan como DateTime; Prisma ignora la fecha.
@@ -128,16 +128,17 @@ export async function seedPermisos(
 export async function seedSalon(
   tx: Prisma.TransactionClient,
   sucursalId: string,
-  { capacidades, columnas, x0, pasoX }: SalonSeed,
+  { capacidades }: SalonSeed,
 ): Promise<void> {
+  const ocupadas: RectanguloMesa[] = [];
   for (const [i, capacidad] of capacidades.entries()) {
     const numero = i + 1;
-    const posicion = {
-      capacidad,
-      posX: x0 + (i % columnas) * pasoX,
-      posY: 15 + Math.floor(i / columnas) * 30,
-      activa: true,
-    };
+    const lugar = buscarLugarLibre(capacidad, false, ocupadas);
+    if (!lugar) {
+      throw new Error(`No hay lugar en el salón para la mesa ${numero} (${capacidad} personas).`);
+    }
+    ocupadas.push(rectanguloMesa({ capacidad, vertical: false, ...lugar }));
+    const posicion = { capacidad, vertical: false, ...lugar, activa: true };
     await tx.mesa.upsert({
       where: { sucursalId_numero: { sucursalId, numero } },
       update: posicion,

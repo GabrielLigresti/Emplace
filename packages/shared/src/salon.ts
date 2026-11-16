@@ -11,6 +11,7 @@ export const mesaInputSchema = z.object({
   capacidad: z.number().int().min(1).max(20),
   posX: z.number().min(0).max(LIENZO_SALON.ancho),
   posY: z.number().min(0).max(LIENZO_SALON.alto),
+  vertical: z.boolean().optional(),
   activa: z.boolean().optional(),
 });
 
@@ -22,6 +23,7 @@ export interface Mesa {
   capacidad: number;
   posX: number;
   posY: number;
+  vertical: boolean;
   activa: boolean;
 }
 
@@ -42,6 +44,7 @@ export interface MesaSalon {
   capacidad: number;
   posX: number;
   posY: number;
+  vertical: boolean;
   estado: EstadoMesaSalon;
   reserva: ReservaPanel | null;
   pedidos: PedidoSalon[];
