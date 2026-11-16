@@ -4,7 +4,15 @@ import { createMesaService } from './mesa.service';
 
 const R = 'restaurante';
 
-const mesa: Mesa = { id: 'm1', numero: 1, capacidad: 4, posX: 10, posY: 15, vertical: false, activa: true };
+const mesa: Mesa = {
+  id: 'm1',
+  numero: 1,
+  capacidad: 4,
+  posX: 10,
+  posY: 15,
+  vertical: false,
+  activa: true,
+};
 const datos: MesaInput = { numero: 1, capacidad: 4, posX: 10, posY: 15 };
 
 function repoFalso(cambios: Partial<MesaRepository> = {}): jest.Mocked<MesaRepository> {
