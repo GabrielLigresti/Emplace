@@ -62,12 +62,15 @@ export function LeyendaSalon({
   inactiva,
   vistaComensal,
   conPersonas,
+  sinConfirmar,
 }: {
   estados: EstadoMesaDibujo[];
   inactiva?: boolean;
   vistaComensal?: boolean;
   // Explica «2/4» (personas / capacidad); solo para pantallas que muestran personas.
   conPersonas?: boolean;
+  // Suma el ítem de las mesas movidas y todavía sin confirmar (editor del salón).
+  sinConfirmar?: boolean;
 }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-meta">
@@ -114,6 +117,22 @@ export function LeyendaSalon({
             </defs>
           </svg>
           Dada de baja
+        </li>
+      )}
+      {sinConfirmar && (
+        <li className="flex items-center gap-1.5">
+          <svg viewBox="0 0 10 10" className="size-3.5" aria-hidden>
+            <rect
+              x={0.8}
+              y={0.8}
+              width={8.4}
+              height={8.4}
+              rx={1.6}
+              strokeWidth={0.8}
+              className="fill-none stroke-accent"
+            />
+          </svg>
+          Sin confirmar
         </li>
       )}
       {conPersonas && !vistaComensal && <li>2/4 = personas / capacidad</li>}
@@ -388,7 +407,7 @@ export function MapaSalon({
                   mesa.inactiva
                     ? ', dada de baja'
                     : `, ${nombreEstado(estado, vistaComensal).toLowerCase()}`
-                }`}
+                }${mesa.pendiente ? ', movida sin confirmar' : ''}`}
                 aria-pressed={elegible ? seleccionada : undefined}
               >
                 {mesa.pendiente && (

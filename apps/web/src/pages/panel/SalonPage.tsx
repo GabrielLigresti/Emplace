@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, useParams } from 'react-router';
+import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import {
   EVENTOS_SOCKET,
   buscarLugarLibre,
@@ -51,6 +51,8 @@ export function SalonPage() {
   const sucursal = sucursales.datos?.find((s) => s.id === sucursalId);
   const [editando, setEditando] = useState<Mesa | null>(null);
   const guardar = useGuardar();
+  const confirmar = useConfirmar();
+  const navegar = useNavigate();
   const [sinLugar, setSinLugar] = useState(false);
   const [conflicto, setConflicto] = useState<string | null>(null);
   // Borrador: mesas movidas y todavía sin confirmar (id → posición nueva).
@@ -67,15 +69,15 @@ export function SalonPage() {
     [datos, pendientes],
   );
 
-  // Tras una recarga, el borrador pierde las mesas que ya no existen, las que
-  // se dieron de baja y las que otro gerente dejó justo donde el borrador las puso.
+  // Tras una recarga, el borrador pierde las mesas que ya no existen y las que
+  // el servidor ya tiene donde el borrador las puso (por ejemplo, tras confirmar).
   useEffect(() => {
     if (!datos) return;
     setPendientes((actual) => {
       const resto = Object.fromEntries(
         Object.entries(actual).filter(([id, p]) => {
           const m = datos.find((x) => x.id === id);
-          return m?.activa && (m.posX !== p.posX || m.posY !== p.posY);
+          return m && (m.posX !== p.posX || m.posY !== p.posY);
         }),
       );
       return Object.keys(resto).length === Object.keys(actual).length ? actual : resto;
@@ -124,6 +126,21 @@ export function SalonPage() {
     });
   }
 
+  // BrowserRouter no permite bloquear la navegación: solo se cubre este enlace.
+  async function volverASucursales(e: MouseEvent<HTMLAnchorElement>) {
+    if (cantidadPendientes === 0) return;
+    e.preventDefault();
+    const sale = await confirmar({
+      mensaje:
+        cantidadPendientes === 1
+          ? 'Tenés 1 mesa sin confirmar'
+          : `Tenés ${cantidadPendientes} mesas sin confirmar`,
+      detalle: 'Si salís ahora, se pierde su nueva ubicación.',
+      accion: 'Salir sin confirmar',
+    });
+    if (sale) navegar('/panel/sucursales');
+  }
+
   function descartar() {
     limpiarAvisos();
     setPendientes({});
@@ -134,10 +151,9 @@ export function SalonPage() {
     const cuerpo: DistribucionInput = {
       mesas: Object.entries(pendientes).map(([id, p]) => ({ id, ...p })),
     };
-    if (await guardar.enviar(`${ruta}/distribucion`, 'PUT', cuerpo)) {
-      setPendientes({});
-      recargar();
-    }
+    // El borrador no se vacía a mano: al llegar las mesas guardadas, el efecto
+    // de depuración lo vacía y las mesas no vuelven un instante a su lugar viejo.
+    if (await guardar.enviar(`${ruta}/distribucion`, 'PUT', cuerpo)) recargar();
   }
 
   // Otro gerente puede editar el mapa: se recarga al recibir el aviso. El
@@ -162,7 +178,7 @@ export function SalonPage() {
   return (
     <section>
       <p className="mb-2 text-sm">
-        <Link to="/panel/sucursales" className="text-meta underline">
+        <Link to="/panel/sucursales" onClick={volverASucursales} className="text-meta underline">
           ← Sucursales
         </Link>
       </p>
@@ -190,7 +206,7 @@ export function SalonPage() {
               inactiva: !m.activa,
               pendiente: m.id in pendientes,
             }))}
-            onMover={editable ? mover : undefined}
+            onMover={editable && !guardar.enviando ? mover : undefined}
             onConflicto={(_, otra) =>
               setConflicto(`No se puede ubicar ahí: se superpone con la mesa ${otra.numero}`)
             }
@@ -202,7 +218,7 @@ export function SalonPage() {
           {/* Debajo del plano: al aparecer empuja lo de abajo y no corre el plano. */}
           {cantidadPendientes > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <p className="text-sm text-text">
+              <p role="status" className="text-sm font-semibold text-ink">
                 {cantidadPendientes === 1
                   ? '1 mesa movida sin confirmar'
                   : `${cantidadPendientes} mesas movidas sin confirmar`}
@@ -220,7 +236,13 @@ export function SalonPage() {
           <Aviso>
             {conflicto ?? (sinLugar ? 'No hay lugar libre en el salón' : null) ?? guardar.error}
           </Aviso>
-          {mesas.some((m) => !m.activa) && <LeyendaSalon estados={[]} inactiva />}
+          {(mesas.some((m) => !m.activa) || cantidadPendientes > 0) && (
+            <LeyendaSalon
+              estados={[]}
+              inactiva={mesas.some((m) => !m.activa)}
+              sinConfirmar={cantidadPendientes > 0}
+            />
+          )}
         </div>
       )}
 
@@ -230,6 +252,12 @@ export function SalonPage() {
           ruta={ruta}
           mesa={editando}
           vigente={vigente}
+          pendiente={editando.id in pendientes}
+          onVolver={() => {
+            const { [editando.id]: _, ...resto } = pendientes;
+            setPendientes(resto);
+            setEditando(null);
+          }}
           onCerrar={() => setEditando(null)}
           onGuardado={() => {
             limpiarAvisos();
@@ -246,12 +274,17 @@ function FormularioMesa({
   ruta,
   mesa,
   vigente,
+  pendiente,
+  onVolver,
   onCerrar,
   onGuardado,
 }: {
   ruta: string;
   mesa: Mesa;
   vigente?: Mesa;
+  // La mesa está movida en el borrador: se puede devolver a su lugar guardado.
+  pendiente: boolean;
+  onVolver(): void;
   onCerrar(): void;
   onGuardado(): void;
 }) {
@@ -355,7 +388,8 @@ function FormularioMesa({
                 role="radio"
                 aria-checked={vertical === o.valor}
                 tabIndex={vertical === o.valor ? 0 : -1}
-                variante={vertical === o.valor ? 'principal' : 'secundario'}
+                variante={vertical === o.valor ? 'tonal' : 'secundario'}
+                className={vertical === o.valor ? 'border-accent!' : ''}
                 densidad="tactil"
                 onClick={() => setVertical(o.valor)}
               >
@@ -364,8 +398,20 @@ function FormularioMesa({
             ))}
           </div>
         </div>
-        <Aviso>{error}</Aviso>
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <Aviso>
+          {error && pendiente && /superpon/i.test(error)
+            ? `${error}. Confirmá primero la distribución.`
+            : error}
+        </Aviso>
+        {pendiente && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Boton variante="secundario" onClick={onVolver} disabled={enviando}>
+              Volver a su lugar
+            </Boton>
+            <span className="text-sm text-meta">Está movida sin confirmar.</span>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           {base.activa ? (
             <Boton variante="peligro" onClick={darDeBaja} disabled={enviando}>
               Dar de baja
