@@ -17,6 +17,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:seed:deploy": "tsx prisma/seed-deploy.ts",
+    "db:reubicar-mesas": "tsx prisma/reubicar-mesas.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
