@@ -15,6 +15,10 @@ const PESTANIAS = [
 
 const CUENTA = { a: '/cuenta', texto: 'Mi cuenta', icono: UserRound };
 
+// Acción principal fija de la carta y la ficha (botón de 56 px del diseño).
+export const claseAccionClasica =
+  'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-semibold text-white hover:bg-dorado-800';
+
 // Título de las pantallas del comensal.
 export function TituloComensal({ children }: { children: ReactNode }) {
   return (
@@ -30,12 +34,15 @@ export function LayoutComensal({
   volver,
   accionFija,
   mesaActiva,
+  clasico = false,
   children,
 }: {
   volver?: { a: string; texto: string };
   accionFija?: ReactNode;
   // La pantalla que ya consultó la mesa la pasa, para no pedirla dos veces.
   mesaActiva?: MiMesa | null;
+  // Carta y ficha: registro Clásico a sangre, sin márgenes. El tab bar no cambia.
+  clasico?: boolean;
   children: ReactNode;
 }) {
   useTemaStaff();
@@ -55,7 +62,7 @@ export function LayoutComensal({
   ];
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className={`min-h-screen ${clasico ? 'bg-papel' : 'bg-bg'}`}>
       <header className="sticky top-0 z-10 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-2 px-4 py-1">
           {volver ? (
@@ -100,7 +107,11 @@ export function LayoutComensal({
       </header>
 
       <main
-        className={`mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`}
+        className={
+          clasico
+            ? 'mx-auto max-w-[480px] bg-bg font-lora'
+            : `mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`
+        }
       >
         {children}
       </main>
@@ -108,7 +119,11 @@ export function LayoutComensal({
       <div className="fixed inset-x-0 bottom-0 z-10">
         {accionFija && (
           <div className="border-t border-line bg-bg">
-            <div className="mx-auto flex max-w-[480px] flex-wrap gap-2 px-4 py-2">{accionFija}</div>
+            <div
+              className={`mx-auto flex max-w-[480px] flex-wrap gap-2 ${clasico ? 'px-5 py-3' : 'px-4 py-2'}`}
+            >
+              {accionFija}
+            </div>
           </div>
         )}
         {esComensal && (

@@ -103,3 +103,12 @@ export function sumarDias(fecha: string, dias: number): string {
 export function formatoMinutos(minutos: number): string {
   return `${minutos} min`;
 }
+
+// Precio como en la carta: "$ 18.500", sin decimales si el monto es entero.
+export function formatoPrecioCarta(monto: number): string {
+  const decimales = Number.isInteger(monto) ? 0 : 2;
+  return `$ ${monto.toLocaleString('es-AR', {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales,
+  })}`;
+}
