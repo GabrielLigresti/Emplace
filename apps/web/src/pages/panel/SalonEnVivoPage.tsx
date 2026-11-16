@@ -53,7 +53,7 @@ function SalonEnVivo() {
   }, [recargar]);
 
   const mesa = datos?.find((m) => m.id === mesaId) ?? null;
-  const enGris = filtro && datos ? datos.filter((m) => m.estado !== filtro).length : 0;
+  const cuenta = (estado: EstadoMesaSalon) => datos?.filter((m) => m.estado === estado).length ?? 0;
 
   // Si la mesa elegida queda fuera del filtro (al cambiarlo o porque cambió de estado), se cierra el detalle.
   useEffect(() => {
@@ -121,7 +121,7 @@ function SalonEnVivo() {
               aria-label="Filtrar por estado"
             >
               <Chip seleccionado={filtro === null} onClick={() => setFiltro(null)}>
-                Todas
+                Todas {datos?.length ?? 0}
               </Chip>
               {FILTROS.map((f) => (
                 <Chip
@@ -129,14 +129,21 @@ function SalonEnVivo() {
                   seleccionado={filtro === f.valor}
                   onClick={() => setFiltro(f.valor)}
                 >
-                  {f.texto}
+                  {f.texto} {cuenta(f.valor)}
                 </Chip>
               ))}
-              {filtro && (
-                <Boton variante="fantasma" densidad="tactil" onClick={() => setFiltro(null)}>
-                  Quitar filtros ({enGris} en gris)
+              {/* Siempre ocupa su lugar para que el plano no se corra al filtrar. */}
+              <span className={filtro ? undefined : 'invisible'} aria-hidden={!filtro}>
+                <Boton
+                  variante="fantasma"
+                  densidad="tactil"
+                  tabIndex={filtro ? undefined : -1}
+                  disabled={!filtro}
+                  onClick={() => setFiltro(null)}
+                >
+                  Ver todas
                 </Boton>
-              )}
+              </span>
             </div>
             <MapaSalon
               ajustarAncho
@@ -153,7 +160,7 @@ function SalonEnVivo() {
                 return reserva ? formatoHora(reserva.inicio) : undefined;
               }}
             />
-            <LeyendaSalon estados={['LIBRE', 'RESERVADA', 'OCUPADA']} />
+            <LeyendaSalon estados={['LIBRE', 'RESERVADA', 'OCUPADA']} conPersonas />
           </div>
           {mesa && (
             <DetalleMesa

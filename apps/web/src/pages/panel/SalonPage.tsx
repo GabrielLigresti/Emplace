@@ -53,14 +53,35 @@ export function SalonPage() {
   const [editando, setEditando] = useState<Mesa | null>(null);
   const guardar = useGuardar();
   const [sinLugar, setSinLugar] = useState(false);
+  const [conflicto, setConflicto] = useState<string | null>(null);
 
   useEffect(() => {
     if (datos) setMesas(datos);
   }, [datos]);
 
+  // «No hay lugar» vale para el salón de ese momento: si las mesas cambian, se descarta.
+  useEffect(() => {
+    setSinLugar(false);
+  }, [mesas]);
+
+  // Mesa vigente del formulario: otro gerente pudo moverla o quitarla mientras está abierto.
+  const vigente = editando ? mesas.find((m) => m.id === editando.id) : undefined;
+  useEffect(() => {
+    if (editando && datos && !vigente) {
+      setEditando(null);
+      setConflicto('La mesa que estabas editando ya no existe.');
+    }
+  }, [editando, datos, vigente]);
+
+  function limpiarAvisos() {
+    setSinLugar(false);
+    setConflicto(null);
+  }
+
   async function mover(id: string, posX: number, posY: number) {
     const mesa = mesas.find((m) => m.id === id);
     if (!mesa) return;
+    limpiarAvisos();
     setMesas((actual) => actual.map((m) => (m.id === id ? { ...m, posX, posY } : m)));
     if (!(await guardar.enviar(`${ruta}/${id}`, 'PUT', { ...datosDe(mesa), posX, posY }))) {
       recargar();
@@ -72,12 +93,12 @@ export function SalonPage() {
   useEventoSocket(EVENTOS_SOCKET.mapaEditado, recargar, sucursalId);
 
   async function agregar() {
+    limpiarAvisos();
     const lugar = buscarLugarLibre(4, false, mesas.filter((m) => m.activa).map(rectanguloMesa));
     if (!lugar) {
       setSinLugar(true);
       return;
     }
-    setSinLugar(false);
     const numero = Math.max(0, ...mesas.map((m) => m.numero)) + 1;
     const nueva: MesaInput = { numero, capacidad: 4, ...lugar };
     if (await guardar.enviar(ruta, 'POST', nueva)) recargar();
@@ -94,6 +115,7 @@ export function SalonPage() {
       }))
     )
       return;
+    limpiarAvisos();
     if (await guardar.enviar(`${ruta}/${mesa.id}`, 'DELETE')) recargar();
   }
 
@@ -108,7 +130,7 @@ export function SalonPage() {
         titulo={`Salón${sucursal ? ` de ${sucursal.nombre}` : ''}`}
         descripcion={
           editable
-            ? 'Arrastrá las mesas para ubicarlas; la posición se guarda al soltar.'
+            ? 'Arrastrá las mesas para ubicarlas; la posición se guarda al soltar. Tocá una mesa para editarla.'
             : 'Ubicación y capacidad de las mesas.'
         }
         accion={
@@ -121,13 +143,18 @@ export function SalonPage() {
       />
       <EstadoCarga cargando={cargando && !datos} error={error} />
       <div className="mb-3">
-        <Aviso>{guardar.error ?? (sinLugar ? 'No hay lugar libre en el salón' : null)}</Aviso>
+        <Aviso>
+          {conflicto ?? (sinLugar ? 'No hay lugar libre en el salón' : null) ?? guardar.error}
+        </Aviso>
       </div>
       {datos && (
         <div className="space-y-4">
           <MapaSalon
             mesas={mesas.map((m) => ({ ...m, inactiva: !m.activa }))}
             onMover={editable ? mover : undefined}
+            onConflicto={(_, otra) =>
+              setConflicto(`No se puede ubicar ahí: se superpone con la mesa ${otra.numero}`)
+            }
             onElegir={
               editable ? (id) => setEditando(mesas.find((m) => m.id === id) ?? null) : undefined
             }
@@ -168,10 +195,13 @@ export function SalonPage() {
 
       {editando && (
         <FormularioMesa
+          key={editando.id}
           ruta={ruta}
           mesa={editando}
+          vigente={vigente}
           onCerrar={() => setEditando(null)}
           onGuardado={() => {
+            limpiarAvisos();
             setEditando(null);
             recargar();
           }}
@@ -184,11 +214,13 @@ export function SalonPage() {
 function FormularioMesa({
   ruta,
   mesa,
+  vigente,
   onCerrar,
   onGuardado,
 }: {
   ruta: string;
   mesa: Mesa;
+  vigente?: Mesa;
   onCerrar(): void;
   onGuardado(): void;
 }) {
@@ -204,7 +236,8 @@ function FormularioMesa({
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const datos: MesaInput = {
-      ...datosDe(mesa),
+      // La posición sale de la mesa vigente: la copia pudo quedar vieja si la movieron.
+      ...datosDe(vigente ?? mesa),
       numero: aNumero(numero),
       capacidad,
       vertical,
@@ -245,15 +278,15 @@ function FormularioMesa({
         </div>
         <div className="space-y-1">
           <span className="block text-sm font-medium text-text">Orientación</span>
-          <div role="tablist" aria-label="Orientación" className="grid grid-cols-2 gap-2">
+          <div role="radiogroup" aria-label="Orientación" className="grid grid-cols-2 gap-2">
             {[
               { valor: false, texto: 'Horizontal' },
               { valor: true, texto: 'Vertical' },
             ].map((o) => (
               <Boton
                 key={o.texto}
-                role="tab"
-                aria-selected={vertical === o.valor}
+                role="radio"
+                aria-checked={vertical === o.valor}
                 variante={vertical === o.valor ? 'principal' : 'secundario'}
                 densidad="tactil"
                 onClick={() => setVertical(o.valor)}
