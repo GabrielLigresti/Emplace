@@ -90,7 +90,13 @@ export function createMesaService(
         `La mesa tiene ${cantidad} ${cantidad === 1 ? 'reserva vigente' : 'reservas vigentes'}: no se puede dar de baja`,
       );
     }
-    if (cambios.capacidad !== undefined && cambios.capacidad < maxPersonas) {
+    // Solo cuando se achica: el formulario manda siempre la capacidad, y mover o
+    // girar una mesa que ya tenía una reserva mayor no la achica.
+    if (
+      cambios.capacidad !== undefined &&
+      cambios.capacidad < mesa.capacidad &&
+      cambios.capacidad < maxPersonas
+    ) {
       throw new AppError(
         409,
         `La mesa tiene una reserva para ${maxPersonas} personas: la capacidad no puede ser menor`,

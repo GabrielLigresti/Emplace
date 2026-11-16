@@ -412,6 +412,22 @@ describe('mesaService', () => {
       expect(repo.actualizar).toHaveBeenCalled();
     });
 
+    it('mover una mesa con una reserva mayor que su capacidad no cuenta como achicarla', async () => {
+      const repo = conReservas([reserva('PENDIENTE', '2026-10-30T23:00:00.000Z', 12)]);
+
+      await servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, posX: 40 });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+    });
+
+    it('achicar por debajo de esa reserva mayor sigue respondiendo 409', async () => {
+      const repo = conReservas([reserva('PENDIENTE', '2026-10-30T23:00:00.000Z', 12)]);
+
+      await expect(
+        servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, capacidad: 2 }),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
     it('una activa de una franja que ya terminó no la traba', async () => {
       const repo = conReservas([reserva('ACTIVA', '2026-10-29T23:00:00.000Z', 8)]);
 
