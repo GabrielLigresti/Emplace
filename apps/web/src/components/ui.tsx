@@ -30,9 +30,9 @@ export const propsDecimal = {
 
 // En el celular el texto va a 16 px: con menos, iOS hace zoom al enfocar el campo.
 export const claseInput =
-  'w-full min-h-11 rounded-control border border-control bg-surface px-3 text-[16px] text-text sm:min-h-9 sm:text-sm focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/20 disabled:bg-panel disabled:text-meta';
+  'w-full min-h-11 rounded-control border border-control bg-surface px-3 text-[16px] text-text aria-invalid:border-bad sm:min-h-9 sm:text-sm focus:border-accent focus:outline-none focus:ring-3 focus:ring-accent/20 disabled:bg-panel disabled:text-meta';
 
-type Variante = 'principal' | 'secundario' | 'tonal' | 'peligro' | 'fantasma';
+type Variante = 'principal' | 'secundario' | 'tonal' | 'peligro' | 'fantasma' | 'peligroFantasma';
 
 const VARIANTES: Record<Variante, string> = {
   principal:
@@ -41,6 +41,7 @@ const VARIANTES: Record<Variante, string> = {
   tonal: 'border border-accent/20 bg-accent-soft text-accent-ink hover:bg-accent/15',
   peligro: 'border border-bad/30 bg-surface text-bad hover:bg-bad-soft',
   fantasma: 'border border-transparent bg-transparent text-meta hover:bg-panel hover:text-text',
+  peligroFantasma: 'border border-transparent bg-transparent text-bad hover:bg-bad-soft',
 };
 
 const ALTURAS: Record<Densidad, string> = {

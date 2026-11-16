@@ -22,6 +22,9 @@ interface Props<T> {
   seleccionada?(fila: T): boolean;
   // Presentación propia de la tarjeta del celular, en lugar del título y la lista de campos.
   tarjeta?(fila: T): ReactNode;
+  // Anchos fijos de columna (CSS), para que varias listas seguidas queden alineadas.
+  // Una por columna y, si hay acciones, una más para ellas.
+  anchos?: string[];
 }
 
 function propsSeleccion<T>(fila: T, onSeleccionar?: (fila: T) => void, etiqueta?: string) {
@@ -55,6 +58,7 @@ export function Lista<T>({
   densidad = 'compacta',
   seleccionada,
   tarjeta,
+  anchos,
 }: Props<T>) {
   const clickeable = onSeleccionar ? 'cursor-pointer hover:bg-panel' : '';
   if (filas.length === 0) {
@@ -69,7 +73,14 @@ export function Lista<T>({
   return (
     <>
       <div className="hidden overflow-x-auto rounded-panel border border-line bg-surface md:block">
-        <table className="w-full text-left">
+        <table className={`w-full text-left ${anchos ? 'table-fixed' : ''}`}>
+          {anchos && (
+            <colgroup>
+              {anchos.map((ancho, i) => (
+                <col key={i} style={{ width: ancho }} />
+              ))}
+            </colgroup>
+          )}
           <thead className="border-b border-line bg-bg text-xs text-meta">
             <tr>
               {columnas.map((c) => (

@@ -101,7 +101,10 @@ export function BeneficiosPage() {
   const sinFiltros = clase === 'TODOS';
   const listaGrupos = grupos.datos ?? [];
   // Se pide la lista completa y el tipo se filtra acá, para no mostrar datos viejos al cambiar.
-  const datos = todos && grupos.datos ? todos.filter((b) => sinFiltros || b.clase === clase) : null;
+  const datos =
+    todos && (grupos.datos || grupos.error)
+      ? todos.filter((b) => sinFiltros || b.clase === clase)
+      : null;
   const idsGrupos = new Set(listaGrupos.map((g) => g.id));
   const sinGrupo = (datos ?? []).filter((b) => !b.grupo || !idsGrupos.has(b.grupo.id));
 
@@ -111,6 +114,7 @@ export function BeneficiosPage() {
       clave={(b) => b.id}
       inactiva={(b) => b.estado === 'BAJA'}
       vacio={vacio}
+      anchos={['20%', '8%', '17%', '9%', '13%', '8%', '7%', '18%']}
       columnas={[
         { titulo: 'Beneficio', valor: (b) => b.nombre },
         {
@@ -214,12 +218,9 @@ export function BeneficiosPage() {
             <div key={g.id} className="mb-6">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h2 className="min-w-0 text-base font-semibold text-ink [overflow-wrap:anywhere]">
-                  {g.nombre}{' '}
-                  <span className="text-sm font-normal text-meta">
-                    ({filas.length} {filas.length === 1 ? 'beneficio' : 'beneficios'})
-                  </span>
+                  {g.nombre} <span className="text-sm font-normal text-meta">({filas.length})</span>
                 </h2>
-                <span className="inline-flex shrink-0 gap-1">
+                <span className="-mr-3 inline-flex shrink-0 gap-1">
                   {tienePermiso('beneficio.editar') && (
                     <Boton
                       variante="fantasma"
@@ -231,13 +232,12 @@ export function BeneficiosPage() {
                   )}
                   {tienePermiso('beneficio.eliminar') && (
                     <Boton
-                      variante="fantasma"
-                      className="text-bad hover:bg-bad-soft hover:text-bad"
+                      variante="peligroFantasma"
                       aria-label={`Borrar el grupo ${g.nombre}`}
                       disabled={g.cantidadBeneficios > 0}
                       title={
                         g.cantidadBeneficios > 0
-                          ? 'El grupo tiene beneficios. Sacalos del grupo antes de borrarlo.'
+                          ? 'Solo se puede borrar un grupo sin beneficios.'
                           : undefined
                       }
                       onClick={() => borrarGrupo(g)}
@@ -247,6 +247,11 @@ export function BeneficiosPage() {
                   )}
                 </span>
               </div>
+              {tienePermiso('beneficio.eliminar') && g.cantidadBeneficios > 0 && (
+                <p className="mb-2 text-xs text-meta">
+                  Solo se puede borrar un grupo sin beneficios.
+                </p>
+              )}
               {lista(
                 filas,
                 <p className="py-3 text-sm text-meta">Este grupo no tiene beneficios.</p>,
@@ -305,8 +310,8 @@ function FormularioGrupo({
       return;
     }
     const ok = grupo
-      ? await enviar(`/fidelizacion/grupos/${grupo.id}`, 'PUT', { nombre })
-      : await enviar('/fidelizacion/grupos', 'POST', { nombre });
+      ? await enviar(`/fidelizacion/grupos/${grupo.id}`, 'PUT', { nombre: nombre.trim() })
+      : await enviar('/fidelizacion/grupos', 'POST', { nombre: nombre.trim() });
     if (ok) onGuardado();
   }
 
