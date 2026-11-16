@@ -10,6 +10,7 @@ const mesa = (id: string, numero: number, activa = true): Mesa => ({
   numero,
   capacidad: 4,
   posX: 10 * numero,
+  vertical: false,
   posY: 15,
   activa,
 });

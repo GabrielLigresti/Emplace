@@ -39,6 +39,7 @@ const seleccion = {
   capacidad: true,
   posX: true,
   posY: true,
+  vertical: true,
   activa: true,
 } satisfies Prisma.MesaSelect;
 

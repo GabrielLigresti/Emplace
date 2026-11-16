@@ -26,7 +26,7 @@ const sucursal: SucursalReservable = {
 };
 
 function mesa(id: string, numero: number, capacidad: number): Mesa {
-  return { id, numero, capacidad, posX: 10 * numero, posY: 15, activa: true };
+  return { id, numero, capacidad, posX: 10 * numero, posY: 15, vertical: false, activa: true };
 }
 
 const mesas = [mesa('m1', 1, 2), mesa('m2', 2, 4), mesa('m3', 3, 6)];

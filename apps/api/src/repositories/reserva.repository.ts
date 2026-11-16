@@ -203,7 +203,15 @@ export const reservaRepository: ReservaRepository = {
   async listarMesasActivas(sucursalId) {
     const filas = await prisma.mesa.findMany({
       where: { sucursalId, activa: true },
-      select: { id: true, numero: true, capacidad: true, posX: true, posY: true, activa: true },
+      select: {
+        id: true,
+        numero: true,
+        capacidad: true,
+        posX: true,
+        posY: true,
+        vertical: true,
+        activa: true,
+      },
       orderBy: { numero: 'asc' },
     });
     return filas.map(aMesa);

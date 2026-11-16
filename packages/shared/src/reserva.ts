@@ -47,6 +47,7 @@ export interface MesaMapa {
   capacidad: number;
   posX: number;
   posY: number;
+  vertical?: boolean;
   estado: EstadoMesaMapa;
 }
 
