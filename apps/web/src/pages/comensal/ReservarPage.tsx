@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import {
   DIAS_ANTICIPACION_RESERVA,
@@ -8,6 +8,7 @@ import {
   type CambioSalon,
   type FranjaDisponible,
   type MapaDeFranja,
+  type MapaEditado,
   type MenuSucursal,
   type ReservaComensal,
 } from '@pgim/shared';
@@ -62,6 +63,27 @@ export function ReservarPage() {
     },
     sucursalId,
   );
+  // El gerente editó el salón: se recarga el plano y la cantidad de mesas libres.
+  useEventoSocket<MapaEditado>(
+    EVENTOS_SOCKET.mapaEditado,
+    () => {
+      mapa.recargar();
+      franjas.recargar();
+    },
+    sucursalId,
+  );
+  // Llegó un mapa nuevo: si la mesa elegida ya no está o dejó de estar libre, se
+  // descarta y se avisa. Si sigue libre (aunque la hayan movido), se conserva.
+  // Solo mira el mapa que llega, no cada clic, para no pisar la elección del usuario.
+  const mesaIdActual = useRef(mesaId);
+  mesaIdActual.current = mesaId;
+  useEffect(() => {
+    const elegida = mesaIdActual.current;
+    if (!mapa.datos || elegida === null) return;
+    if (mapa.datos.mesas.some((m) => m.id === elegida && m.estado === 'LIBRE')) return;
+    setMesaId(null);
+    setError('La mesa que elegías cambió. Elegí otra.');
+  }, [mapa.datos, setError]);
   const mesaElegida = mapa.datos?.mesas.find((m) => m.id === mesaId && m.estado === 'LIBRE');
 
   function cambiarDatos(cambio: () => void) {
@@ -211,8 +233,13 @@ export function ReservarPage() {
           <EstadoCarga cargando={mapa.cargando && !mapa.datos} error={mapa.error} />
           {mapa.datos && (
             <>
-              <MapaSalon mesas={mapa.datos.mesas} seleccionadaId={mesaId} onElegir={setMesaId} />
-              <LeyendaSalon estados={['LIBRE', 'RESERVADA', 'CHICA']} />
+              <MapaSalon
+                mesas={mapa.datos.mesas}
+                seleccionadaId={mesaId}
+                onElegir={setMesaId}
+                vistaComensal
+              />
+              <LeyendaSalon estados={['LIBRE', 'RESERVADA', 'CHICA']} vistaComensal />
             </>
           )}
           <Aviso>{error}</Aviso>
