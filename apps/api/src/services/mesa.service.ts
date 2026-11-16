@@ -1,4 +1,13 @@
-import { administraModulo, type CodigoPermiso, type Mesa, type MesaInput } from '@pgim/shared';
+import {
+  administraModulo,
+  entraEnLienzo,
+  rectanguloMesa,
+  seSuperponen,
+  type CodigoPermiso,
+  type Mesa,
+  type MesaGeometria,
+  type MesaInput,
+} from '@pgim/shared';
 import { ocupaLaMesa } from '../domain/reserva';
 import { AppError } from '../lib/errors';
 import { mesaRepository, type MesaRepository } from '../repositories/mesa.repository';
@@ -28,6 +37,23 @@ export function createMesaService(repo: MesaRepository, ahora: () => Date = () =
     }
   }
 
+  // Una mesa dada de baja no ocupa lugar: no se valida su geometría. Si está
+  // activa, tiene que entrar en el lienzo y no pisar a otra mesa activa.
+  async function verificarGeometria(
+    restauranteId: string,
+    sucursalId: string,
+    mesa: MesaGeometria & { id?: string; activa: boolean },
+  ) {
+    if (!mesa.activa) return;
+    const rectangulo = rectanguloMesa(mesa);
+    if (!entraEnLienzo(rectangulo)) throw new AppError(409, 'La mesa no entra en el salón');
+    const otras = await repo.listar(restauranteId, sucursalId);
+    const choque = otras.find(
+      (o) => o.activa && o.id !== mesa.id && seSuperponen(rectangulo, rectanguloMesa(o)),
+    );
+    if (choque) throw new AppError(409, `Se superpone con la mesa ${choque.numero}`);
+  }
+
   // Una mesa con reservas que todavía la ocupan no se da de baja ni se achica
   // por debajo del grupo más grande: esas reservas quedarían sin mesa. Una
   // pendiente vencida o una activa de una franja ya terminada no cuentan.
@@ -37,10 +63,18 @@ export function createMesaService(repo: MesaRepository, ahora: () => Date = () =
     mesa: Mesa,
     cambios: Partial<MesaInput>,
   ) {
+    const todas = await repo.reservasVigentes(restauranteId, sucursalId, mesa.id);
+    // Una reserva ACTIVA tiene a los comensales sentados hasta que se cierre,
+    // aunque su franja haya terminado: la mesa no cambia de lugar ni de giro.
+    const cambiaLugar =
+      (cambios.posX !== undefined && cambios.posX !== mesa.posX) ||
+      (cambios.posY !== undefined && cambios.posY !== mesa.posY) ||
+      (cambios.vertical !== undefined && cambios.vertical !== mesa.vertical);
+    if (cambiaLugar && todas.some((r) => r.estado === 'ACTIVA')) {
+      throw new AppError(409, 'La mesa está ocupada: movela cuando se cierre');
+    }
     const momento = ahora();
-    const ocupan = (await repo.reservasVigentes(restauranteId, sucursalId, mesa.id)).filter((r) =>
-      ocupaLaMesa(r, momento),
-    );
+    const ocupan = todas.filter((r) => ocupaLaMesa(r, momento));
     const cantidad = ocupan.length;
     if (cantidad === 0) return;
     const maxPersonas = Math.max(...ocupan.map((r) => r.cantidadPersonas));
@@ -77,6 +111,10 @@ export function createMesaService(repo: MesaRepository, ahora: () => Date = () =
     async crear(restauranteId: string, sucursalId: string, datos: MesaInput) {
       await verificarSucursal(restauranteId, sucursalId);
       await verificarNumero(restauranteId, sucursalId, datos.numero);
+      await verificarGeometria(restauranteId, sucursalId, {
+        ...datos,
+        activa: datos.activa ?? true,
+      });
       return repo.crear(restauranteId, sucursalId, datos);
     },
 
@@ -84,6 +122,14 @@ export function createMesaService(repo: MesaRepository, ahora: () => Date = () =
       const mesa = await obtenerMesa(restauranteId, sucursalId, id);
       await verificarNumero(restauranteId, sucursalId, datos.numero, id);
       await verificarReservas(restauranteId, sucursalId, mesa, datos);
+      await verificarGeometria(restauranteId, sucursalId, {
+        id,
+        capacidad: datos.capacidad,
+        posX: datos.posX,
+        posY: datos.posY,
+        vertical: datos.vertical ?? mesa.vertical,
+        activa: datos.activa ?? mesa.activa,
+      });
       return repo.actualizar(restauranteId, sucursalId, id, datos);
     },
 

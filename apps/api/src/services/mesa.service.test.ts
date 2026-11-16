@@ -13,11 +13,11 @@ const mesa: Mesa = {
   vertical: false,
   activa: true,
 };
-const datos: MesaInput = { numero: 1, capacidad: 4, posX: 10, posY: 15 };
+const datos: MesaInput = { numero: 1, capacidad: 4, posX: 10, posY: 15, vertical: false };
 
 function repoFalso(cambios: Partial<MesaRepository> = {}): jest.Mocked<MesaRepository> {
   return {
-    listar: jest.fn().mockResolvedValue([mesa]),
+    listar: jest.fn().mockResolvedValue([]),
     existeSucursal: jest.fn().mockResolvedValue(true),
     buscar: jest.fn().mockResolvedValue(mesa),
     existeNumero: jest.fn().mockResolvedValue(false),
@@ -96,6 +96,271 @@ describe('mesaService', () => {
 
     expect(repo.existeNumero).toHaveBeenCalledWith(R, 'centro', 1, undefined);
     expect(repo.crear).toHaveBeenCalledWith(R, 'centro', datos);
+  });
+
+  describe('geometría', () => {
+    // Vecina 2 de 4 personas pegada a la derecha de `mesa` (x de 17,5 a 32,5).
+    const vecina: Mesa = { ...mesa, id: 'm2', numero: 2, posX: 25, posY: 15 };
+    const conVecina = (cambios: Partial<MesaRepository> = {}) =>
+      repoFalso({ listar: jest.fn().mockResolvedValue([mesa, vecina]), ...cambios });
+
+    it('crear fuera del lienzo responde 409', async () => {
+      const repo = repoFalso();
+
+      await expect(
+        createMesaService(repo).crear(R, 'centro', { ...datos, posX: 3 }),
+      ).rejects.toMatchObject({ status: 409, message: 'La mesa no entra en el salón' });
+      expect(repo.crear).not.toHaveBeenCalled();
+    });
+
+    it('crear con el borde justo sobre el lienzo se permite', async () => {
+      const repo = repoFalso();
+
+      await createMesaService(repo).crear(R, 'centro', { ...datos, posX: 7.5, posY: 5 });
+
+      expect(repo.crear).toHaveBeenCalled();
+    });
+
+    it('crear encima de otra mesa activa responde 409', async () => {
+      const repo = repoFalso({ listar: jest.fn().mockResolvedValue([mesa]) });
+
+      await expect(
+        createMesaService(repo).crear(R, 'centro', { ...datos, numero: 2, posX: 12 }),
+      ).rejects.toMatchObject({ status: 409, message: 'Se superpone con la mesa 1' });
+      expect(repo.crear).not.toHaveBeenCalled();
+    });
+
+    it('crear con un solape de 0,1 responde 409', async () => {
+      const repo = repoFalso({ listar: jest.fn().mockResolvedValue([mesa]) });
+
+      await expect(
+        createMesaService(repo).crear(R, 'centro', { ...datos, numero: 2, posX: 24.9 }),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('crear con borde compartido se permite', async () => {
+      const repo = repoFalso({ listar: jest.fn().mockResolvedValue([mesa]) });
+
+      await createMesaService(repo).crear(R, 'centro', { ...datos, numero: 2, posX: 25 });
+
+      expect(repo.crear).toHaveBeenCalled();
+    });
+
+    it('una mesa dada de baja en ese lugar no cuenta', async () => {
+      const repo = repoFalso({
+        listar: jest.fn().mockResolvedValue([{ ...mesa, activa: false }]),
+      });
+
+      await createMesaService(repo).crear(R, 'centro', { ...datos, numero: 2 });
+
+      expect(repo.crear).toHaveBeenCalled();
+    });
+
+    it('crear una mesa inactiva no valida su geometría', async () => {
+      const repo = repoFalso({ listar: jest.fn().mockResolvedValue([mesa]) });
+
+      await createMesaService(repo).crear(R, 'centro', { ...datos, numero: 2, activa: false });
+
+      expect(repo.crear).toHaveBeenCalled();
+    });
+
+    it('subir la capacidad de 4 a 8 contra una vecina responde 409', async () => {
+      // Pegada por la derecha: 4 personas ocupa de 12,5 a 27,5 y 8 personas de 7 a 33.
+      const centrada = { ...mesa, posX: 20 };
+      const pegada: Mesa = { ...vecina, posX: 35 };
+      const repo = repoFalso({
+        buscar: jest.fn().mockResolvedValue(centrada),
+        listar: jest.fn().mockResolvedValue([centrada, pegada]),
+      });
+
+      await expect(
+        createMesaService(repo).actualizar(R, 'centro', 'm1', {
+          ...datos,
+          posX: 20,
+          capacidad: 8,
+        }),
+      ).rejects.toMatchObject({ status: 409, message: 'Se superpone con la mesa 2' });
+      expect(repo.actualizar).not.toHaveBeenCalled();
+    });
+
+    it('girar contra una vecina responde 409', async () => {
+      // De 15x10 a 10x15: de 5 a 15 en x y de 7,5 a 22,5 en y; la vecina cubre y de 10 a 20 desde x 17,5.
+      const repo = repoFalso({
+        listar: jest.fn().mockResolvedValue([mesa, { ...vecina, posX: 18, posY: 15 }]),
+      });
+
+      await expect(
+        createMesaService(repo).actualizar(R, 'centro', 'm1', { ...datos, vertical: true }),
+      ).rejects.toMatchObject({ status: 409, message: 'Se superpone con la mesa 2' });
+    });
+
+    it('girar sin choque se guarda', async () => {
+      const repo = repoFalso({ listar: jest.fn().mockResolvedValue([mesa]) });
+      const girada = { ...datos, vertical: true };
+
+      await createMesaService(repo).actualizar(R, 'centro', 'm1', girada);
+
+      expect(repo.actualizar).toHaveBeenCalledWith(R, 'centro', 'm1', girada);
+    });
+
+    it('la mesa que se edita no choca consigo misma', async () => {
+      const repo = repoFalso({ listar: jest.fn().mockResolvedValue([mesa]) });
+
+      await createMesaService(repo).actualizar(R, 'centro', 'm1', { ...datos, posX: 12 });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+    });
+
+    it('sin vertical en los datos se conserva la orientación guardada', async () => {
+      // Vertical ocupa de 15 a 25 en x; horizontal iría de 12,5 a 27,5 y pisaría a la vecina (desde 25,5).
+      const girada = { ...mesa, posX: 20, vertical: true };
+      const lejana: Mesa = { ...vecina, posX: 33 };
+      const repo = repoFalso({
+        buscar: jest.fn().mockResolvedValue(girada),
+        listar: jest.fn().mockResolvedValue([girada, lejana]),
+      });
+      const { vertical: _omitido, ...sinVertical } = datos;
+
+      await createMesaService(repo).actualizar(R, 'centro', 'm1', { ...sinVertical, posX: 20 });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+      await expect(
+        createMesaService(repo).actualizar(R, 'centro', 'm1', {
+          ...sinVertical,
+          posX: 20,
+          vertical: false,
+        }),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('una mesa dada de baja que sigue dada de baja se guarda sin validar', async () => {
+      const repo = conVecina({
+        buscar: jest.fn().mockResolvedValue({ ...mesa, activa: false }),
+      });
+
+      await createMesaService(repo).actualizar(R, 'centro', 'm1', {
+        ...datos,
+        activa: false,
+        posX: 25,
+      });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+    });
+
+    it('una mesa dada de baja sin el campo activa tampoco se valida', async () => {
+      const repo = conVecina({
+        buscar: jest.fn().mockResolvedValue({ ...mesa, activa: false }),
+      });
+
+      await createMesaService(repo).actualizar(R, 'centro', 'm1', { ...datos, posX: 25 });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+    });
+
+    it('reactivar en un lugar tomado responde 409', async () => {
+      const repo = conVecina({
+        buscar: jest.fn().mockResolvedValue({ ...mesa, activa: false }),
+      });
+
+      await expect(
+        createMesaService(repo).actualizar(R, 'centro', 'm1', {
+          ...datos,
+          activa: true,
+          posX: 25,
+        }),
+      ).rejects.toMatchObject({ status: 409, message: 'Se superpone con la mesa 2' });
+    });
+
+    it('reactivar en un lugar libre se guarda', async () => {
+      const repo = repoFalso({
+        buscar: jest.fn().mockResolvedValue({ ...mesa, activa: false }),
+        listar: jest.fn().mockResolvedValue([vecina]),
+      });
+
+      await createMesaService(repo).actualizar(R, 'centro', 'm1', { ...datos, activa: true });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+    });
+
+    it('una capacidad fuera de la lista (3, 5 o 20) no rompe la validación', async () => {
+      // La vecina empieza en x 31: 3 personas (15 a 25) y 5 (10 a 30) caben; 20 (7 a 33) la pisa.
+      const centrada = { ...mesa, posX: 20 };
+      const derecha: Mesa = { ...vecina, posX: 38.5 };
+      const repo = repoFalso({
+        buscar: jest.fn().mockResolvedValue(centrada),
+        listar: jest.fn().mockResolvedValue([centrada, derecha]),
+      });
+      const con = (capacidad: number) =>
+        createMesaService(repo).actualizar(R, 'centro', 'm1', { ...datos, posX: 20, capacidad });
+
+      await expect(con(3)).resolves.toBeDefined();
+      await expect(con(5)).resolves.toBeDefined();
+      await expect(con(20)).rejects.toMatchObject({ status: 409 });
+    });
+  });
+
+  describe('mesa ocupada por una reserva activa', () => {
+    // Activa de una franja que ya terminó: igual la mesa está en uso hasta que se cierre.
+    const AHORA = new Date('2026-10-30T20:00:00.000Z');
+    const activa = {
+      estado: 'ACTIVA' as const,
+      inicio: new Date('2026-10-29T23:00:00.000Z'),
+      cantidadPersonas: 2,
+      toleranciaNoShowMin: 15,
+    };
+    const ocupada = () => repoFalso({ reservasVigentes: jest.fn().mockResolvedValue([activa]) });
+    const servicio = (repo: MesaRepository) => createMesaService(repo, () => AHORA);
+    const MENSAJE = 'La mesa está ocupada: movela cuando se cierre';
+
+    it.each([
+      ['posX', { posX: 40 }],
+      ['posY', { posY: 30 }],
+      ['vertical', { vertical: true }],
+    ])('cambiar %s responde 409', async (_campo, cambio) => {
+      const repo = ocupada();
+
+      await expect(
+        servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, ...cambio }),
+      ).rejects.toMatchObject({ status: 409, message: MENSAJE });
+      expect(repo.actualizar).not.toHaveBeenCalled();
+    });
+
+    it('cambiar solo el número o subir la capacidad sin choque se guarda', async () => {
+      const repo = ocupada();
+
+      await servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, numero: 5 });
+      await servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, capacidad: 6 });
+
+      expect(repo.actualizar).toHaveBeenCalledTimes(2);
+    });
+
+    it('subir la capacidad contra una vecina sigue chocando', async () => {
+      const centrada = { ...mesa, posX: 20 };
+      const vecina: Mesa = { ...mesa, id: 'm2', numero: 2, posX: 35 };
+      const repo = repoFalso({
+        buscar: jest.fn().mockResolvedValue(centrada),
+        reservasVigentes: jest.fn().mockResolvedValue([activa]),
+        listar: jest.fn().mockResolvedValue([centrada, vecina]),
+      });
+
+      await expect(
+        servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, posX: 20, capacidad: 8 }),
+      ).rejects.toMatchObject({ status: 409, message: 'Se superpone con la mesa 2' });
+    });
+
+    it('una reserva pendiente no fija la mesa', async () => {
+      const repo = repoFalso({
+        reservasVigentes: jest
+          .fn()
+          .mockResolvedValue([
+            { ...activa, estado: 'PENDIENTE', inicio: new Date('2026-10-30T23:00:00.000Z') },
+          ]),
+      });
+
+      await servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, posX: 40 });
+
+      expect(repo.actualizar).toHaveBeenCalled();
+    });
   });
 
   describe('con reservas vigentes', () => {
