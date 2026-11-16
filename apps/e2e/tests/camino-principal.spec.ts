@@ -64,7 +64,13 @@ test('del alta del comensal a su primera visita, con el personal en otra sesión
 
   // 4. Pide la milanesa desde la carta.
   await comensal.getByRole('link', { name: 'Pedir más' }).click();
-  await comensal.getByRole('button', { name: 'Agregar Milanesa con puré' }).click();
+  // Desde #43 la carta no tiene botón de agregar: se agrega desde la ficha.
+  await comensal
+    .getByRole('link', { name: /Milanesa con puré/ })
+    .first()
+    .click();
+  await comensal.getByRole('button', { name: 'Agregar al pedido' }).click();
+  await comensal.goBack();
   await comensal.getByRole('link', { name: /^Ver pedido/ }).click();
   await comensal.getByRole('button', { name: /^Confirmar pedido/ }).click();
   await expect(comensal).toHaveURL(/\/mesa$/);
