@@ -7,7 +7,6 @@ import {
   Aviso,
   Boton,
   Campo,
-  EncabezadoPagina,
   EstadoCarga,
   Panel,
   Vacio,
@@ -29,18 +28,18 @@ const tasaDe = (pesos: number) => Math.round((1 / pesos) * 10_000) / 10_000;
 
 // Programa de puntos del restaurante. Es permanente: una vez creado siempre
 // acumula, la tasa no cambia y los puntos no vencen.
-export function ProgramaPuntosPage() {
+export function ProgramaPuntos() {
   const { tienePermiso } = useSesion();
   const { datos, cargando, error, recargar } = useRecurso<ProgramaPanel | null>(
     '/fidelizacion/programa',
   );
 
   return (
-    <section className="max-w-2xl">
-      <EncabezadoPagina
-        titulo="Programa de puntos"
-        descripcion="Cada pago aprobado desde la app suma puntos en este restaurante."
-      />
+    <section className="mb-6 max-w-2xl">
+      <h2 className="text-base font-semibold text-ink">Programa de puntos</h2>
+      <p className="mb-3 text-sm text-meta">
+        Cada pago aprobado desde la app suma puntos en este restaurante.
+      </p>
       <EstadoCarga cargando={cargando && datos === null} error={error} />
       {datos ? (
         <Panel>

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { Gift } from 'lucide-react';
 import {
   hoyArgentina,
@@ -14,6 +14,7 @@ import {
 import { useSesion } from '../../auth/SesionProvider';
 import { useConfirmar } from '../../components/Confirmacion';
 import { Lista } from '../../components/Lista';
+import { ProgramaPuntos } from './ProgramaPuntosPage';
 import {
   Aviso,
   Boton,
@@ -22,7 +23,6 @@ import {
   Estado,
   EstadoCarga,
   Modal,
-  Panel,
   Segmentado,
   Vacio,
   claseInput,
@@ -50,16 +50,13 @@ type FiltroClase = 'TODOS' | ClaseBeneficio;
 export function BeneficiosPage() {
   const { tienePermiso } = useSesion();
   const [clase, setClase] = useState<FiltroClase>('TODOS');
-  const [grupoId, setGrupoId] = useState('');
-  const consulta = new URLSearchParams({
-    ...(clase !== 'TODOS' && { clase }),
-    ...(grupoId && { grupoId }),
-  }).toString();
+  const consulta = clase !== 'TODOS' ? new URLSearchParams({ clase }).toString() : '';
   const { datos, cargando, error, recargar } = useRecurso<BeneficioPanel[]>(
     `/fidelizacion/beneficios${consulta ? `?${consulta}` : ''}`,
   );
   const grupos = useRecurso<GrupoPanel[]>('/fidelizacion/grupos');
   const [editando, setEditando] = useState<BeneficioPanel | 'nuevo' | null>(null);
+  const [grupoModal, setGrupoModal] = useState<GrupoPanel | 'nuevo' | null>(null);
   const accion = useGuardar();
   const confirmar = useConfirmar();
 
@@ -94,19 +91,87 @@ export function BeneficiosPage() {
     if (await accion.enviar(`/fidelizacion/beneficios/${b.id}`, 'DELETE')) cambio();
   }
 
-  const sinFiltros = clase === 'TODOS' && !grupoId;
+  async function borrarGrupo(g: GrupoPanel) {
+    if (!(await confirmar({ mensaje: `¿Borrar el grupo ${g.nombre}?`, accion: 'Borrar' }))) return;
+    if (await accion.enviar(`/fidelizacion/grupos/${g.id}`, 'DELETE')) cambio();
+  }
+
+  const sinFiltros = clase === 'TODOS';
+  const listaGrupos = grupos.datos ?? [];
+  const sinGrupo = (datos ?? []).filter((b) => !b.grupo);
+
+  const lista = (filas: BeneficioPanel[], vacio?: ReactNode) => (
+    <Lista<BeneficioPanel>
+      filas={filas}
+      clave={(b) => b.id}
+      inactiva={(b) => b.estado === 'BAJA'}
+      vacio={vacio}
+      columnas={[
+        { titulo: 'Beneficio', valor: (b) => b.nombre },
+        {
+          titulo: 'Tipo',
+          valor: (b) => (b.clase === 'RECOMPENSA' ? 'Recompensa' : 'Promoción'),
+        },
+        { titulo: 'Condición', valor: textoCondicion },
+        { titulo: 'Descuento', valor: textoDescuento },
+        { titulo: 'Vigencia', valor: textoVigencia },
+        { titulo: 'Disponibles', valor: textoStock },
+        { titulo: 'Estado', valor: (b) => <Estado entidad="beneficio" valor={b.estado} /> },
+      ]}
+      acciones={(b) => (
+        <span className="inline-flex flex-wrap justify-end gap-x-6 gap-y-2">
+          {tienePermiso('beneficio.editar') && b.estado === 'PROGRAMADO' && (
+            <Boton variante="secundario" onClick={() => setEditando(b)}>
+              Editar
+            </Boton>
+          )}
+          {tienePermiso('beneficio.editar') && b.estado === 'TERMINADO' && (
+            <Boton
+              variante="secundario"
+              disabled={b.pagosEnCurso > 0}
+              title={
+                b.pagosEnCurso > 0
+                  ? 'Hay pagos en curso con este beneficio. Esperá a que terminen.'
+                  : undefined
+              }
+              onClick={() => relanzar(b)}
+            >
+              Relanzar
+            </Boton>
+          )}
+          {tienePermiso('beneficio.eliminar') && b.estado !== 'VIGENTE' && b.estado !== 'BAJA' && (
+            <Boton variante="peligro" onClick={() => darDeBaja(b)}>
+              Dar de baja
+            </Boton>
+          )}
+        </span>
+      )}
+    />
+  );
+
+  // Con un filtro de tipo, los grupos que quedan sin beneficios se ocultan.
+  const gruposVisibles = listaGrupos.filter(
+    (g) => sinFiltros || (datos ?? []).some((b) => b.grupo?.id === g.id),
+  );
+  const hayBeneficios = (datos ?? []).length > 0;
 
   return (
     <section>
       <EncabezadoPagina
         titulo="Beneficios"
-        descripcion="Recompensas por fidelidad y promociones de un menú. El comensal usa uno por mesa."
+        descripcion="Programa de puntos, recompensas por fidelidad y promociones de un menú. El comensal usa uno por mesa."
         accion={
           tienePermiso('beneficio.crear') && (
-            <Boton onClick={() => setEditando('nuevo')}>Nuevo beneficio</Boton>
+            <span className="inline-flex flex-wrap gap-2">
+              <Boton variante="secundario" onClick={() => setGrupoModal('nuevo')}>
+                Crear grupo de beneficios
+              </Boton>
+              <Boton onClick={() => setEditando('nuevo')}>Nuevo beneficio</Boton>
+            </span>
           )
         }
       />
+      <ProgramaPuntos />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Segmentado<FiltroClase>
           etiqueta="Tipo de beneficio"
@@ -118,225 +183,111 @@ export function BeneficiosPage() {
             { valor: 'PROMOCION', texto: 'Promociones' },
           ]}
         />
-        {(grupos.datos?.length ?? 0) > 0 && (
-          <div className="w-full sm:w-64">
-            <select
-              aria-label="Grupo"
-              value={grupoId}
-              onChange={(e) => setGrupoId(e.target.value)}
-              className={claseInput}
-            >
-              <option value="">Todos los grupos</option>
-              {grupos.datos!.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
       <EstadoCarga cargando={cargando && !datos} error={error} />
       <div className="mb-3">
         <Aviso>{accion.error}</Aviso>
       </div>
-      {datos && (
-        <Lista<BeneficioPanel>
-          filas={datos}
-          clave={(b) => b.id}
-          inactiva={(b) => b.estado === 'BAJA'}
-          vacio={
-            <Vacio
-              icono={Gift}
-              titulo={
-                sinFiltros ? 'Todavía no hay beneficios' : 'No hay beneficios con este filtro'
-              }
-              texto={
-                sinFiltros
-                  ? 'Creá una recompensa para premiar a los comensales que vuelven, o una promoción para un menú.'
-                  : undefined
-              }
-            />
+      {datos && !hayBeneficios && gruposVisibles.length === 0 && (
+        <Vacio
+          icono={Gift}
+          titulo={sinFiltros ? 'Todavía no hay beneficios' : 'No hay beneficios con este filtro'}
+          texto={
+            sinFiltros
+              ? 'Creá una recompensa para premiar a los comensales que vuelven, o una promoción para un menú.'
+              : undefined
           }
-          columnas={[
-            {
-              titulo: 'Beneficio',
-              valor: (b) => (
-                <span>
-                  {b.nombre}
-                  {b.grupo && <span className="block text-xs text-meta">{b.grupo.nombre}</span>}
-                </span>
-              ),
-            },
-            {
-              titulo: 'Tipo',
-              valor: (b) => (b.clase === 'RECOMPENSA' ? 'Recompensa' : 'Promoción'),
-            },
-            { titulo: 'Condición', valor: textoCondicion },
-            { titulo: 'Descuento', valor: textoDescuento },
-            { titulo: 'Vigencia', valor: textoVigencia },
-            { titulo: 'Disponibles', valor: textoStock },
-            { titulo: 'Estado', valor: (b) => <Estado entidad="beneficio" valor={b.estado} /> },
-          ]}
-          acciones={(b) => (
-            <span className="inline-flex flex-wrap justify-end gap-x-6 gap-y-2">
-              {tienePermiso('beneficio.editar') && b.estado === 'PROGRAMADO' && (
-                <Boton variante="secundario" onClick={() => setEditando(b)}>
-                  Editar
-                </Boton>
-              )}
-              {tienePermiso('beneficio.editar') && b.estado === 'TERMINADO' && (
-                <Boton
-                  variante="secundario"
-                  disabled={b.pagosEnCurso > 0}
-                  title={
-                    b.pagosEnCurso > 0
-                      ? 'Hay pagos en curso con este beneficio. Esperá a que terminen.'
-                      : undefined
-                  }
-                  onClick={() => relanzar(b)}
-                >
-                  Relanzar
-                </Boton>
-              )}
-              {tienePermiso('beneficio.eliminar') &&
-                b.estado !== 'VIGENTE' &&
-                b.estado !== 'BAJA' && (
-                  <Boton variante="peligro" onClick={() => darDeBaja(b)}>
-                    Dar de baja
-                  </Boton>
-                )}
-            </span>
-          )}
         />
       )}
-
-      <Grupos
-        grupos={grupos.datos ?? []}
-        onCambio={() => {
-          grupos.recargar();
-          recargar();
-        }}
-      />
+      {datos &&
+        gruposVisibles.map((g) => {
+          const filas = datos.filter((b) => b.grupo?.id === g.id);
+          return (
+            <div key={g.id} className="mb-6">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-ink">
+                  {g.nombre}{' '}
+                  <span className="text-sm font-normal text-meta">
+                    ({g.cantidadBeneficios}{' '}
+                    {g.cantidadBeneficios === 1 ? 'beneficio' : 'beneficios'})
+                  </span>
+                </h2>
+                <span className="inline-flex gap-2">
+                  {tienePermiso('beneficio.editar') && (
+                    <Boton variante="secundario" onClick={() => setGrupoModal(g)}>
+                      Renombrar
+                    </Boton>
+                  )}
+                  {tienePermiso('beneficio.eliminar') && (
+                    <Boton variante="peligro" onClick={() => borrarGrupo(g)}>
+                      Borrar
+                    </Boton>
+                  )}
+                </span>
+              </div>
+              {lista(
+                filas,
+                <p className="py-3 text-sm text-meta">Este grupo no tiene beneficios.</p>,
+              )}
+            </div>
+          );
+        })}
+      {datos && sinGrupo.length > 0 && (
+        <div className="mb-6">
+          {gruposVisibles.length > 0 && (
+            <h2 className="mb-2 text-base font-semibold text-ink">Sin grupo</h2>
+          )}
+          {lista(sinGrupo)}
+        </div>
+      )}
 
       {editando && (
         <FormularioBeneficio
           beneficio={editando === 'nuevo' ? null : editando}
-          grupos={grupos.datos ?? []}
+          grupos={listaGrupos}
           onCerrar={() => setEditando(null)}
           onGuardado={cambio}
+        />
+      )}
+      {grupoModal && (
+        <FormularioGrupo
+          grupo={grupoModal === 'nuevo' ? null : grupoModal}
+          onCerrar={() => setGrupoModal(null)}
+          onGuardado={() => {
+            setGrupoModal(null);
+            cambio();
+          }}
         />
       )}
     </section>
   );
 }
 
-// Los grupos solo ordenan los beneficios en el panel.
-function Grupos({ grupos, onCambio }: { grupos: GrupoPanel[]; onCambio(): void }) {
-  const { tienePermiso } = useSesion();
-  const [nombre, setNombre] = useState('');
-  const [renombrando, setRenombrando] = useState<GrupoPanel | null>(null);
-  const alta = useGuardar();
-  const baja = useGuardar();
-  const confirmar = useConfirmar();
-
-  async function crear(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (await alta.enviar('/fidelizacion/grupos', 'POST', { nombre })) {
-      setNombre('');
-      onCambio();
-    }
-  }
-
-  async function borrar(g: GrupoPanel) {
-    if (!(await confirmar({ mensaje: `¿Borrar el grupo ${g.nombre}?`, accion: 'Borrar' }))) return;
-    if (await baja.enviar(`/fidelizacion/grupos/${g.id}`, 'DELETE')) onCambio();
-  }
-
-  if (grupos.length === 0 && !tienePermiso('beneficio.crear')) return null;
-
-  return (
-    <Panel titulo="Grupos" className="mt-6 max-w-2xl">
-      <p className="mb-3 text-sm text-meta">Sirven para ordenar los beneficios en esta lista.</p>
-      <Aviso>{baja.error}</Aviso>
-      {grupos.length > 0 && (
-        <ul className="mb-3 divide-y divide-line">
-          {grupos.map((g) => (
-            <li key={g.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <span>
-                {g.nombre}{' '}
-                <span className="text-sm text-meta">
-                  ({g.cantidadBeneficios} {g.cantidadBeneficios === 1 ? 'beneficio' : 'beneficios'})
-                </span>
-              </span>
-              <span className="inline-flex gap-2">
-                {tienePermiso('beneficio.editar') && (
-                  <Boton variante="secundario" onClick={() => setRenombrando(g)}>
-                    Renombrar
-                  </Boton>
-                )}
-                {tienePermiso('beneficio.eliminar') && (
-                  <Boton variante="peligro" onClick={() => borrar(g)}>
-                    Borrar
-                  </Boton>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {tienePermiso('beneficio.crear') && (
-        <form onSubmit={crear} className="flex flex-wrap items-end gap-2">
-          <Campo etiqueta="Nuevo grupo">
-            <input
-              required
-              maxLength={60}
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className={claseInput}
-            />
-          </Campo>
-          <Boton type="submit" variante="secundario" disabled={alta.enviando}>
-            Agregar
-          </Boton>
-          <div className="basis-full">
-            <Aviso>{alta.error}</Aviso>
-          </div>
-        </form>
-      )}
-      {renombrando && (
-        <RenombrarGrupo
-          grupo={renombrando}
-          onCerrar={() => setRenombrando(null)}
-          onGuardado={() => {
-            setRenombrando(null);
-            onCambio();
-          }}
-        />
-      )}
-    </Panel>
-  );
-}
-
-function RenombrarGrupo({
+function FormularioGrupo({
   grupo,
   onCerrar,
   onGuardado,
 }: {
-  grupo: GrupoPanel;
+  grupo: GrupoPanel | null;
   onCerrar(): void;
   onGuardado(): void;
 }) {
-  const [nombre, setNombre] = useState(grupo.nombre);
+  const [nombre, setNombre] = useState(grupo?.nombre ?? '');
   const { enviar, enviando, error } = useGuardar();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (await enviar(`/fidelizacion/grupos/${grupo.id}`, 'PUT', { nombre })) onGuardado();
+    const ok = grupo
+      ? await enviar(`/fidelizacion/grupos/${grupo.id}`, 'PUT', { nombre })
+      : await enviar('/fidelizacion/grupos', 'POST', { nombre });
+    if (ok) onGuardado();
   }
 
   return (
-    <Modal titulo={`Renombrar ${grupo.nombre}`} onCerrar={onCerrar}>
+    <Modal
+      titulo={grupo ? `Renombrar ${grupo.nombre}` : 'Crear grupo de beneficios'}
+      onCerrar={onCerrar}
+    >
       <form onSubmit={onSubmit} className="space-y-4">
         <Campo etiqueta="Nombre">
           <input
