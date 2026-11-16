@@ -36,8 +36,8 @@ type NombreSucursal = (typeof SUCURSALES)[number]['nombre'];
 // Salón de cada sucursal (CU-14): capacidades en orden de número de mesa,
 // ubicadas en una grilla sobre el lienzo de 100 × 60.
 const SALONES: Record<NombreSucursal, SalonSeed> = {
-  Centro: { capacidades: [2, 2, 4, 4, 4, 6, 6, 8, 2, 4], columnas: 5, x0: 10, pasoX: 20 },
-  Palermo: { capacidades: [2, 4, 4, 6, 2, 8], columnas: 3, x0: 20, pasoX: 30 },
+  Centro: { capacidades: [2, 2, 4, 4, 4, 6, 6, 8, 2, 4] },
+  Palermo: { capacidades: [2, 4, 4, 6, 2, 8] },
 };
 
 const COMENSALES = [
@@ -493,7 +493,7 @@ async function seedSegundoRestaurante(tx: Prisma.TransactionClient, passwordHash
   await tx.horarioServicio.createMany({
     data: HORARIOS_SERVICIO.map((h) => ({ sucursalId: sucursal.id, ...h })),
   });
-  await seedSalon(tx, sucursal.id, { capacidades: [2, 4, 4, 6], columnas: 2, x0: 20, pasoX: 40 });
+  await seedSalon(tx, sucursal.id, { capacidades: [2, 4, 4, 6] });
   await tx.configuracionApertura.upsert({
     where: { sucursalId: sucursal.id },
     update: {},
