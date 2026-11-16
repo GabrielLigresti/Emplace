@@ -24,6 +24,7 @@ describe('GET /api/salon/estado', () => {
     capacidad: 4,
     posX: 10,
     posY: 15,
+    vertical: false,
     estado: 'LIBRE',
     reserva: null,
     pedidos: [],

@@ -1,5 +1,6 @@
 import type { Mesa, MesaInput } from '@pgim/shared';
 import type { MesaRepository } from '../repositories/mesa.repository';
+import type { BusEventos } from '../domain/eventos';
 import { createMesaService } from './mesa.service';
 
 const R = 'restaurante';
@@ -455,6 +456,49 @@ describe('mesaService', () => {
       await servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, activa: false, posX: 40 });
 
       expect(repo.actualizar).toHaveBeenCalled();
+    });
+  });
+
+  describe('aviso MAPA_EDITADO', () => {
+    const busFalso = () =>
+      ({ publicar: jest.fn(), suscribir: jest.fn() }) as jest.Mocked<BusEventos>;
+    const aviso = { tipo: 'MAPA_EDITADO', sucursalId: 'centro' };
+
+    it('crear, actualizar y desactivar publican una vez, después de escribir', async () => {
+      const bus = busFalso();
+      const repo = repoFalso();
+      const servicio = createMesaService(repo, undefined, bus);
+
+      await servicio.crear(R, 'centro', datos);
+      expect(bus.publicar).toHaveBeenCalledTimes(1);
+      expect(bus.publicar).toHaveBeenLastCalledWith(aviso);
+      await servicio.actualizar(R, 'centro', 'm1', datos);
+      expect(bus.publicar).toHaveBeenCalledTimes(2);
+      await servicio.desactivar(R, 'centro', 'm1');
+      expect(bus.publicar).toHaveBeenCalledTimes(3);
+      expect(bus.publicar).toHaveBeenLastCalledWith(aviso);
+      expect(repo.desactivar.mock.invocationCallOrder[0]!).toBeLessThan(
+        bus.publicar.mock.invocationCallOrder[2]!,
+      );
+    });
+
+    it('si la validación falla no publica', async () => {
+      const bus = busFalso();
+      const servicio = createMesaService(repoFalso(), undefined, bus);
+
+      await expect(servicio.crear(R, 'centro', { ...datos, posX: 3 })).rejects.toMatchObject({
+        status: 409,
+      });
+      expect(bus.publicar).not.toHaveBeenCalled();
+    });
+
+    it('si el repo falla no publica', async () => {
+      const bus = busFalso();
+      const repo = repoFalso({ actualizar: jest.fn().mockRejectedValue(new Error('base')) });
+      const servicio = createMesaService(repo, undefined, bus);
+
+      await expect(servicio.actualizar(R, 'centro', 'm1', datos)).rejects.toThrow('base');
+      expect(bus.publicar).not.toHaveBeenCalled();
     });
   });
 });

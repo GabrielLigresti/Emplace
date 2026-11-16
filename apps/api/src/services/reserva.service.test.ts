@@ -166,6 +166,14 @@ describe('reservaService', () => {
         [3, 'LIBRE'],
       ]);
     });
+
+    it('cada mesa del mapa trae vertical', async () => {
+      const { service } = servicio(repoFalso());
+
+      const mapa = await service.mapa(S, new Date(A_LAS_21), 3);
+
+      expect(mapa.mesas.every((m) => m.vertical === false)).toBe(true);
+    });
   });
 
   describe('reserva manual', () => {

@@ -8,12 +8,17 @@ import {
   type MesaGeometria,
   type MesaInput,
 } from '@pgim/shared';
+import { busEventos, type BusEventos } from '../domain/eventos';
 import { ocupaLaMesa } from '../domain/reserva';
 import { AppError } from '../lib/errors';
 import { mesaRepository, type MesaRepository } from '../repositories/mesa.repository';
 
 // CU-14 Configurar mapa del salón.
-export function createMesaService(repo: MesaRepository, ahora: () => Date = () => new Date()) {
+export function createMesaService(
+  repo: MesaRepository,
+  ahora: () => Date = () => new Date(),
+  bus: BusEventos = busEventos,
+) {
   async function verificarSucursal(restauranteId: string, sucursalId: string) {
     if (!(await repo.existeSucursal(restauranteId, sucursalId))) {
       throw new AppError(404, 'La sucursal no existe');
@@ -115,7 +120,9 @@ export function createMesaService(repo: MesaRepository, ahora: () => Date = () =
         ...datos,
         activa: datos.activa ?? true,
       });
-      return repo.crear(restauranteId, sucursalId, datos);
+      const creada = await repo.crear(restauranteId, sucursalId, datos);
+      bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId });
+      return creada;
     },
 
     async actualizar(restauranteId: string, sucursalId: string, id: string, datos: MesaInput) {
@@ -130,13 +137,16 @@ export function createMesaService(repo: MesaRepository, ahora: () => Date = () =
         vertical: datos.vertical ?? mesa.vertical,
         activa: datos.activa ?? mesa.activa,
       });
-      return repo.actualizar(restauranteId, sucursalId, id, datos);
+      const actualizada = await repo.actualizar(restauranteId, sucursalId, id, datos);
+      bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId });
+      return actualizada;
     },
 
     async desactivar(restauranteId: string, sucursalId: string, id: string) {
       const mesa = await obtenerMesa(restauranteId, sucursalId, id);
       await verificarReservas(restauranteId, sucursalId, mesa, { activa: false });
       await repo.desactivar(restauranteId, sucursalId, id);
+      bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId });
     },
   };
 }

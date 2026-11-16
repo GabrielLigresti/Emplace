@@ -44,7 +44,7 @@ export interface MesaSalon {
   capacidad: number;
   posX: number;
   posY: number;
-  vertical?: boolean;
+  vertical: boolean;
   estado: EstadoMesaSalon;
   reserva: ReservaPanel | null;
   pedidos: PedidoSalon[];

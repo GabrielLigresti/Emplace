@@ -45,6 +45,19 @@ describe('notificadores', () => {
     expect(emit).toHaveBeenCalledWith('reserva:cambio', { id: 'R', estado: 'PENDIENTE' });
   });
 
+  it('un MAPA_EDITADO avisa solo a la sala de la sucursal', () => {
+    const { io, emit } = ioFalso();
+    const bus = crearBusEventos();
+    registrarNotificadores(io as never, bus);
+
+    bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId: 'S' });
+
+    expect(io.to).toHaveBeenCalledTimes(1);
+    expect(io.to).toHaveBeenCalledWith('sucursal:S');
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith('salon:mapa', { sucursalId: 'S' });
+  });
+
   const pedido = {
     id: 'P',
     numero: 1,

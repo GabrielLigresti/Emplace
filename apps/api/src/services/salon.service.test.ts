@@ -58,6 +58,12 @@ describe('salonService.estado', () => {
     expect(salon.map((m) => m.id)).toEqual(['m1']);
   });
 
+  it('cada mesa trae vertical', async () => {
+    const { servicio } = armar([mesa('m1', 1)], [], new Map());
+    const salon = await servicio.estado('R', 'S', true);
+    expect(salon[0]?.vertical).toBe(false);
+  });
+
   it('pide las pendientes hasta 30 minutos después de ahora', async () => {
     const { servicio, repoReservas } = armar([mesa('m1', 1)], [], new Map());
     await servicio.estado('R', 'S', true);

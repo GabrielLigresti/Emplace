@@ -60,7 +60,9 @@ export type EventoDominio =
   | { tipo: 'PLATO_SIN_RECETA'; sucursalId: string; itemMenuId: string }
   | { tipo: 'ALERTA_CREADA'; sucursalId: string; alerta: AlertaPanel }
   // CU-09: el gerente confirmó los turnos de la semana.
-  | { tipo: 'PLANIFICACION_CONFIRMADA'; sucursalId: string; planificacionId: string };
+  | { tipo: 'PLANIFICACION_CONFIRMADA'; sucursalId: string; planificacionId: string }
+  // CU-14: el gerente creó, movió o dio de baja una mesa.
+  | { tipo: 'MAPA_EDITADO'; sucursalId: string };
 
 export type OyenteEventos = (evento: EventoDominio) => void;
 

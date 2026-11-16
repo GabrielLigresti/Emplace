@@ -47,7 +47,7 @@ export interface MesaMapa {
   capacidad: number;
   posX: number;
   posY: number;
-  vertical?: boolean;
+  vertical: boolean;
   estado: EstadoMesaMapa;
 }
 
@@ -85,12 +85,18 @@ export const EVENTOS_SOCKET = {
   pagosCambio: 'pagos:cambio',
   alertaNueva: 'alerta:nueva',
   turnosPublicados: 'turnos:publicados',
+  mapaEditado: 'salon:mapa',
 } as const;
 
 export interface CambioSalon {
   sucursalId: string;
   inicio: string;
   mesaId: string;
+}
+
+// El gerente editó el mapa del salón (alta, cambio o baja de una mesa).
+export interface MapaEditado {
+  sucursalId: string;
 }
 
 export interface CambioReserva {
