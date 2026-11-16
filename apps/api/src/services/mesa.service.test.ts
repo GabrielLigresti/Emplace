@@ -26,6 +26,7 @@ function repoFalso(cambios: Partial<MesaRepository> = {}): jest.Mocked<MesaRepos
     actualizar: jest.fn().mockResolvedValue(mesa),
     desactivar: jest.fn(),
     reservasVigentes: jest.fn().mockResolvedValue([]),
+    actualizarPosiciones: jest.fn().mockResolvedValue(undefined),
     ...cambios,
   } as jest.Mocked<MesaRepository>;
 }
@@ -472,6 +473,196 @@ describe('mesaService', () => {
       await servicio(repo).actualizar(R, 'centro', 'm1', { ...datos, activa: false, posX: 40 });
 
       expect(repo.actualizar).toHaveBeenCalled();
+    });
+  });
+
+  describe('distribuir', () => {
+    // Dos mesas de 4 personas (15x10) bien separadas, y una de 2 (10x8) abajo.
+    const a: Mesa = { ...mesa, id: 'a', numero: 1, posX: 20, posY: 15 };
+    const b: Mesa = { ...mesa, id: 'b', numero: 2, posX: 60, posY: 15 };
+    const c: Mesa = { ...mesa, id: 'c', numero: 3, capacidad: 2, posX: 20, posY: 45 };
+    const busFalso = () =>
+      ({ publicar: jest.fn(), suscribir: jest.fn() }) as jest.Mocked<BusEventos>;
+    const salon = (mesas: Mesa[] = [a, b, c], cambios: Partial<MesaRepository> = {}) =>
+      repoFalso({ listar: jest.fn().mockResolvedValue(mesas), ...cambios });
+    const activa = {
+      estado: 'ACTIVA' as const,
+      inicio: new Date('2026-10-29T23:00:00.000Z'),
+      cantidadPersonas: 2,
+      toleranciaNoShowMin: 15,
+    };
+
+    it('intercambiar la posición de dos mesas pasa aunque cada una caiga donde estaba la otra', async () => {
+      const repo = salon();
+      const cambios = [
+        { id: 'a', posX: 60, posY: 15 },
+        { id: 'b', posX: 20, posY: 15 },
+      ];
+
+      await createMesaService(repo).distribuir(R, 'centro', cambios);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalledWith(R, 'centro', cambios);
+    });
+
+    it('responde con las mesas de la sucursal leídas después de escribir', async () => {
+      const repo = salon();
+
+      const res = await createMesaService(repo).distribuir(R, 'centro', [
+        { id: 'a', posX: 30, posY: 15 },
+      ]);
+
+      expect(res).toEqual([a, b, c]);
+      expect(repo.listar.mock.invocationCallOrder.at(-1)!).toBeGreaterThan(
+        repo.actualizarPosiciones.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it('una sucursal de otro restaurante responde 404', async () => {
+      const repo = salon([a], { existeSucursal: jest.fn().mockResolvedValue(false) });
+
+      await expect(
+        createMesaService(repo).distribuir(R, 'ajena', [{ id: 'a', posX: 30, posY: 15 }]),
+      ).rejects.toMatchObject({ status: 404, message: 'La sucursal no existe' });
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+    });
+
+    it('una mesa inexistente responde 404 y no escribe', async () => {
+      const repo = salon();
+
+      await expect(
+        createMesaService(repo).distribuir(R, 'centro', [
+          { id: 'a', posX: 30, posY: 15 },
+          { id: 'zzz', posX: 40, posY: 15 },
+        ]),
+      ).rejects.toMatchObject({ status: 404, message: 'La mesa no existe' });
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+    });
+
+    it('chocar con una mesa que no se movió responde 409', async () => {
+      const repo = salon();
+
+      await expect(
+        createMesaService(repo).distribuir(R, 'centro', [{ id: 'a', posX: 50, posY: 15 }]),
+      ).rejects.toMatchObject({ status: 409, message: 'La mesa 1 se superpone con la mesa 2' });
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+    });
+
+    it('dos mesas movidas que terminan una sobre otra responden 409', async () => {
+      const repo = salon();
+
+      await expect(
+        createMesaService(repo).distribuir(R, 'centro', [
+          { id: 'a', posX: 40, posY: 40 },
+          { id: 'c', posX: 42, posY: 40 },
+        ]),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+
+    it('fuera del lienzo responde 409', async () => {
+      const repo = salon();
+
+      await expect(
+        createMesaService(repo).distribuir(R, 'centro', [{ id: 'a', posX: 3, posY: 15 }]),
+      ).rejects.toMatchObject({ status: 409, message: 'La mesa 1 no entra en el salón' });
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+    });
+
+    it('una mesa con reserva activa que se mueve responde 409 y no escribe', async () => {
+      const repo = salon([a, b, c], {
+        reservasVigentes: jest.fn().mockResolvedValue([activa]),
+      });
+
+      await expect(
+        createMesaService(repo).distribuir(R, 'centro', [{ id: 'a', posX: 30, posY: 15 }]),
+      ).rejects.toMatchObject({
+        status: 409,
+        message: 'La mesa 1 está ocupada: movela cuando se cierre',
+      });
+      expect(repo.actualizarPosiciones).not.toHaveBeenCalled();
+    });
+
+    it('una mesa con reserva activa que no cambia de lugar no traba el guardado', async () => {
+      // La reserva activa es de la mesa a, que se manda en su mismo lugar.
+      const repo = salon([a, b, c], {
+        reservasVigentes: jest.fn(async (_r, _s, id) => (id === 'a' ? [activa] : [])),
+      });
+
+      await createMesaService(repo).distribuir(R, 'centro', [
+        { id: 'a', posX: 20, posY: 15 },
+        { id: 'b', posX: 65, posY: 15 },
+      ]);
+
+      expect(repo.reservasVigentes).not.toHaveBeenCalledWith(R, 'centro', 'a');
+      expect(repo.actualizarPosiciones).toHaveBeenCalledWith(R, 'centro', [
+        { id: 'b', posX: 65, posY: 15 },
+      ]);
+    });
+
+    it('una reserva pendiente no fija la mesa', async () => {
+      const repo = salon([a, b, c], {
+        reservasVigentes: jest.fn().mockResolvedValue([{ ...activa, estado: 'PENDIENTE' }]),
+      });
+
+      await createMesaService(repo).distribuir(R, 'centro', [{ id: 'a', posX: 30, posY: 15 }]);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalled();
+    });
+
+    it('una mesa inactiva se mueve sin validar y no ocupa lugar para las demás', async () => {
+      const baja: Mesa = { ...c, activa: false };
+      const repo = salon([a, b, baja]);
+
+      await createMesaService(repo).distribuir(R, 'centro', [
+        { id: 'c', posX: 1, posY: 1 },
+        { id: 'a', posX: 20, posY: 40 },
+      ]);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalled();
+    });
+
+    it('un par ya superpuesto que no se movió no bloquea el guardado', async () => {
+      const pegada: Mesa = { ...b, posX: 24, posY: 15 };
+      const repo = salon([a, pegada, c]);
+
+      await createMesaService(repo).distribuir(R, 'centro', [{ id: 'c', posX: 20, posY: 50 }]);
+
+      expect(repo.actualizarPosiciones).toHaveBeenCalled();
+    });
+
+    it('publica MAPA_EDITADO una sola vez, después de escribir', async () => {
+      const bus = busFalso();
+      const repo = salon();
+
+      await createMesaService(repo, undefined, bus).distribuir(R, 'centro', [
+        { id: 'a', posX: 30, posY: 15 },
+        { id: 'c', posX: 30, posY: 45 },
+      ]);
+
+      expect(bus.publicar).toHaveBeenCalledTimes(1);
+      expect(bus.publicar).toHaveBeenCalledWith({ tipo: 'MAPA_EDITADO', sucursalId: 'centro' });
+      expect(repo.actualizarPosiciones.mock.invocationCallOrder[0]!).toBeLessThan(
+        bus.publicar.mock.invocationCallOrder[0]!,
+      );
+    });
+
+    it('si la validación o el repo fallan no publica', async () => {
+      const bus = busFalso();
+
+      await expect(
+        createMesaService(salon(), undefined, bus).distribuir(R, 'centro', [
+          { id: 'a', posX: 50, posY: 15 },
+        ]),
+      ).rejects.toMatchObject({ status: 409 });
+      const roto = salon([a, b, c], {
+        actualizarPosiciones: jest.fn().mockRejectedValue(new Error('base')),
+      });
+      await expect(
+        createMesaService(roto, undefined, bus).distribuir(R, 'centro', [
+          { id: 'a', posX: 30, posY: 15 },
+        ]),
+      ).rejects.toThrow('base');
+
+      expect(bus.publicar).not.toHaveBeenCalled();
     });
   });
 

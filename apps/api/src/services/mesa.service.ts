@@ -4,6 +4,7 @@ import {
   rectanguloMesa,
   seSuperponen,
   type CodigoPermiso,
+  type DistribucionInput,
   type Mesa,
   type MesaGeometria,
   type MesaInput,
@@ -146,6 +147,62 @@ export function createMesaService(
       const actualizada = await repo.actualizar(restauranteId, sucursalId, id, datos);
       bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId });
       return actualizada;
+    },
+
+    // Guarda de una vez las posiciones del borrador del editor. Se valida la
+    // distribución final completa, así que dos mesas pueden intercambiar lugar.
+    async distribuir(
+      restauranteId: string,
+      sucursalId: string,
+      cambios: DistribucionInput['mesas'],
+    ) {
+      await verificarSucursal(restauranteId, sucursalId);
+      const actuales = await repo.listar(restauranteId, sucursalId);
+      const porId = new Map(actuales.map((m) => [m.id, m]));
+      const movidas = new Set<string>();
+      for (const cambio of cambios) {
+        const mesa = porId.get(cambio.id);
+        if (!mesa) throw new AppError(404, 'La mesa no existe');
+        if (mesa.posX !== cambio.posX || mesa.posY !== cambio.posY) movidas.add(mesa.id);
+      }
+      if (movidas.size === 0) return actuales;
+
+      for (const id of movidas) {
+        const mesa = porId.get(id)!;
+        const reservas = await repo.reservasVigentes(restauranteId, sucursalId, id);
+        if (reservas.some((r) => r.estado === 'ACTIVA')) {
+          throw new AppError(409, `La mesa ${mesa.numero} está ocupada: movela cuando se cierre`);
+        }
+      }
+
+      const finales = actuales.map((m) => {
+        const cambio = cambios.find((c) => c.id === m.id);
+        return cambio ? { ...m, posX: cambio.posX, posY: cambio.posY } : m;
+      });
+      const activas = finales.filter((m) => m.activa);
+      for (const mesa of activas.filter((m) => movidas.has(m.id))) {
+        const rectangulo = rectanguloMesa(mesa);
+        if (!entraEnLienzo(rectangulo)) {
+          throw new AppError(409, `La mesa ${mesa.numero} no entra en el salón`);
+        }
+        const choque = activas.find(
+          (o) => o.id !== mesa.id && seSuperponen(rectangulo, rectanguloMesa(o)),
+        );
+        if (choque) {
+          throw new AppError(
+            409,
+            `La mesa ${mesa.numero} se superpone con la mesa ${choque.numero}`,
+          );
+        }
+      }
+
+      await repo.actualizarPosiciones(
+        restauranteId,
+        sucursalId,
+        cambios.filter((c) => movidas.has(c.id)),
+      );
+      bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId });
+      return repo.listar(restauranteId, sucursalId);
     },
 
     async desactivar(restauranteId: string, sucursalId: string, id: string) {
