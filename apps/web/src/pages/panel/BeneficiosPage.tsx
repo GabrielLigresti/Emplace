@@ -14,7 +14,7 @@ import {
 import { useSesion } from '../../auth/SesionProvider';
 import { useConfirmar } from '../../components/Confirmacion';
 import { Lista } from '../../components/Lista';
-import { ProgramaPuntos } from './ProgramaPuntosPage';
+import { ProgramaPuntos } from './ProgramaPuntos';
 import {
   Aviso,
   Boton,
@@ -50,10 +50,12 @@ type FiltroClase = 'TODOS' | ClaseBeneficio;
 export function BeneficiosPage() {
   const { tienePermiso } = useSesion();
   const [clase, setClase] = useState<FiltroClase>('TODOS');
-  const consulta = clase !== 'TODOS' ? new URLSearchParams({ clase }).toString() : '';
-  const { datos, cargando, error, recargar } = useRecurso<BeneficioPanel[]>(
-    `/fidelizacion/beneficios${consulta ? `?${consulta}` : ''}`,
-  );
+  const {
+    datos: todos,
+    cargando,
+    error,
+    recargar,
+  } = useRecurso<BeneficioPanel[]>('/fidelizacion/beneficios');
   const grupos = useRecurso<GrupoPanel[]>('/fidelizacion/grupos');
   const [editando, setEditando] = useState<BeneficioPanel | 'nuevo' | null>(null);
   const [grupoModal, setGrupoModal] = useState<GrupoPanel | 'nuevo' | null>(null);
@@ -98,7 +100,10 @@ export function BeneficiosPage() {
 
   const sinFiltros = clase === 'TODOS';
   const listaGrupos = grupos.datos ?? [];
-  const sinGrupo = (datos ?? []).filter((b) => !b.grupo);
+  // Se pide la lista completa y el tipo se filtra acá, para no mostrar datos viejos al cambiar.
+  const datos = todos && grupos.datos ? todos.filter((b) => sinFiltros || b.clase === clase) : null;
+  const idsGrupos = new Set(listaGrupos.map((g) => g.id));
+  const sinGrupo = (datos ?? []).filter((b) => !b.grupo || !idsGrupos.has(b.grupo.id));
 
   const lista = (filas: BeneficioPanel[], vacio?: ReactNode) => (
     <Lista<BeneficioPanel>
@@ -184,7 +189,10 @@ export function BeneficiosPage() {
           ]}
         />
       </div>
-      <EstadoCarga cargando={cargando && !datos} error={error} />
+      <EstadoCarga
+        cargando={(cargando && !todos) || (grupos.cargando && !grupos.datos)}
+        error={error ?? grupos.error}
+      />
       <div className="mb-3">
         <Aviso>{accion.error}</Aviso>
       </div>
@@ -204,22 +212,36 @@ export function BeneficiosPage() {
           const filas = datos.filter((b) => b.grupo?.id === g.id);
           return (
             <div key={g.id} className="mb-6">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base font-semibold text-ink">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h2 className="min-w-0 text-base font-semibold text-ink [overflow-wrap:anywhere]">
                   {g.nombre}{' '}
                   <span className="text-sm font-normal text-meta">
-                    ({g.cantidadBeneficios}{' '}
-                    {g.cantidadBeneficios === 1 ? 'beneficio' : 'beneficios'})
+                    ({filas.length} {filas.length === 1 ? 'beneficio' : 'beneficios'})
                   </span>
                 </h2>
-                <span className="inline-flex gap-2">
+                <span className="inline-flex shrink-0 gap-1">
                   {tienePermiso('beneficio.editar') && (
-                    <Boton variante="secundario" onClick={() => setGrupoModal(g)}>
+                    <Boton
+                      variante="fantasma"
+                      aria-label={`Renombrar el grupo ${g.nombre}`}
+                      onClick={() => setGrupoModal(g)}
+                    >
                       Renombrar
                     </Boton>
                   )}
                   {tienePermiso('beneficio.eliminar') && (
-                    <Boton variante="peligro" onClick={() => borrarGrupo(g)}>
+                    <Boton
+                      variante="fantasma"
+                      className="text-bad hover:bg-bad-soft hover:text-bad"
+                      aria-label={`Borrar el grupo ${g.nombre}`}
+                      disabled={g.cantidadBeneficios > 0}
+                      title={
+                        g.cantidadBeneficios > 0
+                          ? 'El grupo tiene beneficios. Sacalos del grupo antes de borrarlo.'
+                          : undefined
+                      }
+                      onClick={() => borrarGrupo(g)}
+                    >
                       Borrar
                     </Boton>
                   )}
@@ -234,7 +256,7 @@ export function BeneficiosPage() {
         })}
       {datos && sinGrupo.length > 0 && (
         <div className="mb-6">
-          {gruposVisibles.length > 0 && (
+          {listaGrupos.length > 0 && (
             <h2 className="mb-2 text-base font-semibold text-ink">Sin grupo</h2>
           )}
           {lista(sinGrupo)}
@@ -274,9 +296,14 @@ function FormularioGrupo({
 }) {
   const [nombre, setNombre] = useState(grupo?.nombre ?? '');
   const { enviar, enviando, error } = useGuardar();
+  const [falta, setFalta] = useState(false);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!nombre.trim()) {
+      setFalta(true);
+      return;
+    }
     const ok = grupo
       ? await enviar(`/fidelizacion/grupos/${grupo.id}`, 'PUT', { nombre })
       : await enviar('/fidelizacion/grupos', 'POST', { nombre });
@@ -288,17 +315,20 @@ function FormularioGrupo({
       titulo={grupo ? `Renombrar ${grupo.nombre}` : 'Crear grupo de beneficios'}
       onCerrar={onCerrar}
     >
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-4">
         <Campo etiqueta="Nombre">
           <input
-            required
             maxLength={60}
             value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            aria-invalid={falta || undefined}
+            onChange={(e) => {
+              setNombre(e.target.value);
+              setFalta(false);
+            }}
             className={claseInput}
           />
         </Campo>
-        <Aviso>{error}</Aviso>
+        <Aviso>{falta ? 'Ingresá un nombre' : error}</Aviso>
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
             Cancelar

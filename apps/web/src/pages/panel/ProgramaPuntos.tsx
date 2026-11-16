@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from 'react';
-import { Star } from 'lucide-react';
 import type { ProgramaInput, ProgramaPanel } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useConfirmar } from '../../components/Confirmacion';
@@ -9,7 +8,6 @@ import {
   Campo,
   EstadoCarga,
   Panel,
-  Vacio,
   claseInput,
   propsDecimal,
 } from '../../components/ui';
@@ -68,11 +66,9 @@ export function ProgramaPuntos() {
         (tienePermiso('beneficio.crear') ? (
           <FormularioPrograma onCreado={recargar} />
         ) : (
-          <Vacio
-            icono={Star}
-            titulo="Todavía no hay programa de puntos"
-            texto="Lo puede crear quien administra los beneficios del restaurante."
-          />
+          <p className="text-sm text-meta">
+            Todavía no hay programa de puntos. Lo puede crear quien administra los beneficios.
+          </p>
         ))
       )}
     </section>
@@ -102,7 +98,7 @@ function FormularioPrograma({ onCreado }: { onCreado(): void }) {
   }
 
   return (
-    <Panel titulo="Crear el programa">
+    <Panel>
       <form onSubmit={onSubmit} className="space-y-4">
         <Campo
           etiqueta="Cada cuántos pesos se suma 1 punto"
