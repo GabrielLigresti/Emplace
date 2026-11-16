@@ -234,10 +234,10 @@ export function FormTanda({
           texto="Para registrar una tanda, activá “Lleva stock (se produce por tandas)” en la receta de la preparación."
           accion={
             <Link
-              to="/panel/recetas"
+              to="/panel/stock?pestaña=preparaciones"
               className="text-sm font-medium text-accent-ink underline underline-offset-2"
             >
-              Ir a Recetas
+              Ir a Preparaciones
             </Link>
           }
         />
