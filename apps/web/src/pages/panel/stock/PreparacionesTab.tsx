@@ -1,6 +1,11 @@
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
-import { ETIQUETA_UNIDAD, type ResumenRecetas } from '@pgim/shared';
+import {
+  ETIQUETA_UNIDAD,
+  convertirUnidad,
+  type ResumenRecetas,
+  type UnidadBase,
+} from '@pgim/shared';
 import { useSesion } from '../../../auth/SesionProvider';
 import { useConfirmar } from '../../../components/Confirmacion';
 import { Lista } from '../../../components/Lista';
@@ -8,6 +13,13 @@ import { Aviso, EstadoCarga, Etiqueta } from '../../../components/ui';
 import { NOMBRE_UNIDAD, formatoPesos } from '../../../lib/formato';
 import { useGuardar } from '../../../lib/useGuardar';
 import { useRecurso } from '../../../lib/useRecurso';
+
+// Costo por kg o por l cuando la base es g o ml, que es como se compra y se lee.
+function textoCosto(costoUnitario: number, base: UnidadBase) {
+  if (base === 'UNIDAD') return `${formatoPesos(costoUnitario)} por unidad`;
+  const grande = base === 'GRAMO' ? 'KILOGRAMO' : 'LITRO';
+  return `${formatoPesos(costoUnitario * convertirUnidad(1, grande, base))} por ${ETIQUETA_UNIDAD[grande]}`;
+}
 
 const claseLink =
   'inline-block rounded-control border border-line-strong bg-surface px-3 py-2 text-sm font-medium text-text hover:bg-panel';
@@ -69,10 +81,10 @@ export function PreparacionesTab({
                 </span>
               ),
             },
-            { titulo: 'Unidad base', valor: (i) => NOMBRE_UNIDAD[i.unidadBase] },
+            { titulo: 'Unidad', valor: (i) => NOMBRE_UNIDAD[i.unidadBase] },
             {
               titulo: 'Costo',
-              valor: (i) => `${formatoPesos(i.costoUnitario)} por ${ETIQUETA_UNIDAD[i.unidadBase]}`,
+              valor: (i) => textoCosto(i.costoUnitario, i.unidadBase),
               className: 'tabular-nums',
             },
           ]}
