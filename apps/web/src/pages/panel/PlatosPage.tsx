@@ -112,7 +112,6 @@ export function PlatosPage() {
                   <span className="inline-flex flex-wrap items-center gap-1">
                     {p.nombre}
                     {p.sinReceta && <Etiqueta tono="warn">Sin receta</Etiqueta>}
-                    {p.reventa && <Etiqueta>Se vende como viene</Etiqueta>}
                     {!p.activo && <Etiqueta>Dado de baja</Etiqueta>}
                   </span>
                 ),
