@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
-import { EVENTOS_SOCKET, type MesaSalon } from '@pgim/shared';
+import { EVENTOS_SOCKET, type EstadoMesaSalon, type MesaSalon } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { IndicadorConexion } from '../../components/IndicadorConexion';
 import { LeyendaSalon, MapaSalon } from '../../components/MapaSalon';
-import { Aviso, Boton, EncabezadoPagina, Estado, EstadoCarga } from '../../components/ui';
+import { Aviso, Boton, Chip, EncabezadoPagina, Estado, EstadoCarga } from '../../components/ui';
 import { formatoHora } from '../../lib/formato';
 import { useConexionSocket, useEventoSocket } from '../../lib/socket';
 import { useCerrarMesa } from '../../lib/useCerrarMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
 const REFRESCO_MS = 60_000;
+
+// Los estados que trae el salón en vivo son solo estos tres (INASISTENCIA y
+// CHICA son del plano de reservas), así que los filtros cubren todas las mesas.
+const FILTROS: { valor: EstadoMesaSalon; texto: string }[] = [
+  { valor: 'LIBRE', texto: 'Libre' },
+  { valor: 'RESERVADA', texto: 'Reservada' },
+  { valor: 'OCUPADA', texto: 'Ocupada' },
+];
 
 // Estado actual del salón para el mozo: el plano con cada mesa libre, reservada
 // u ocupada y, al tocar una, su detalle con los pedidos y el cierre (CU-18).
@@ -29,10 +37,13 @@ function SalonEnVivo() {
   const columna = useRef<HTMLElement>(null);
   const plano = useRef<HTMLDivElement>(null);
   const [toques, setToques] = useState(0);
+  // Filtro por estado: solo del cliente, atenúa las mesas que no coinciden.
+  const [filtro, setFiltro] = useState<EstadoMesaSalon | null>(null);
 
   useEventoSocket(EVENTOS_SOCKET.cambioSalon, recargar);
   useEventoSocket(EVENTOS_SOCKET.pedidoNuevo, recargar);
   useEventoSocket(EVENTOS_SOCKET.pedidoCambio, recargar);
+  useEventoSocket(EVENTOS_SOCKET.mapaEditado, recargar);
   const conexion = useConexionSocket(recargar);
 
   // Ningún evento avisa cuando una mesa entra en la ventana de activación: se recarga por intervalo.
@@ -42,6 +53,15 @@ function SalonEnVivo() {
   }, [recargar]);
 
   const mesa = datos?.find((m) => m.id === mesaId) ?? null;
+  const enGris = filtro && datos ? datos.filter((m) => m.estado !== filtro).length : 0;
+
+  // Si la mesa elegida queda fuera del filtro (al cambiarlo o porque cambió de estado), se cierra el detalle.
+  useEffect(() => {
+    if (filtro && mesa && mesa.estado !== filtro) {
+      limpiarError();
+      setMesaId(null);
+    }
+  }, [filtro, mesa, limpiarError]);
 
   // Si la mesa elegida ya no viene en la respuesta, se vuelve al plano solo.
   useEffect(() => {
@@ -95,10 +115,37 @@ function SalonEnVivo() {
       {datos && datos.length > 0 && (
         <div className="lg:flex lg:items-start lg:gap-4">
           <div ref={plano} className="min-w-0 flex-1 space-y-3">
+            <div
+              className="flex flex-wrap items-center gap-2"
+              role="group"
+              aria-label="Filtrar por estado"
+            >
+              <Chip seleccionado={filtro === null} onClick={() => setFiltro(null)}>
+                Todas
+              </Chip>
+              {FILTROS.map((f) => (
+                <Chip
+                  key={f.valor}
+                  seleccionado={filtro === f.valor}
+                  onClick={() => setFiltro(f.valor)}
+                >
+                  {f.texto}
+                </Chip>
+              ))}
+              {filtro && (
+                <Boton variante="fantasma" densidad="tactil" onClick={() => setFiltro(null)}>
+                  Quitar filtros ({enGris} en gris)
+                </Boton>
+              )}
+            </div>
             <MapaSalon
               ajustarAncho
               todasElegibles
-              mesas={datos}
+              mesas={datos.map((m) => ({
+                ...m,
+                personas: m.reserva?.cantidadPersonas,
+                atenuada: filtro !== null && m.estado !== filtro,
+              }))}
               seleccionadaId={mesaId}
               onElegir={elegir}
               horaReservada={(m) => {
