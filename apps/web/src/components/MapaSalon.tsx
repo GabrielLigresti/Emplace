@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { LIENZO_SALON, dimensionesMesa, rectanguloMesa, seSuperponen } from '@pgim/shared';
 
 export interface MesaDibujo {
@@ -27,11 +27,11 @@ const COLOR: Record<EstadoMesaDibujo, { mesa: string; texto: string }> = {
   RESERVADA: { mesa: `fill-surface stroke-meta ${PUNTEADO}`, texto: 'fill-ink' },
   OCUPADA: { mesa: 'fill-accent-soft stroke-accent', texto: 'fill-accent-ink' },
   INASISTENCIA: { mesa: 'fill-surface stroke-warn', texto: 'fill-warn' },
-  CHICA: { mesa: 'fill-surface stroke-line-strong [stroke-dasharray:1_0.6]', texto: 'fill-meta' },
+  CHICA: { mesa: 'fill-surface stroke-meta [stroke-dasharray:1_0.6]', texto: 'fill-meta' },
 };
 const COLOR_CONFLICTO = { mesa: 'fill-bad-soft stroke-bad', texto: 'fill-bad' };
 const COLOR_ATENUADA = { mesa: 'fill-panel stroke-line-strong', texto: 'fill-meta' };
-const COLOR_INACTIVA = { mesa: `stroke-line-strong ${PUNTEADO}`, texto: 'fill-meta' };
+const COLOR_INACTIVA = { mesa: `stroke-meta ${PUNTEADO}`, texto: 'fill-meta' };
 
 const NOMBRE: Record<EstadoMesaDibujo, string> = {
   LIBRE: 'Libre',
@@ -56,10 +56,13 @@ export function LeyendaSalon({
   estados,
   inactiva,
   vistaComensal,
+  conPersonas,
 }: {
   estados: EstadoMesaDibujo[];
   inactiva?: boolean;
   vistaComensal?: boolean;
+  // Explica «2/4» (personas / capacidad); solo para pantallas que muestran personas.
+  conPersonas?: boolean;
 }) {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-meta">
@@ -90,7 +93,7 @@ export function LeyendaSalon({
               rx={1.2}
               strokeWidth={1.2}
               fill="url(#rayado-leyenda)"
-              className={`stroke-line-strong ${PUNTEADO}`}
+              className={`stroke-meta ${PUNTEADO}`}
             />
             <defs>
               <pattern
@@ -101,13 +104,14 @@ export function LeyendaSalon({
                 patternTransform="rotate(45)"
               >
                 <rect width="2" height="2" className="fill-panel" />
-                <rect width="0.8" height="2" className="fill-line-strong" />
+                <rect width="0.6" height="2" className="fill-line-strong" />
               </pattern>
             </defs>
           </svg>
           Dada de baja
         </li>
       )}
+      {conPersonas && !vistaComensal && <li>2/4 = personas / capacidad</li>}
     </ul>
   );
 }
@@ -130,6 +134,7 @@ export function MapaSalon({
   onMover,
   horaReservada,
   vistaComensal,
+  onConflicto,
 }: {
   mesas: MesaDibujo[];
   seleccionadaId?: string | null;
@@ -141,6 +146,8 @@ export function MapaSalon({
   // En pantallas anchas deja que el plano se achique al ancho de su columna.
   ajustarAncho?: boolean;
   onMover?(id: string, posX: number, posY: number): void;
+  // Se llama al soltar una mesa sobre otra activa; la mesa vuelve a su lugar.
+  onConflicto?(mesa: MesaDibujo, otra: MesaDibujo): void;
   // Plano del comensal: solo número y capacidad, sin hora, personas ni la
   // diferencia entre reservada y ocupada.
   vistaComensal?: boolean;
@@ -150,211 +157,272 @@ export function MapaSalon({
   // Hubo movimiento en el gesto actual: el click que sigue al soltar no elige.
   const huboMovimiento = useRef(false);
 
-  function aLienzo(e: PointerEvent, mesa: MesaDibujo): { x: number; y: number } | null {
+  // Gesto en curso: punto de agarre y distancia del puntero al centro de la mesa.
+  const gesto = useRef<{
+    agarre: { x: number; y: number };
+    offset: { x: number; y: number };
+    arrastrando: boolean;
+  } | null>(null);
+
+  function punteroEnLienzo(e: PointerEvent): { x: number; y: number } | null {
     const matriz = svg.current?.getScreenCTM();
     if (!matriz) return null;
     const punto = new DOMPoint(e.clientX, e.clientY).matrixTransform(matriz.inverse());
-    const { ancho, alto } = dimensionesMesa(mesa.capacidad, mesa.vertical);
-    return {
-      x: Math.round(limitar(punto.x, ancho / 2, LIENZO_SALON.ancho - ancho / 2) * 10) / 10,
-      y: Math.round(limitar(punto.y, alto / 2, LIENZO_SALON.alto - alto / 2) * 10) / 10,
-    };
+    return { x: punto.x, y: punto.y };
   }
 
   // La mesa en esa posición pisaría a otra mesa activa (las dadas de baja no ocupan lugar).
-  function hayConflicto(mesa: MesaDibujo, x: number, y: number) {
-    if (mesa.inactiva) return false;
+  function conflictoCon(mesa: MesaDibujo, x: number, y: number): MesaDibujo | undefined {
+    if (mesa.inactiva) return undefined;
     const propia = rectanguloMesa({ ...mesa, posX: x, posY: y });
-    return mesas.some((otra) => {
+    return mesas.find((otra) => {
       return otra.id !== mesa.id && !otra.inactiva && seSuperponen(propia, rectanguloMesa(otra));
     });
   }
 
   function alApretar(e: PointerEvent<SVGGElement>, mesa: MesaDibujo) {
     if (!onMover) return;
+    const punto = punteroEnLienzo(e);
+    if (!punto) return;
     huboMovimiento.current = false;
+    gesto.current = {
+      agarre: punto,
+      offset: { x: mesa.posX - punto.x, y: mesa.posY - punto.y },
+      arrastrando: false,
+    };
     e.currentTarget.setPointerCapture(e.pointerId);
     setArrastre({ id: mesa.id, x: mesa.posX, y: mesa.posY });
   }
 
   function alMover(e: PointerEvent<SVGGElement>, mesa: MesaDibujo) {
-    if (!arrastre) return;
-    const punto = aLienzo(e, mesa);
+    if (!arrastre || !gesto.current) return;
+    const punto = punteroEnLienzo(e);
     if (!punto) return;
-    if (punto.x !== mesa.posX || punto.y !== mesa.posY) huboMovimiento.current = true;
-    setArrastre({ ...arrastre, ...punto });
+    const { agarre, offset } = gesto.current;
+    // Un tap o click con un temblor mínimo no mueve nada.
+    if (!gesto.current.arrastrando) {
+      if (Math.hypot(punto.x - agarre.x, punto.y - agarre.y) <= 1) return;
+      gesto.current.arrastrando = true;
+      huboMovimiento.current = true;
+    }
+    const { ancho, alto } = dimensionesMesa(mesa.capacidad, mesa.vertical);
+    setArrastre({
+      ...arrastre,
+      x:
+        Math.round(limitar(punto.x + offset.x, ancho / 2, LIENZO_SALON.ancho - ancho / 2) * 10) /
+        10,
+      y: Math.round(limitar(punto.y + offset.y, alto / 2, LIENZO_SALON.alto - alto / 2) * 10) / 10,
+    });
   }
 
   function alSoltar(mesa: MesaDibujo) {
     if (!arrastre) return;
     setArrastre(null);
+    const arrastrando = gesto.current?.arrastrando;
+    gesto.current = null;
+    if (!arrastrando) return;
     const movida = arrastre.x !== mesa.posX || arrastre.y !== mesa.posY;
-    if (movida && !hayConflicto(mesa, arrastre.x, arrastre.y)) {
-      onMover?.(mesa.id, arrastre.x, arrastre.y);
-    }
+    if (!movida) return;
+    const otra = conflictoCon(mesa, arrastre.x, arrastre.y);
+    if (otra) onConflicto?.(mesa, otra);
+    else onMover?.(mesa.id, arrastre.x, arrastre.y);
   }
+
+  // Sombra en el borde derecho mientras haya plano fuera de pantalla.
+  const contenedor = useRef<HTMLDivElement>(null);
+  const [masAlaDerecha, setMasAlaDerecha] = useState(false);
+  useEffect(() => {
+    const el = contenedor.current;
+    if (!el) return;
+    const medir = () => setMasAlaDerecha(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    medir();
+    el.addEventListener('scroll', medir, { passive: true });
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    if (el.firstElementChild) observador.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener('scroll', medir);
+      observador.disconnect();
+    };
+  }, []);
 
   // En el celular el plano no se achica más que esto: así el texto de las
   // mesas no baja de 12 px y el plano se desplaza de costado.
   return (
-    <div className="overflow-x-auto rounded-panel border border-line">
-      <svg
-        ref={svg}
-        viewBox={`0 0 ${LIENZO_SALON.ancho} ${LIENZO_SALON.alto}`}
-        className={`block w-full min-w-[500px] select-none ${ajustarAncho ? 'lg:min-w-0' : ''} ${onMover ? 'touch-none' : ''}`}
-        role={onElegir ? 'group' : 'img'}
-        aria-label="Mapa del salón"
-      >
-        <defs>
-          <pattern
-            id="rayado-mesa"
-            width="1.6"
-            height="1.6"
-            patternUnits="userSpaceOnUse"
-            patternTransform="rotate(45)"
-          >
-            <rect width="1.6" height="1.6" className="fill-panel" />
-            <rect width="0.6" height="1.6" className="fill-line-strong" />
-          </pattern>
-        </defs>
-        <rect width={LIENZO_SALON.ancho} height={LIENZO_SALON.alto} className="fill-surface" />
-        {mesas.map((mesa) => {
-          const enArrastre = arrastre?.id === mesa.id ? arrastre : null;
-          const x = enArrastre?.x ?? mesa.posX;
-          const y = enArrastre?.y ?? mesa.posY;
-          const conflicto = enArrastre ? hayConflicto(mesa, x, y) : false;
-          const estado = estadoVisible(mesa.estado ?? 'LIBRE', vistaComensal);
-          const elegible =
-            Boolean(onElegir) &&
-            !mesa.inactiva &&
-            !mesa.atenuada &&
-            (todasElegibles || estado === 'LIBRE');
-          const seleccionada = mesa.id === seleccionadaId;
-          const { ancho, alto } = dimensionesMesa(mesa.capacidad, mesa.vertical);
-          const izquierda = x - ancho / 2;
-          const arriba = y - alto / 2;
-          // La hora ocupa una línea más: solo se escribe si la mesa tiene alto para tres.
-          const hora =
-            !vistaComensal && estado === 'RESERVADA' && alto >= 10
-              ? horaReservada?.(mesa)
-              : undefined;
-          const personas =
-            !vistaComensal && mesa.personas !== undefined
-              ? `${mesa.personas}/${mesa.capacidad}`
-              : `${mesa.capacidad} p.`;
-          const colores = conflicto
-            ? COLOR_CONFLICTO
-            : mesa.inactiva
-              ? COLOR_INACTIVA
-              : mesa.atenuada
-                ? COLOR_ATENUADA
-                : COLOR[estado];
-          return (
-            <g
-              key={mesa.id}
-              className={`group outline-none ${
-                onMover ? 'cursor-grab' : elegible ? 'cursor-pointer' : ''
-              }`}
-              onPointerDown={(e) => alApretar(e, mesa)}
-              onPointerMove={(e) => alMover(e, mesa)}
-              onPointerUp={() => alSoltar(mesa)}
-              onPointerCancel={() => setArrastre(null)}
-              onClick={
-                elegible
-                  ? () => {
-                      if (huboMovimiento.current) {
-                        huboMovimiento.current = false;
-                        return;
-                      }
-                      onElegir?.(mesa.id);
-                    }
-                  : undefined
-              }
-              onKeyDown={
-                elegible
-                  ? (e) => {
-                      if (e.key !== 'Enter' && e.key !== ' ') return;
-                      e.preventDefault();
-                      onElegir?.(mesa.id);
-                    }
-                  : undefined
-              }
-              tabIndex={elegible ? 0 : undefined}
-              role={elegible ? 'button' : undefined}
-              aria-label={`Mesa ${mesa.numero}, ${mesa.capacidad} personas${
-                mesa.inactiva
-                  ? ', dada de baja'
-                  : `, ${nombreEstado(estado, vistaComensal).toLowerCase()}`
-              }`}
-              aria-pressed={elegible ? seleccionada : undefined}
+    <div className="relative overflow-hidden rounded-panel border border-line">
+      <div ref={contenedor} className="overflow-x-auto">
+        <svg
+          ref={svg}
+          viewBox={`0 0 ${LIENZO_SALON.ancho} ${LIENZO_SALON.alto}`}
+          className={`block w-full min-w-[500px] select-none ${ajustarAncho ? 'lg:min-w-0' : ''} `}
+          role={onElegir ? 'group' : 'img'}
+          aria-label="Mapa del salón"
+        >
+          <defs>
+            <pattern
+              id="rayado-mesa"
+              width="1.6"
+              height="1.6"
+              patternUnits="userSpaceOnUse"
+              patternTransform="rotate(45)"
             >
-              {/* La selección se marca con un contorno oscuro separado, distinto del acento de ocupada. */}
-              {seleccionada && (
+              <rect width="1.6" height="1.6" className="fill-panel" />
+              <rect width="0.4" height="1.6" className="fill-line-strong" />
+            </pattern>
+          </defs>
+          <rect width={LIENZO_SALON.ancho} height={LIENZO_SALON.alto} className="fill-surface" />
+          {mesas.map((mesa) => {
+            const enArrastre = arrastre?.id === mesa.id ? arrastre : null;
+            const x = enArrastre?.x ?? mesa.posX;
+            const y = enArrastre?.y ?? mesa.posY;
+            const conflicto = enArrastre ? Boolean(conflictoCon(mesa, x, y)) : false;
+            const estado = estadoVisible(mesa.estado ?? 'LIBRE', vistaComensal);
+            const elegible =
+              Boolean(onElegir) &&
+              !mesa.inactiva &&
+              !mesa.atenuada &&
+              (todasElegibles || estado === 'LIBRE');
+            const seleccionada = mesa.id === seleccionadaId;
+            const { ancho, alto } = dimensionesMesa(mesa.capacidad, mesa.vertical);
+            const izquierda = x - ancho / 2;
+            const arriba = y - alto / 2;
+            // La hora ocupa una línea más: solo se escribe si la mesa tiene alto para tres.
+            const hora =
+              !vistaComensal && estado === 'RESERVADA' && alto >= 10
+                ? horaReservada?.(mesa)
+                : undefined;
+            const personas =
+              !vistaComensal && mesa.personas !== undefined
+                ? `${mesa.personas}/${mesa.capacidad}`
+                : `${mesa.capacidad} p.`;
+            const colores = conflicto
+              ? COLOR_CONFLICTO
+              : mesa.inactiva
+                ? COLOR_INACTIVA
+                : mesa.atenuada
+                  ? COLOR_ATENUADA
+                  : COLOR[estado];
+            return (
+              <g
+                key={mesa.id}
+                className={`group outline-none ${
+                  onMover ? 'cursor-grab' : elegible ? 'cursor-pointer' : ''
+                }`}
+                style={onMover ? { touchAction: 'none' } : undefined}
+                onPointerDown={(e) => alApretar(e, mesa)}
+                onPointerMove={(e) => alMover(e, mesa)}
+                onPointerUp={() => alSoltar(mesa)}
+                onPointerCancel={() => {
+                  gesto.current = null;
+                  setArrastre(null);
+                }}
+                onClick={
+                  elegible
+                    ? () => {
+                        if (huboMovimiento.current) {
+                          huboMovimiento.current = false;
+                          return;
+                        }
+                        onElegir?.(mesa.id);
+                      }
+                    : undefined
+                }
+                onKeyDown={
+                  elegible
+                    ? (e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return;
+                        e.preventDefault();
+                        onElegir?.(mesa.id);
+                      }
+                    : undefined
+                }
+                tabIndex={elegible ? 0 : undefined}
+                role={elegible ? 'button' : undefined}
+                aria-label={`Mesa ${mesa.numero}, ${mesa.capacidad} personas${
+                  mesa.inactiva
+                    ? ', dada de baja'
+                    : `, ${nombreEstado(estado, vistaComensal).toLowerCase()}`
+                }`}
+                aria-pressed={elegible ? seleccionada : undefined}
+              >
+                {/* La selección se marca con un contorno oscuro separado, distinto del acento de ocupada. */}
+                {seleccionada && (
+                  <rect
+                    x={izquierda - 1.3}
+                    y={arriba - 1.3}
+                    width={ancho + 2.6}
+                    height={alto + 2.6}
+                    rx={2.6}
+                    className="fill-none stroke-ink"
+                    strokeWidth={0.6}
+                  />
+                )}
                 <rect
                   x={izquierda - 1.3}
                   y={arriba - 1.3}
                   width={ancho + 2.6}
                   height={alto + 2.6}
                   rx={2.6}
-                  className="fill-none stroke-ink"
                   strokeWidth={0.6}
+                  className="fill-none stroke-accent opacity-0 group-focus-visible:opacity-100"
                 />
-              )}
-              <rect
-                x={izquierda - 1.3}
-                y={arriba - 1.3}
-                width={ancho + 2.6}
-                height={alto + 2.6}
-                rx={2.6}
-                strokeWidth={0.6}
-                className="fill-none stroke-accent opacity-0 group-focus-visible:opacity-100"
-              />
-              <rect
-                x={izquierda}
-                y={arriba}
-                width={ancho}
-                height={alto}
-                rx={1.6}
-                strokeWidth={0.4}
-                className={colores.mesa}
-                fill={mesa.inactiva && !conflicto ? 'url(#rayado-mesa)' : undefined}
-              />
-              <text
-                x={x}
-                y={hora ? y - alto * 0.2 : y - alto * 0.1}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={4}
-                className={`font-semibold ${colores.texto}`}
-              >
-                {mesa.numero}
-              </text>
-              {hora && (
+                <rect
+                  x={izquierda}
+                  y={arriba}
+                  width={ancho}
+                  height={alto}
+                  rx={1.6}
+                  strokeWidth={0.4}
+                  className={colores.mesa}
+                  fill={mesa.inactiva && !conflicto ? 'url(#rayado-mesa)' : undefined}
+                />
                 <text
                   x={x}
-                  y={y + alto * 0.12}
+                  y={hora ? y - alto * 0.2 : y - alto * 0.1}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize={2.2}
+                  fontSize={4}
+                  className={`font-semibold ${colores.texto}`}
+                >
+                  {mesa.numero}
+                </text>
+                {hora && (
+                  <text
+                    x={x}
+                    y={y + alto * 0.12}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={2.4}
+                    className="fill-meta"
+                  >
+                    {hora}
+                  </text>
+                )}
+                <text
+                  x={x}
+                  y={y + alto * 0.31}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={2.4}
                   className="fill-meta"
                 >
-                  {hora}
+                  {personas}
                 </text>
-              )}
-              <text
-                x={x}
-                y={y + alto * 0.31}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={2.4}
-                className="fill-meta"
-              >
-                {personas}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      {masAlaDerecha && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-8"
+          style={{
+            background:
+              'linear-gradient(to left, color-mix(in srgb, var(--color-ink) 22%, transparent), transparent)',
+          }}
+        />
+      )}
     </div>
   );
 }

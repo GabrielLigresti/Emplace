@@ -237,6 +237,7 @@ export function ReservarPage() {
                 mesas={mapa.datos.mesas}
                 seleccionadaId={mesaId}
                 onElegir={setMesaId}
+                ajustarAncho
                 vistaComensal
               />
               <LeyendaSalon estados={['LIBRE', 'RESERVADA', 'CHICA']} vistaComensal />
