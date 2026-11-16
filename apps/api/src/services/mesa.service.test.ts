@@ -477,9 +477,10 @@ describe('mesaService', () => {
       await servicio.desactivar(R, 'centro', 'm1');
       expect(bus.publicar).toHaveBeenCalledTimes(3);
       expect(bus.publicar).toHaveBeenLastCalledWith(aviso);
-      expect(repo.desactivar.mock.invocationCallOrder[0]!).toBeLessThan(
-        bus.publicar.mock.invocationCallOrder[2]!,
-      );
+      const publicaciones = bus.publicar.mock.invocationCallOrder;
+      expect(repo.crear.mock.invocationCallOrder[0]!).toBeLessThan(publicaciones[0]!);
+      expect(repo.actualizar.mock.invocationCallOrder[0]!).toBeLessThan(publicaciones[1]!);
+      expect(repo.desactivar.mock.invocationCallOrder[0]!).toBeLessThan(publicaciones[2]!);
     });
 
     it('si la validación falla no publica', async () => {

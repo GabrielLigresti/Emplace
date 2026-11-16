@@ -98,6 +98,6 @@ describe('/api/sucursales/:sucursalId/mesas', () => {
       .send({ ...valida, posX: 20, capacidad: 8 });
 
     expect(res.status).toBe(409);
-    expect(res.body.error ?? res.body.message).toBe('Se superpone con la mesa 2');
+    expect(res.body.error).toBe('Se superpone con la mesa 2');
   });
 });
