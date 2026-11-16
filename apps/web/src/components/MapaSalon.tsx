@@ -19,6 +19,9 @@ export interface MesaDibujo {
 
 export type EstadoMesaDibujo = 'LIBRE' | 'RESERVADA' | 'OCUPADA' | 'INASISTENCIA' | 'CHICA';
 
+// Ancho en px con el que el texto secundario (2,4 del lienzo) mide 12 px.
+const ANCHO_MINIMO_PX = 500;
+
 const PUNTEADO = '[stroke-dasharray:1.2_0.8]';
 
 // Colores de mesa según la tabla de estados del sistema visual.
@@ -271,6 +274,21 @@ export function MapaSalon({
     };
   }, [onMover]);
 
+  // Con ajustarAncho el plano puede quedar por debajo de 500 px (columna angosta
+  // en pantalla ancha): el texto secundario se agranda para no bajar de 12 px.
+  const [anchoPlano, setAnchoPlano] = useState(0);
+  useEffect(() => {
+    const el = svg.current;
+    if (!el || !ajustarAncho) return;
+    const medir = () => setAnchoPlano(el.getBoundingClientRect().width);
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [ajustarAncho]);
+  const escala = ajustarAncho && anchoPlano > 0 ? Math.max(1, ANCHO_MINIMO_PX / anchoPlano) : 1;
+  const tamanoSecundario = 2.4 * escala;
+
   // En el celular el plano no se achica más que esto: así el texto de las
   // mesas no baja de 12 px y el plano se desplaza de costado.
   return (
@@ -401,10 +419,10 @@ export function MapaSalon({
                 />
                 <text
                   x={x}
-                  y={hora ? y - alto * 0.2 : y - alto * 0.1}
+                  y={hora ? y - alto * 0.3 : y - alto * 0.1}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize={4}
+                  fontSize={hora ? 3.6 : 4}
                   className={`font-semibold ${colores.texto}`}
                 >
                   {mesa.numero}
@@ -412,10 +430,10 @@ export function MapaSalon({
                 {hora && (
                   <text
                     x={x}
-                    y={y + alto * 0.12}
+                    y={y + alto * 0.06}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize={2.4}
+                    fontSize={tamanoSecundario}
                     className="fill-meta"
                   >
                     {hora}
@@ -423,10 +441,10 @@ export function MapaSalon({
                 )}
                 <text
                   x={x}
-                  y={y + alto * 0.31}
+                  y={y + alto * (hora ? 0.33 : 0.31)}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize={2.4}
+                  fontSize={tamanoSecundario}
                   className="fill-meta"
                 >
                   {personas}
