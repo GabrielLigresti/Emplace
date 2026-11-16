@@ -3,7 +3,9 @@ import { Check } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   CONVERSION,
-  UNIDADES_BASE,
+  ETIQUETA_UNIDAD,
+  UNIDADES_MEDIDA,
+  convertirUnidad,
   unidadesCompatibles,
   type ComponenteReceta,
   type ErrorReceta,
@@ -11,7 +13,6 @@ import {
   type LlevaStockInput,
   type RecetaDetalle,
   type RecetaInput,
-  type UnidadBase,
   type UnidadMedida,
 } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
@@ -83,7 +84,10 @@ function Editor({
   const [detalle, setDetalle] = useState(inicial);
   const receta = detalle?.receta ?? null;
   const [nombre, setNombre] = useState('');
-  const [unidadBase, setUnidadBase] = useState<UnidadBase>('GRAMO');
+  // Unidad en la que se tipea el rendimiento de una preparación; se guarda en unidad base.
+  const [unidadRendimiento, setUnidadRendimiento] = useState<UnidadMedida>(
+    detalle?.dueno.unidadBase ?? 'GRAMO',
+  );
   const [lineas, setLineas] = useState<LineaFormulario[]>(() =>
     (receta?.lineas ?? []).map((l) => ({
       clave: siguienteClave++,
@@ -126,6 +130,20 @@ function Editor({
     return total + bruta * componente.costoUnitario;
   }, 0);
   const rinde = aNumero(rendimiento);
+  const unidadBase = CONVERSION[unidadRendimiento].base;
+  const medidaCosto = tipo === 'plato' ? 'porción' : ETIQUETA_UNIDAD[unidadRendimiento];
+
+  // Cambia la unidad sin alterar la cantidad real; si cambia de dimensión, no hay conversión.
+  function cambiarUnidadRendimiento(nueva: UnidadMedida) {
+    setGuardada(false);
+    const actual = aNumero(rendimiento);
+    if (rendimiento.trim() !== '' && actual > 0 && CONVERSION[nueva].base === unidadBase) {
+      setRendimiento(String(Number(convertirUnidad(actual, unidadRendimiento, nueva).toFixed(6))));
+    } else if (CONVERSION[nueva].base !== unidadBase) {
+      setRendimiento('');
+    }
+    setUnidadRendimiento(nueva);
+  }
 
   function cambiarLinea(clave: number, cambios: Partial<LineaFormulario>) {
     setGuardada(false);
@@ -153,7 +171,10 @@ function Editor({
         unidad: l.unidad,
         porcentajeMerma: aNumero(l.merma || '0'),
       })),
-      rendimiento: aNumero(rendimiento),
+      rendimiento:
+        tipo === 'plato'
+          ? aNumero(rendimiento)
+          : convertirUnidad(aNumero(rendimiento), unidadRendimiento, unidadBase),
       instrucciones: instrucciones || null,
     };
     if (lineas.some((l) => !l.componenteId)) {
@@ -213,10 +234,6 @@ function Editor({
   }
 
   const titulo = esNuevo ? 'Nueva preparación' : `Receta de ${detalle.dueno.nombre}`;
-  const unidadRendimiento =
-    tipo === 'plato'
-      ? 'porciones'
-      : NOMBRE_UNIDAD[esNuevo ? unidadBase : (detalle.dueno.unidadBase ?? 'GRAMO')];
 
   return (
     <form onSubmit={onSubmit} className="mt-3 space-y-5">
@@ -241,13 +258,13 @@ function Editor({
               className={claseInput}
             />
           </Campo>
-          <Campo etiqueta="Unidad base">
+          <Campo etiqueta="Unidad">
             <select
-              value={unidadBase}
-              onChange={(e) => setUnidadBase(e.target.value as UnidadBase)}
+              value={unidadRendimiento}
+              onChange={(e) => cambiarUnidadRendimiento(e.target.value as UnidadMedida)}
               className={claseInput}
             >
-              {UNIDADES_BASE.map((u) => (
+              {UNIDADES_MEDIDA.map((u) => (
                 <option key={u} value={u}>
                   {NOMBRE_UNIDAD[u]}
                 </option>
@@ -373,15 +390,33 @@ function Editor({
         </Boton>
       </fieldset>
 
-      <fieldset disabled={!puedeGuardar} className="grid gap-3 sm:grid-cols-[12rem_1fr]">
-        <Campo etiqueta={`Rendimiento (${unidadRendimiento})`}>
-          <input
-            {...propsDecimal}
-            required
-            value={rendimiento}
-            onChange={(e) => setRendimiento(e.target.value)}
-            className={claseInput}
-          />
+      <fieldset disabled={!puedeGuardar} className="grid gap-3 sm:grid-cols-[16rem_1fr]">
+        <Campo
+          etiqueta={`Rendimiento (${tipo === 'plato' ? 'porciones' : ETIQUETA_UNIDAD[unidadRendimiento]})`}
+        >
+          <div className="flex gap-2">
+            <input
+              {...propsDecimal}
+              required
+              value={rendimiento}
+              onChange={(e) => setRendimiento(e.target.value)}
+              className={claseInput}
+            />
+            {tipo === 'intermedio' && (
+              <select
+                aria-label="Unidad del rendimiento"
+                value={unidadRendimiento}
+                onChange={(e) => cambiarUnidadRendimiento(e.target.value as UnidadMedida)}
+                className={claseInput}
+              >
+                {unidadesCompatibles(unidadBase).map((u) => (
+                  <option key={u} value={u}>
+                    {NOMBRE_UNIDAD[u]}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </Campo>
         <Campo etiqueta="Instrucciones">
           <textarea
@@ -397,14 +432,18 @@ function Editor({
         <p className="font-medium text-ink">Costo</p>
         <p className="text-meta">
           Estimado: {formatoPesos(costoEstimado)} en total
-          {rinde > 0 &&
-            ` · ${formatoPesos(costoEstimado / rinde)} por ${tipo === 'plato' ? 'porción' : 'unidad'}`}
+          {rinde > 0 && ` · ${formatoPesos(costoEstimado / rinde)} por ${medidaCosto}`}
         </p>
         {receta && (
           <>
             <p className="text-meta">
               Guardado: {formatoPesos(receta.costoTotal)} en total ·{' '}
-              {formatoPesos(receta.costoPorPorcion)} por {tipo === 'plato' ? 'porción' : 'unidad'}
+              {formatoPesos(
+                tipo === 'plato'
+                  ? receta.costoPorPorcion
+                  : receta.costoPorPorcion * convertirUnidad(1, unidadRendimiento, unidadBase),
+              )}{' '}
+              por {medidaCosto}
             </p>
             <ul className="mt-2 space-y-0.5 text-xs text-meta">
               {receta.lineas.map((l) => (

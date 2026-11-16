@@ -29,6 +29,14 @@ export function unidadesCompatibles(base: UnidadBase): UnidadMedida[] {
   return UNIDADES_MEDIDA.filter((u) => CONVERSION[u].base === base);
 }
 
+// Pasa un valor de una unidad a otra de la misma dimensión (kg → g, ml → l).
+export function convertirUnidad(valor: number, desde: UnidadMedida, hasta: UnidadMedida): number {
+  if (CONVERSION[desde].base !== CONVERSION[hasta].base) {
+    throw new Error(`No se puede convertir de ${desde} a ${hasta}`);
+  }
+  return (valor * CONVERSION[desde].factor) / CONVERSION[hasta].factor;
+}
+
 // ─── Insumos ─────────────────────────────────────────────────────────────────
 
 export const insumoInputSchema = z.object({
