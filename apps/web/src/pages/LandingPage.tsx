@@ -50,9 +50,13 @@ export function LandingPage() {
     <div className="landing-clasica min-h-screen bg-papel font-lora text-tinta-clasica">
       <div className="mx-auto max-w-[1240px] border-linea-clasica bg-papel min-[1241px]:border-x">
         <header className="flex items-center justify-between gap-4 border-b border-linea-clasica px-5 py-4 md:px-14 md:py-[18px]">
-          <span className="font-titulo text-[28px] leading-none font-semibold tracking-tight">
-            PGIM
-          </span>
+          <img
+            src="/marca/emplace-logo.png"
+            alt="Emplace"
+            width={320}
+            height={256}
+            className="h-14 w-auto md:h-16"
+          />
           <nav aria-label="Secciones" className="hidden items-center gap-8 text-sm md:flex">
             <a href="#restaurantes" className="py-3 text-dorado-700 hover:text-dorado-800">
               Restaurantes
@@ -204,7 +208,7 @@ export function LandingPage() {
 
         <footer className="mx-5 flex flex-wrap justify-between gap-3 border-t border-linea-clasica pt-5 pb-7 text-[13px] leading-5 text-tinta-clasica/70 md:mx-14">
           <span>
-            PGIM · Gestión de restaurantes. Modelos 3D en CC BY 4.0 de Sketchfab:{' '}
+            Emplace · Gestión de restaurantes. Modelos 3D en CC BY 4.0 de Sketchfab:{' '}
             <a
               href="https://sketchfab.com/3d-models/burger-realistic-free-18e59d7dbd2243c69f469e0f056f44c4"
               target="_blank"
@@ -239,7 +243,7 @@ export function LandingPage() {
               to="/registrar-restaurante"
               className="inline-flex min-h-11 items-center text-dorado-700 underline underline-offset-[3px] hover:text-dorado-800"
             >
-              Registralo en PGIM
+              Registralo en Emplace
             </Link>
           </span>
         </footer>
