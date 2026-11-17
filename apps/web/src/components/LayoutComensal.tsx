@@ -73,10 +73,18 @@ export function LayoutComensal({
               <ChevronLeft aria-hidden className="size-5 shrink-0" />
               <span className="truncate">{volver.texto}</span>
             </Link>
-          ) : (
+          ) : sesion ? (
             <span className="truncate text-sm font-medium text-text">
-              {sesion ? `Hola, ${sesion.usuario.nombre}` : 'PGIM'}
+              Hola, {sesion.usuario.nombre}
             </span>
+          ) : (
+            <img
+              src="/marca/emplace-logo.png"
+              alt="Emplace"
+              width={320}
+              height={256}
+              className="h-11 w-auto"
+            />
           )}
           {!sesion ? (
             <Link
