@@ -55,7 +55,15 @@ export function LoginPage() {
         className="w-full max-w-sm space-y-4 rounded-panel border border-line bg-surface p-6"
       >
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-semibold text-ink">PGIM</h1>
+          <h1 className="flex justify-center">
+            <img
+              src="/marca/emplace-logo.png"
+              alt="Emplace"
+              width={320}
+              height={256}
+              className="h-20 w-auto"
+            />
+          </h1>
           <p className="text-sm text-meta">Iniciá sesión con tu cuenta</p>
         </div>
 
