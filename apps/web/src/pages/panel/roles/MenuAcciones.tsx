@@ -94,7 +94,17 @@ export function MenuAcciones({
       e.preventDefault();
       cerrar(true);
     } else if (e.key === 'Tab') {
+      // Tab cierra el menú y sigue desde el botón ⋯ (al siguiente o al
+      // anterior control), en vez de saltar al principio de la página.
+      e.preventDefault();
+      const controles = [
+        ...document.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((el) => !menu.current?.contains(el));
+      const posicion = boton.current ? controles.indexOf(boton.current) : -1;
       setAbierto(false);
+      (controles[posicion + (e.shiftKey ? -1 : 1)] ?? boton.current)?.focus();
     }
   }
 
