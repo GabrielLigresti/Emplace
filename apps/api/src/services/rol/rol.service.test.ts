@@ -24,7 +24,7 @@ function repoFalso(rol: Rol, gestores = 1): jest.Mocked<RolRepository> {
     crear: jest.fn(),
     actualizar: jest.fn().mockResolvedValue(rol),
     desactivar: jest.fn(),
-    contarEmpleados: jest.fn().mockResolvedValue(0),
+    contarEmpleados: jest.fn().mockResolvedValue({ activos: 0, inactivos: 0 }),
     eliminar: jest.fn().mockResolvedValue(true),
     listarEmpleadosActivos: jest.fn(),
     buscarEmpleadosActivos: jest.fn().mockResolvedValue([]),
@@ -215,13 +215,24 @@ describe('rolService', () => {
   });
 
   describe('eliminar', () => {
-    it('se bloquea si hay empleados asignados, aunque estén inactivos', async () => {
+    it('se bloquea si hay empleados activos asignados', async () => {
       const repo = repoFalso(mozo);
-      repo.contarEmpleados.mockResolvedValue(2);
+      repo.contarEmpleados.mockResolvedValue({ activos: 2, inactivos: 1 });
 
       await expect(createRolService(repo).eliminar(R, 'mozo')).rejects.toMatchObject({
         status: 409,
-        message: expect.stringContaining('2 empleado(s) asignado(s)'),
+        message: expect.stringContaining('2 empleado(s) activo(s)'),
+      });
+      expect(repo.eliminar).not.toHaveBeenCalled();
+    });
+
+    it('se bloquea si solo hay empleados dados de baja, y lo aclara', async () => {
+      const repo = repoFalso(mozo);
+      repo.contarEmpleados.mockResolvedValue({ activos: 0, inactivos: 3 });
+
+      await expect(createRolService(repo).eliminar(R, 'mozo')).rejects.toMatchObject({
+        status: 409,
+        message: `El rol "${mozo.nombre}" tiene 3 empleado(s) dado(s) de baja asignado(s): cambiales el rol desde Personal antes de eliminarlo`,
       });
       expect(repo.eliminar).not.toHaveBeenCalled();
     });

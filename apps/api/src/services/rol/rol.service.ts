@@ -87,13 +87,15 @@ export function createRolService(repo: RolRepository) {
     // Baja física: solo si ningún empleado, activo o inactivo, referencia el rol.
     async eliminar(restauranteId: string, id: string) {
       const rol = await obtener(restauranteId, id);
-      const asignados = await repo.contarEmpleados(restauranteId, id);
+      const { activos, inactivos } = await repo.contarEmpleados(restauranteId, id);
       const bloqueado = () =>
         new AppError(
           409,
-          `El rol "${rol.nombre}" tiene ${asignados} empleado(s) asignado(s): reasignalos a otro rol antes de eliminarlo`,
+          activos > 0
+            ? `El rol "${rol.nombre}" tiene ${activos} empleado(s) activo(s): reasignalos a otro rol antes de eliminarlo`
+            : `El rol "${rol.nombre}" tiene ${inactivos} empleado(s) dado(s) de baja asignado(s): cambiales el rol desde Personal antes de eliminarlo`,
         );
-      if (asignados > 0) throw bloqueado();
+      if (activos + inactivos > 0) throw bloqueado();
       if (!(await repo.eliminar(restauranteId, id))) throw bloqueado();
     },
 

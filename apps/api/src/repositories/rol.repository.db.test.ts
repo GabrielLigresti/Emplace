@@ -42,7 +42,10 @@ describe('rolRepository: empleados y eliminación', () => {
     );
     await prisma.usuario.update({ where: { id: usuarioId }, data: { activo: false } });
 
-    expect(await rolRepository.contarEmpleados(restauranteId, rolAdminId)).toBe(1);
+    expect(await rolRepository.contarEmpleados(restauranteId, rolAdminId)).toEqual({
+      activos: 0,
+      inactivos: 1,
+    });
     expect(await rolRepository.eliminar(restauranteId, rolAdminId)).toBe(false);
     expect(await rolRepository.buscar(restauranteId, rolAdminId)).not.toBeNull();
   });
@@ -73,7 +76,10 @@ describe('rolRepository: empleados y eliminación', () => {
     expect(await rolRepository.buscarEmpleadosActivos(a.restauranteId, [b.usuarioId])).toEqual([]);
 
     await rolRepository.asignarEmpleados(a.restauranteId, destino.id, [a.usuarioId]);
-    expect(await rolRepository.contarEmpleados(a.restauranteId, destino.id)).toBe(1);
+    expect(await rolRepository.contarEmpleados(a.restauranteId, destino.id)).toEqual({
+      activos: 1,
+      inactivos: 0,
+    });
   });
 
   it('contarGestoresDeRoles excluye a todos los usuarios indicados', async () => {

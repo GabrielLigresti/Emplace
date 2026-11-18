@@ -16,8 +16,11 @@ export interface RolRepository {
   crear(restauranteId: string, datos: RolInput): Promise<Rol>;
   actualizar(restauranteId: string, id: string, datos: RolInput): Promise<Rol>;
   desactivar(restauranteId: string, id: string): Promise<void>;
-  // Cuenta todos los empleados del rol, activos e inactivos.
-  contarEmpleados(restauranteId: string, rolId: string): Promise<number>;
+  // Cuenta los empleados del rol por separado: activos y dados de baja.
+  contarEmpleados(
+    restauranteId: string,
+    rolId: string,
+  ): Promise<{ activos: number; inactivos: number }>;
   // Borra el rol en una transacción; false si apareció algún empleado asignado.
   eliminar(restauranteId: string, id: string): Promise<boolean>;
   listarEmpleadosActivos(restauranteId: string): Promise<EmpleadoDeRol[]>;
@@ -113,16 +116,26 @@ export const rolRepository: RolRepository = {
   },
 
   async contarEmpleados(restauranteId, rolId) {
-    return prisma.empleado.count({ where: { restauranteId, rolId } });
+    const [activos, inactivos] = await Promise.all([
+      prisma.empleado.count({ where: { restauranteId, rolId, usuario: { activo: true } } }),
+      prisma.empleado.count({ where: { restauranteId, rolId, usuario: { activo: false } } }),
+    ]);
+    return { activos, inactivos };
   },
 
   async eliminar(restauranteId, id) {
-    return prisma.$transaction(async (tx) => {
-      const asignados = await tx.empleado.count({ where: { restauranteId, rolId: id } });
-      if (asignados > 0) return false;
-      await tx.rol.delete({ where: { id, restauranteId } });
-      return true;
-    });
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const asignados = await tx.empleado.count({ where: { restauranteId, rolId: id } });
+        if (asignados > 0) return false;
+        await tx.rol.delete({ where: { id, restauranteId } });
+        return true;
+      });
+    } catch (error) {
+      // Una asignación concurrente rompe la FK de empleado.rol_id: es un bloqueo, no un fallo.
+      if ((error as { code?: string }).code === 'P2003') return false;
+      throw error;
+    }
   },
 
   async listarEmpleadosActivos(restauranteId) {
