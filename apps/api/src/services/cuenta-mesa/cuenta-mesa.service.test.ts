@@ -3,8 +3,13 @@ import { crearPasarelaSimulada } from '../../pagos/pasarela';
 import type { CuentaMesaRepository, FilaMesa } from '../../repositories/cuenta-mesa.repository';
 import { createCuentaMesaService } from './cuenta-mesa.service';
 
-function pedido(id: string, total: number, estado: PedidoComensal['estado']): PedidoComensal {
-  return { id, numero: 1, creadoEn: '2026-10-30T23:00:00.000Z', estado, total, lineas: [] };
+function pedido(
+  id: string,
+  total: number,
+  estado: PedidoComensal['estado'],
+  creadoEn = '2026-10-30T23:00:00.000Z',
+): PedidoComensal {
+  return { id, numero: 1, creadoEn, estado, total, lineas: [] };
 }
 
 function mesa(cambios: Partial<FilaMesa> = {}): FilaMesa {
@@ -72,5 +77,65 @@ describe('cuentaMesaService.miMesa con un pago en curso', () => {
   it('sin pago en curso, null', async () => {
     const { servicio } = armar(mesa());
     expect((await servicio.miMesa('C'))!.pagoEnCurso).toBeNull();
+  });
+});
+
+describe('cuentaMesaService.miMesa: estado de pago de cada pedido', () => {
+  const estados = async (fila: FilaMesa) =>
+    Object.fromEntries(
+      (await armar(fila).servicio.miMesa('C'))!.pedidos.map((p) => [p.id, p.estadoPago]),
+    );
+  const tres = [
+    pedido('a', 1000, 'ENTREGADO', '2026-10-30T23:00:00.000Z'),
+    pedido('b', 500, 'CANCELADO', '2026-10-30T23:05:00.000Z'),
+    pedido('c', 800.1, 'CONFIRMADO', '2026-10-30T23:10:00.000Z'),
+  ];
+
+  it('sin pagos, todo pendiente; el cancelado no lleva estado de pago', async () => {
+    expect(await estados(mesa({ pedidos: tres }))).toEqual({
+      a: 'PENDIENTE',
+      b: null,
+      c: 'PENDIENTE',
+    });
+  });
+
+  it('con el saldo pagado, todo pagado (sin errores de redondeo)', async () => {
+    expect(await estados(mesa({ pedidos: tres, pagado: 1800.1 }))).toEqual({
+      a: 'PAGADO',
+      b: null,
+      c: 'PAGADO',
+    });
+  });
+
+  it('el pedido hecho después del último pago queda pendiente', async () => {
+    expect(await estados(mesa({ pedidos: tres, pagado: 1000 }))).toEqual({
+      a: 'PAGADO',
+      b: null,
+      c: 'PENDIENTE',
+    });
+  });
+
+  it('lo que cubrió un beneficio cuenta como pagado', async () => {
+    expect(await estados(mesa({ pedidos: tres, pagado: 700, descuentos: 300 }))).toEqual({
+      a: 'PAGADO',
+      b: null,
+      c: 'PENDIENTE',
+    });
+  });
+
+  it('reparte por fecha de creación aunque la lista venga en otro orden', async () => {
+    const desordenados = [tres[2], tres[0]];
+    expect(await estados(mesa({ pedidos: desordenados, pagado: 1000 }))).toEqual({
+      a: 'PAGADO',
+      c: 'PENDIENTE',
+    });
+  });
+
+  it('un pedido cubierto solo en parte sigue pendiente', async () => {
+    expect(await estados(mesa({ pedidos: tres, pagado: 1500 }))).toEqual({
+      a: 'PAGADO',
+      b: null,
+      c: 'PENDIENTE',
+    });
   });
 });

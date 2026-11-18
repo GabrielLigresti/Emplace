@@ -1,4 +1,4 @@
-import type { MiMesa } from '@pgim/shared';
+import type { MiMesa, PedidoComensal, PedidoMiMesa } from '@pgim/shared';
 import { pasarela as pasarelaPorDefecto, type PasarelaPago } from '../../pagos/pasarela';
 import {
   cuentaMesaRepository,
@@ -8,6 +8,27 @@ import {
 import { pagoService } from '../pago/pago.service';
 
 const centavos = (valor: number) => Math.round(valor * 100) / 100;
+const aCentavos = (valor: number) => Math.round(valor * 100);
+
+// Cada pago cubre todo el saldo del momento, así que lo pagado (y lo que
+// cubrieron los beneficios) alcanza a los pedidos más viejos primero. Un pedido
+// cubierto solo en parte sigue pendiente. Se cuenta en centavos enteros.
+function conEstadoPago(pedidos: PedidoComensal[], cubierto: number): PedidoMiMesa[] {
+  let restante = aCentavos(cubierto);
+  const pagados = new Set<string>();
+  for (const p of [...pedidos]
+    .filter((p) => p.estado !== 'CANCELADO')
+    .sort((a, b) => a.creadoEn.localeCompare(b.creadoEn))) {
+    const total = aCentavos(p.total);
+    if (restante < total) break;
+    restante -= total;
+    pagados.add(p.id);
+  }
+  return pedidos.map((p) => ({
+    ...p,
+    estadoPago: p.estado === 'CANCELADO' ? null : pagados.has(p.id) ? 'PAGADO' : 'PENDIENTE',
+  }));
+}
 
 // "Mi mesa" del comensal: pedidos, saldo y el pago en curso, si hay uno. El
 // pago en sí está en pago.service.
@@ -25,7 +46,7 @@ export function createCuentaMesaService(
       sucursal: fila.sucursal,
       mesa: { numero: fila.mesaNumero },
       abiertaEn: fila.abiertaEn.toISOString(),
-      pedidos: fila.pedidos,
+      pedidos: conEstadoPago(fila.pedidos, fila.pagado + fila.descuentos),
       total,
       pagado: fila.pagado,
       descuentos: fila.descuentos,

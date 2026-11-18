@@ -14,7 +14,7 @@ import { useGuardar } from '../../lib/useGuardar';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
-// "Mi mesa": los pedidos del comensal con su estado en vivo, lo pagado y el
+// "Mi mesa": los pedidos del comensal con su estado de pago, lo pagado y el
 // saldo. Paga siempre el saldo total, con un beneficio opcional, en Mercado
 // Pago; al volver (?pago=<id>) se muestra el resultado.
 export function MiMesaPage() {
@@ -158,7 +158,11 @@ export function MiMesaPage() {
                     <span className="text-sm text-meta">
                       Pedido #{p.numero} · {formatoHora(p.creadoEn)} h
                     </span>
-                    <Estado entidad="pedido" valor={p.estado} publico="comensal" />
+                    {p.estadoPago ? (
+                      <Estado entidad="pagoPedido" valor={p.estadoPago} />
+                    ) : (
+                      <Estado entidad="pedido" valor={p.estado} publico="comensal" />
+                    )}
                   </div>
                   <ul
                     className={`space-y-1 ${p.estado === 'CANCELADO' ? 'line-through opacity-60' : ''}`}

@@ -76,13 +76,22 @@ export interface PedidoComensal {
   lineas: LineaPedidoVista[];
 }
 
+// Lo que ve el comensal de cada pedido: si ya está pagado. Cada pago cubre
+// todo el saldo, así que lo pagado se reparte por orden de creación.
+export type EstadoPagoPedido = 'PENDIENTE' | 'PAGADO';
+
+export interface PedidoMiMesa extends PedidoComensal {
+  // null en los pedidos cancelados: no se cobran.
+  estadoPago: EstadoPagoPedido | null;
+}
+
 // "Mi mesa": la cuenta de mesa abierta del comensal.
 export interface MiMesa {
   cuentaMesaId: string;
   sucursal: Referencia;
   mesa: { numero: number };
   abiertaEn: string;
-  pedidos: PedidoComensal[];
+  pedidos: PedidoMiMesa[];
   total: number;
   pagado: number;
   // Lo que cubrieron los beneficios de pagos aprobados.
