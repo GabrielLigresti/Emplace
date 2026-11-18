@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { ingresarEmpleado, moverReservaAhora } from '../lib/base';
 
 // Camino principal: reserva → activación → pedido → cocina y salón → pago →
@@ -74,7 +74,7 @@ test('del alta del comensal a su primera visita, con el personal en otra sesión
   await comensal.getByRole('link', { name: /^Ver pedido/ }).click();
   await comensal.getByRole('button', { name: /^Confirmar pedido/ }).click();
   await expect(comensal).toHaveURL(/\/mesa$/);
-  await expectPedido(comensal, 'Recibido');
+  await expectPedido(comensal, 'Pendiente de pago');
 
   // El número de pedido identifica la comanda de esta corrida en la cocina.
   const numeroPedido = (
@@ -86,25 +86,26 @@ test('del alta del comensal a su primera visita, con el personal en otra sesión
   const comanda = (page: Page) =>
     page.getByRole('article').filter({ hasText: `Pedido #${numeroPedido}` });
 
-  // 5. Cocina lo prepara, y el mozo lo entrega; el comensal ve cada estado.
+  // 5. Cocina lo prepara, y el mozo lo entrega.
   const cocina = await (await browser.newContext()).newPage();
   await ingresarEmpleado(cocina, 'cocina@demo.pgim.test');
   await cocina.goto('/panel/cocina');
-  await comanda(cocina).getByRole('button', { name: 'Empezar' }).click();
-  await expectPedido(comensal, 'En preparación');
-  await comanda(cocina).getByRole('button', { name: 'Marcar listo' }).click();
-  await expectPedido(comensal, 'Listo');
+  await avanzar(cocina, comanda(cocina), 'Empezar');
+  await avanzar(cocina, comanda(cocina), 'Marcar listo');
 
   const mozo = await (await browser.newContext()).newPage();
   await ingresarEmpleado(mozo, 'mozo@demo.pgim.test');
   await mozo.goto('/panel/cocina');
-  await comanda(mozo).getByRole('button', { name: 'Entregar' }).click();
-  await expectPedido(comensal, 'Entregado');
+  await avanzar(mozo, comanda(mozo), 'Entregar');
+  // El comensal ve el estado de pago, no el de la cocina.
+  await expectPedido(comensal, 'Pendiente de pago');
 
   // 6. Paga el total: la pasarela de prueba aprueba al instante.
   await comensal.getByRole('button', { name: /^Pagar \$/ }).click();
   await expect(comensal.getByText('Pago aprobado')).toBeVisible();
   await expect(comensal.getByText('Comprobante', { exact: true })).toBeVisible();
+  await comensal.getByRole('button', { name: 'Listo' }).click();
+  await expectPedido(comensal, 'Pagado');
 
   // 7. El gerente cierra la mesa.
   await gerente.reload();
@@ -124,4 +125,14 @@ async function expectPedido(comensal: Page, estado: string) {
   await expect(comensal.getByRole('listitem').filter({ hasText: /Pedido #\d+/ })).toContainText(
     estado,
   );
+}
+
+// La cola aplica el avance al instante, pero lo manda a la API después de la
+// ventana para deshacer: se espera esa respuesta antes de seguir.
+async function avanzar(page: Page, comanda: Locator, accion: string) {
+  const enviado = page.waitForResponse(
+    (r) => r.url().includes('/avanzar') && r.request().method() === 'POST' && r.ok(),
+  );
+  await comanda.getByRole('button', { name: accion }).click();
+  await enviado;
 }

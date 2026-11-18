@@ -14,7 +14,7 @@ import { useGuardar } from '../../lib/useGuardar';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
 
-// "Mi mesa": los pedidos del comensal con su estado en vivo, lo pagado y el
+// "Mi mesa": los pedidos del comensal con su estado de pago, lo pagado y el
 // saldo. Paga siempre el saldo total, con un beneficio opcional, en Mercado
 // Pago; al volver (?pago=<id>) se muestra el resultado.
 export function MiMesaPage() {
@@ -111,7 +111,7 @@ export function MiMesaPage() {
   );
 
   return (
-    <LayoutComensal accionFija={accion || undefined} mesaActiva={datos}>
+    <LayoutComensal mesaActiva={datos}>
       <EstadoCarga cargando={mesa.cargando && !datos && !ultima} error={mesa.error} />
       {pagoSeguido && (
         <div className="mb-4">
@@ -158,7 +158,11 @@ export function MiMesaPage() {
                     <span className="text-sm text-meta">
                       Pedido #{p.numero} · {formatoHora(p.creadoEn)} h
                     </span>
-                    <Estado entidad="pedido" valor={p.estado} publico="comensal" />
+                    {p.estadoPago ? (
+                      <Estado entidad="pagoPedido" valor={p.estadoPago} />
+                    ) : (
+                      <Estado entidad="pedido" valor={p.estado} publico="comensal" />
+                    )}
                   </div>
                   <ul
                     className={`space-y-1 ${p.estado === 'CANCELADO' ? 'line-through opacity-60' : ''}`}
@@ -232,6 +236,13 @@ export function MiMesaPage() {
             />
           )}
           <Aviso>{pago.error ?? beneficios.error}</Aviso>
+        </div>
+      )}
+      {accion && (
+        // Va debajo de las tarjetas y, si la página es más larga que la
+        // pantalla, queda pegada sobre la barra de secciones.
+        <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 -mx-4 mt-4 border-t border-line bg-bg px-4 py-2">
+          <div className="flex flex-wrap gap-2">{accion}</div>
         </div>
       )}
     </LayoutComensal>
