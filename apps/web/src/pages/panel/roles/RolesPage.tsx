@@ -87,7 +87,9 @@ export function RolesPage() {
     const respuesta = await accion.enviar<Rol>('/roles', 'POST', datos);
     if (!respuesta) return;
     await recargarSesion();
-    navegar(`/panel/roles/${respuesta.datos.id}/permisos`);
+    // El editor de la copia pide rol.editar: sin ese permiso, se queda en la lista.
+    if (puedeEditar) navegar(`/panel/roles/${respuesta.datos.id}/permisos`);
+    else roles.recargar();
   }
 
   async function eliminar(rol: Rol) {
@@ -176,62 +178,72 @@ export function RolesPage() {
       )}
 
       {roles.datos && (
-        <div className="overflow-x-auto rounded-panel border border-line bg-surface">
-          <div className="min-w-[560px]">
-            <div className="grid grid-cols-[minmax(0,1fr)_112px_112px] gap-4 border-b border-line px-5 py-3 text-xs font-semibold uppercase tracking-wide text-meta">
-              <span>Roles — {visibles.length}</span>
-              <span>Empleados</span>
-              <span className="text-right">Acciones</span>
-            </div>
-            {visibles.length === 0 && (
-              <p className="px-5 py-6 text-sm text-meta">
-                No hay roles que coincidan con la búsqueda.
-              </p>
-            )}
-            <ul>
-              {visibles.map((rol) => (
-                <li
-                  key={rol.id}
-                  className={`grid grid-cols-[minmax(0,1fr)_112px_112px] items-center gap-4 border-b border-line px-5 py-3 last:border-b-0 ${rol.activo ? '' : 'opacity-60'}`}
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span
-                      aria-hidden
-                      className={`size-3 shrink-0 rounded-full ${colorArquetipo(rol.arquetipo)}`}
-                    />
-                    <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
-                        {rol.nombre}
-                        {!rol.activo && <Etiqueta>Desactivado</Etiqueta>}
-                      </p>
-                      <p className="text-sm text-meta">{descripcionRol(rol)}</p>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-1.5 text-sm text-text">
-                    <User aria-hidden className="size-4 text-meta" />
-                    {rol.cantidadEmpleados}
-                  </span>
-                  <div className="flex justify-end gap-2">
-                    {puedeEditar && (
-                      <Link
-                        to={`/panel/roles/${rol.id}/permisos`}
-                        aria-label={`Editar rol ${rol.nombre}`}
-                        className="inline-flex size-11 items-center justify-center rounded-cuadrado bg-panel text-ink hover:bg-line"
-                      >
-                        <Pencil aria-hidden className="size-[18px]" />
-                      </Link>
-                    )}
-                    {puedeEditar && (
-                      <MenuAcciones
-                        etiqueta={`Más acciones para ${rol.nombre}`}
-                        acciones={accionesDe(rol)}
-                      />
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+        <div className="rounded-panel border border-line bg-surface">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 border-b border-line px-4 py-3 text-xs font-semibold uppercase tracking-wide text-meta sm:grid-cols-[minmax(0,1fr)_112px_112px] sm:px-5">
+            <span>Roles — {visibles.length}</span>
+            <span className="hidden sm:inline">Empleados</span>
+            <span className="hidden text-right sm:inline">Acciones</span>
           </div>
+          {visibles.length === 0 && (
+            <p className="px-5 py-6 text-sm text-meta">
+              No hay roles que coincidan con la búsqueda.
+            </p>
+          )}
+          <ul>
+            {visibles.map((rol) => (
+              <li
+                key={rol.id}
+                className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_112px_112px] sm:px-5 ${rol.activo ? '' : 'opacity-60'}`}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden
+                    className={`size-3 shrink-0 rounded-full ${colorArquetipo(rol.arquetipo)}`}
+                  />
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
+                      {puedeEditar ? (
+                        <Link
+                          to={`/panel/roles/${rol.id}/permisos`}
+                          className="rounded-control [overflow-wrap:anywhere] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                        >
+                          {rol.nombre}
+                        </Link>
+                      ) : (
+                        rol.nombre
+                      )}
+                      {!rol.activo && <Etiqueta>Desactivado</Etiqueta>}
+                    </p>
+                    <p className="text-sm text-meta">{descripcionRol(rol)}</p>
+                    <p className="flex items-center gap-1.5 text-sm text-text sm:hidden">
+                      <User aria-hidden className="size-4 text-meta" />
+                      {rol.cantidadEmpleados}{' '}
+                      {rol.cantidadEmpleados === 1 ? 'empleado' : 'empleados'}
+                    </p>
+                  </div>
+                </div>
+                <span className="hidden items-center gap-1.5 text-sm text-text sm:flex">
+                  <User aria-hidden className="size-4 text-meta" />
+                  {rol.cantidadEmpleados}
+                </span>
+                <div className="flex justify-end gap-2">
+                  {puedeEditar && (
+                    <Link
+                      to={`/panel/roles/${rol.id}/permisos`}
+                      aria-label={`Editar rol ${rol.nombre}`}
+                      className="inline-flex size-11 items-center justify-center rounded-cuadrado bg-panel text-ink hover:bg-line"
+                    >
+                      <Pencil aria-hidden className="size-[18px]" />
+                    </Link>
+                  )}
+                  <MenuAcciones
+                    etiqueta={`Más acciones para ${rol.nombre}`}
+                    acciones={accionesDe(rol)}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>

@@ -61,11 +61,15 @@ export function MenuAcciones({
     const cerrarSinFoco = () => setAbierto(false);
     document.addEventListener('mousedown', alClickAfuera);
     window.addEventListener('resize', cerrarSinFoco);
-    window.addEventListener('scroll', cerrarSinFoco, true);
+    // Solo el scroll de la página (el de un contenedor interno no mueve el botón).
+    const alScroll = (e: Event) => {
+      if (e.target === document || e.target === document.documentElement) setAbierto(false);
+    };
+    window.addEventListener('scroll', alScroll, true);
     return () => {
       document.removeEventListener('mousedown', alClickAfuera);
       window.removeEventListener('resize', cerrarSinFoco);
-      window.removeEventListener('scroll', cerrarSinFoco, true);
+      window.removeEventListener('scroll', alScroll, true);
     };
   }, [abierto]);
 
@@ -80,6 +84,12 @@ export function MenuAcciones({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       items[(actual - 1 + items.length) % items.length]?.focus();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      items[0]?.focus();
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      items[items.length - 1]?.focus();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       cerrar(true);
@@ -116,7 +126,7 @@ export function MenuAcciones({
           aria-label={etiqueta}
           onKeyDown={onTeclasMenu}
           style={{ position: 'fixed', ...posicion }}
-          className="z-30 min-w-48 rounded-panel border border-line bg-surface py-1 shadow-lg"
+          className="z-30 min-w-48 rounded-panel border border-line bg-surface py-1 shadow-flotante"
         >
           {acciones.map(({ texto, onSeleccionar, icono: Icono, peligro }) => (
             <button
