@@ -10,7 +10,7 @@ import {
   type ProgramaInput,
 } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { fidelizacionService } from '../services/fidelizacion.service';
+import { fidelizacionService } from '../services/fidelizacion/fidelizacion.service';
 
 // CU-17: programa de puntos, grupos y beneficios. Es por restaurante, sin
 // sucursal de trabajo.

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { idParamSchema, rolInputSchema, type RolInput } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { rolService } from '../services/rol.service';
+import { rolService } from '../services/rol/rol.service';
 
 export const rolesRouter = Router();
 

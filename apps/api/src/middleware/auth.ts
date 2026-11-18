@@ -3,7 +3,7 @@ import type { CodigoPermiso, Sesion } from '@pgim/shared';
 import type { z } from 'zod';
 import { AppError } from '../lib/errors';
 import { COOKIE_SESION, verificarToken } from '../lib/jwt';
-import { authService } from '../services/auth.service';
+import { authService } from '../services/auth/auth.service';
 import '../types/express';
 
 // Cadena de middleware de las rutas protegidas:

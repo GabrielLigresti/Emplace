@@ -25,10 +25,10 @@ import {
   costoUnitario,
   insumosNecesarios,
   type Componente,
-} from '../src/domain/receta';
-import { iniciosDelDia, sumarDias } from '../src/domain/franjas';
-import { semanaSiguiente } from '../src/domain/pronostico';
-import { produccionService } from '../src/services/produccion.service';
+} from '../src/domain/receta/receta';
+import { iniciosDelDia, sumarDias } from '../src/domain/franjas/franjas';
+import { semanaSiguiente } from '../src/domain/pronostico/pronostico';
+import { produccionService } from '../src/services/produccion/produccion.service';
 import { recetaRepository } from '../src/repositories/receta.repository';
 import { stockRepository } from '../src/repositories/stock.repository';
 

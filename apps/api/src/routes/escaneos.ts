@@ -8,7 +8,7 @@ import {
 } from '@pgim/shared';
 import { AppError } from '../lib/errors';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { escaneoService } from '../services/escaneo.service';
+import { escaneoService } from '../services/escaneo/escaneo.service';
 
 // El informe viaja en un encabezado (el video ocupa el cuerpo): JSON en UTF-8
 // codificado en base64url. Cualquier fallo al leerlo es el mismo 422.

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../app';
-import { fechaDe, iniciosDelDia, sumarDias } from '../domain/franjas';
+import { fechaDe, iniciosDelDia, sumarDias } from '../domain/franjas/franjas';
 import { IDS } from '../test/fake-usuarios';
 import { cookieConPermisos, cookieDeComensal } from '../test/sesion-falsa';
 

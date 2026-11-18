@@ -1,5 +1,5 @@
 import type { PagoDelDia } from '@pgim/shared';
-import { sumarDias } from '../domain/franjas';
+import { sumarDias } from '../domain/franjas/franjas';
 import { inicioDeDiaArgentina } from '../lib/dia-argentina';
 import { prisma } from '../lib/prisma';
 

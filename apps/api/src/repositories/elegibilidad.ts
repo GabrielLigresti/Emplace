@@ -1,5 +1,5 @@
 import type { Prisma } from '../generated/prisma/client';
-import { desdeDelCiclo, type DatosElegibilidad } from '../domain/beneficio';
+import { desdeDelCiclo, type DatosElegibilidad } from '../domain/beneficio/beneficio';
 import { prisma } from '../lib/prisma';
 import { aFilaBeneficio, type FilaBeneficio } from './fidelizacion.repository';
 

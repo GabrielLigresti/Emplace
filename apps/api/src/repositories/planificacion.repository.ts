@@ -11,13 +11,17 @@ import {
   type TurnoPlanificado,
   type UnidadMedida,
 } from '@pgim/shared';
-import { horasDeFranja } from '../domain/capacidad';
-import { sumarDias } from '../domain/franjas';
-import { estadoDePlanificacion } from '../domain/planificacion';
-import type { FilaPronostico, HorarioServicioDatos } from '../domain/pronostico';
-import type { Receta } from '../domain/receta';
-import type { ArquetipoTurno, EmpleadoAsignable, TurnoAsignado } from '../domain/turnos';
-import type { AlertaNueva, ContextoStock, PronosticoAVerificar } from '../domain/verificadores';
+import { horasDeFranja } from '../domain/capacidad/capacidad';
+import { sumarDias } from '../domain/franjas/franjas';
+import { estadoDePlanificacion } from '../domain/planificacion/planificacion';
+import type { FilaPronostico, HorarioServicioDatos } from '../domain/pronostico/pronostico';
+import type { Receta } from '../domain/receta/receta';
+import type { ArquetipoTurno, EmpleadoAsignable, TurnoAsignado } from '../domain/turnos/turnos';
+import type {
+  AlertaNueva,
+  ContextoStock,
+  PronosticoAVerificar,
+} from '../domain/verificadores/verificadores';
 import type { Prisma } from '../generated/prisma/client';
 import { AppError } from '../lib/errors';
 import { aHora } from '../lib/hora';

@@ -1,5 +1,5 @@
 import type { EstadoPedido, LineaPedidoVista, PedidoCola, PedidoSalon } from '@pgim/shared';
-import { ESTADOS_ACTIVOS } from '../domain/pedido';
+import { ESTADOS_ACTIVOS } from '../domain/pedido/pedido';
 import type { Prisma } from '../generated/prisma/client';
 import { prisma } from '../lib/prisma';
 import { bloquearStockDeSucursal } from './bloqueo-stock';

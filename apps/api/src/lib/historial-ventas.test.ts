@@ -1,4 +1,4 @@
-import { pronosticarSemana } from '../domain/pronostico';
+import { pronosticarSemana } from '../domain/pronostico/pronostico';
 import {
   generarReservasHistorial,
   SEMILLA_HISTORIAL,

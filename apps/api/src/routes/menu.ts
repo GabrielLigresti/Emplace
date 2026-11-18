@@ -13,8 +13,8 @@ import {
   type PlatoInput,
 } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { escaneoService } from '../services/escaneo.service';
-import { menuService } from '../services/menu.service';
+import { escaneoService } from '../services/escaneo/escaneo.service';
+import { menuService } from '../services/menu/menu.service';
 import { leerInformeCalidad } from './escaneos';
 
 // Categorías, platos y menús comparten los permisos menu.* (el Jefe de cocina tiene el ABM completo).

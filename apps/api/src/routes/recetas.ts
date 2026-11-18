@@ -9,7 +9,7 @@ import {
   type RecetaInput,
 } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { recetaService } from '../services/receta.service';
+import { recetaService } from '../services/receta/receta.service';
 
 export const recetasRouter = Router();
 

@@ -1,6 +1,6 @@
 import type { Pagina, Referencia, UnidadBase } from '@pgim/shared';
 import type { Prisma } from '../generated/prisma/client';
-import type { ConsumoTanda } from '../domain/tanda';
+import type { ConsumoTanda } from '../domain/tanda/tanda';
 import { prisma } from '../lib/prisma';
 import { bloquearStockDeSucursal } from './bloqueo-stock';
 import {

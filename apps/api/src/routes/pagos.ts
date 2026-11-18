@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { autenticar, requierePermiso, tenant } from '../middleware/auth';
-import { pagosDelDiaService } from '../services/pagos-del-dia.service';
+import { pagosDelDiaService } from '../services/pagos-del-dia/pagos-del-dia.service';
 import { sucursalDeTrabajo } from './reservas';
 
 // Pagos del panel (CU-23). Se monta bajo /api/pagos junto al webhook de Mercado
