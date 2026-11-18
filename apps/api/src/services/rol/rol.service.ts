@@ -20,6 +20,15 @@ function permisosPorModulo(): GrupoPermisos[] {
   return [...grupos.values()];
 }
 
+// Quien hace el pedido: su rol sale de la sesión.
+export interface UsuarioActual {
+  id: string;
+  rolId: string | null;
+}
+
+const MENSAJE_AUTOBLOQUEO =
+  'No podés quitarte el permiso de gestionar roles: perderías el acceso a esta pantalla';
+
 export function createRolService(repo: RolRepository) {
   async function obtener(restauranteId: string, id: string): Promise<Rol> {
     const rol = await repo.buscar(restauranteId, id);
@@ -56,19 +65,70 @@ export function createRolService(repo: RolRepository) {
       return repo.crear(restauranteId, datos);
     },
 
-    async actualizar(restauranteId: string, id: string, datos: RolInput) {
-      const actual = await obtener(restauranteId, id);
+    async actualizar(restauranteId: string, id: string, datos: RolInput, actual?: UsuarioActual) {
+      const rol = await obtener(restauranteId, id);
       await verificarNombre(restauranteId, datos.nombre, id);
 
-      const seDesactiva = actual.activo && datos.activo === false;
-      if (seDesactiva) verificarSinEmpleados(actual);
+      const seDesactiva = rol.activo && datos.activo === false;
+      if (seDesactiva) verificarSinEmpleados(rol);
 
-      // E2: el cambio no puede dejar al restaurante sin nadie que gestione roles.
       const sigueGestionando = datos.activo !== false && tienePermisosDeGestion(datos.permisos);
-      if (gestionaRoles(actual) && !sigueGestionando) {
+      // Autobloqueo: nadie se quita a sí mismo el acceso a la pantalla de roles.
+      if (actual?.rolId === id && gestionaRoles(rol) && !sigueGestionando) {
+        throw new AppError(409, MENSAJE_AUTOBLOQUEO);
+      }
+      // E2: el cambio no puede dejar al restaurante sin nadie que gestione roles.
+      if (gestionaRoles(rol) && !sigueGestionando) {
         await verificarGestorDeRoles(repo.contarGestoresDeRoles, restauranteId, { rolId: id });
       }
       return repo.actualizar(restauranteId, id, datos);
+    },
+
+    // Baja física: solo si ningún empleado, activo o inactivo, referencia el rol.
+    async eliminar(restauranteId: string, id: string) {
+      const rol = await obtener(restauranteId, id);
+      const asignados = await repo.contarEmpleados(restauranteId, id);
+      const bloqueado = () =>
+        new AppError(
+          409,
+          `El rol "${rol.nombre}" tiene ${asignados} empleado(s) asignado(s): reasignalos a otro rol antes de eliminarlo`,
+        );
+      if (asignados > 0) throw bloqueado();
+      if (!(await repo.eliminar(restauranteId, id))) throw bloqueado();
+    },
+
+    listarEmpleados: (restauranteId: string) => repo.listarEmpleadosActivos(restauranteId),
+
+    // Pasa los empleados al rol destino en una sola transacción.
+    async asignarEmpleados(
+      restauranteId: string,
+      id: string,
+      empleadoIds: string[],
+      actual: UsuarioActual,
+    ) {
+      const destino = await obtener(restauranteId, id);
+      if (!destino.activo) {
+        throw new AppError(409, `El rol "${destino.nombre}" está desactivado: activalo primero`);
+      }
+      const ids = [...new Set(empleadoIds)];
+      const empleados = await repo.buscarEmpleadosActivos(restauranteId, ids);
+      if (empleados.length !== ids.length) {
+        throw new AppError(404, 'Alguno de los empleados no existe o está inactivo');
+      }
+
+      if (!gestionaRoles(destino)) {
+        if (ids.includes(actual.id)) throw new AppError(409, MENSAJE_AUTOBLOQUEO);
+        // E2: al menos otro gestor tiene que quedar fuera de los movidos.
+        const gestoresMovidos = empleados.filter(
+          ({ rol }) => rol.activo && tienePermisosDeGestion(rol.permisos),
+        );
+        if (gestoresMovidos.length > 0) {
+          await verificarGestorDeRoles(repo.contarGestoresDeRoles, restauranteId, {
+            usuarioIds: ids,
+          });
+        }
+      }
+      await repo.asignarEmpleados(restauranteId, id, ids);
     },
 
     async desactivar(restauranteId: string, id: string) {

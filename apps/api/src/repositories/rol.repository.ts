@@ -1,7 +1,13 @@
-import type { CodigoPermiso, Rol, RolInput } from '@pgim/shared';
+import type { CodigoPermiso, EmpleadoDeRol, Rol, RolInput } from '@pgim/shared';
 import type { Prisma } from '../generated/prisma/client';
 import { prisma } from '../lib/prisma';
 import { contarGestoresDeRoles, type ContarGestoresDeRoles } from './gestores-roles';
+
+// Empleado activo con los datos de su rol actual, para decidir si moverlo es seguro.
+export interface EmpleadoConRol {
+  id: string;
+  rol: { id: string; activo: boolean; permisos: CodigoPermiso[] };
+}
 
 export interface RolRepository {
   listar(restauranteId: string): Promise<Rol[]>;
@@ -10,6 +16,13 @@ export interface RolRepository {
   crear(restauranteId: string, datos: RolInput): Promise<Rol>;
   actualizar(restauranteId: string, id: string, datos: RolInput): Promise<Rol>;
   desactivar(restauranteId: string, id: string): Promise<void>;
+  // Cuenta todos los empleados del rol, activos e inactivos.
+  contarEmpleados(restauranteId: string, rolId: string): Promise<number>;
+  // Borra el rol en una transacción; false si apareció algún empleado asignado.
+  eliminar(restauranteId: string, id: string): Promise<boolean>;
+  listarEmpleadosActivos(restauranteId: string): Promise<EmpleadoDeRol[]>;
+  buscarEmpleadosActivos(restauranteId: string, ids: string[]): Promise<EmpleadoConRol[]>;
+  asignarEmpleados(restauranteId: string, rolId: string, empleadoIds: string[]): Promise<void>;
   contarGestoresDeRoles: ContarGestoresDeRoles;
 }
 
@@ -97,6 +110,77 @@ export const rolRepository: RolRepository = {
 
   async desactivar(restauranteId, id) {
     await prisma.rol.update({ where: { id, restauranteId }, data: { activo: false } });
+  },
+
+  async contarEmpleados(restauranteId, rolId) {
+    return prisma.empleado.count({ where: { restauranteId, rolId } });
+  },
+
+  async eliminar(restauranteId, id) {
+    return prisma.$transaction(async (tx) => {
+      const asignados = await tx.empleado.count({ where: { restauranteId, rolId: id } });
+      if (asignados > 0) return false;
+      await tx.rol.delete({ where: { id, restauranteId } });
+      return true;
+    });
+  },
+
+  async listarEmpleadosActivos(restauranteId) {
+    const filas = await prisma.empleado.findMany({
+      where: { restauranteId, usuario: { activo: true } },
+      select: {
+        usuarioId: true,
+        nombreCompleto: true,
+        usuario: { select: { email: true } },
+        rol: { select: { id: true, nombre: true } },
+        sucursales: {
+          select: { sucursal: { select: { id: true, nombre: true } } },
+          orderBy: { sucursal: { nombre: 'asc' } },
+        },
+      },
+      orderBy: { nombreCompleto: 'asc' },
+    });
+    return filas.map((fila) => ({
+      id: fila.usuarioId,
+      nombreCompleto: fila.nombreCompleto,
+      email: fila.usuario.email,
+      rol: fila.rol,
+      sucursales: fila.sucursales.map(({ sucursal }) => sucursal),
+    }));
+  },
+
+  async buscarEmpleadosActivos(restauranteId, ids) {
+    const filas = await prisma.empleado.findMany({
+      where: { restauranteId, usuarioId: { in: ids }, usuario: { activo: true } },
+      select: {
+        usuarioId: true,
+        rol: {
+          select: {
+            id: true,
+            activo: true,
+            permisos: { select: { permiso: { select: { codigo: true } } } },
+          },
+        },
+      },
+    });
+    return filas.map((fila) => ({
+      id: fila.usuarioId,
+      rol: {
+        id: fila.rol.id,
+        activo: fila.rol.activo,
+        permisos: fila.rol.permisos.map(({ permiso }) => permiso.codigo as CodigoPermiso),
+      },
+    }));
+  },
+
+  async asignarEmpleados(restauranteId, rolId, empleadoIds) {
+    await prisma.$transaction(async (tx) => {
+      const { count } = await tx.empleado.updateMany({
+        where: { restauranteId, usuarioId: { in: empleadoIds } },
+        data: { rolId },
+      });
+      if (count !== empleadoIds.length) throw new Error('Asignación incompleta');
+    });
   },
 
   contarGestoresDeRoles,
