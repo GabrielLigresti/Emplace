@@ -435,13 +435,13 @@ export function Modal({
         const activo = document.activeElement;
         if (e.shiftKey && (activo === primero || activo === d)) {
           e.preventDefault();
-          ultimo.focus();
+          ultimo?.focus();
         } else if (!e.shiftKey && activo === ultimo) {
           e.preventDefault();
-          primero.focus();
+          primero?.focus();
         } else if (!d.contains(activo)) {
           e.preventDefault();
-          primero.focus();
+          primero?.focus();
         }
       }
     };
