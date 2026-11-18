@@ -30,6 +30,11 @@
   --color-bad: #b91c1c;
   --color-bad-soft: #fef2f2;
 
+  /* Categoría del rol (punto junto al nombre); no cambian con el tema del staff. */
+  --color-rol-mozo: #2f6f8f;
+  --color-rol-cocinero: #9b3d2b;
+  --color-rol-otro: #6b5b95;
+
   --font-sans: 'Urbanist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display:
     'Urbanist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;

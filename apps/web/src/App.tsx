@@ -35,7 +35,8 @@ import { PersonalPage } from './pages/panel/PersonalPage';
 import { PlatosPage } from './pages/panel/PlatosPage';
 import { RecetaEditorPage } from './pages/panel/RecetaEditorPage';
 import { ReservasPage } from './pages/panel/ReservasPage';
-import { RolesPage } from './pages/panel/RolesPage';
+import { EditorRolPage } from './pages/panel/roles/EditorRolPage';
+import { RolesPage } from './pages/panel/roles/RolesPage';
 import { SalonEnVivoPage } from './pages/panel/SalonEnVivoPage';
 import { SalonPage } from './pages/panel/SalonPage';
 import { StockPage } from './pages/panel/StockPage';
@@ -139,6 +140,11 @@ export default function App() {
                     element={conPermiso('beneficio.ver', <BeneficiosPage />)}
                   />
                   <Route path="roles" element={conPermiso('rol.ver', <RolesPage />)} />
+                  <Route path="roles/nuevo" element={conPermiso('rol.editar', <EditorRolPage />)} />
+                  <Route
+                    path="roles/:id/:pestana"
+                    element={conPermiso('rol.editar', <EditorRolPage />)}
+                  />
                   <Route path="personal" element={conPermiso('personal.ver', <PersonalPage />)} />
                   <Route path="insumos" element={<Navigate to="/panel/stock" replace />} />
                   <Route
