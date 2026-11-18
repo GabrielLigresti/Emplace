@@ -111,7 +111,7 @@ export function MiMesaPage() {
   );
 
   return (
-    <LayoutComensal accionFija={accion || undefined} mesaActiva={datos}>
+    <LayoutComensal mesaActiva={datos}>
       <EstadoCarga cargando={mesa.cargando && !datos && !ultima} error={mesa.error} />
       {pagoSeguido && (
         <div className="mb-4">
@@ -236,6 +236,13 @@ export function MiMesaPage() {
             />
           )}
           <Aviso>{pago.error ?? beneficios.error}</Aviso>
+        </div>
+      )}
+      {accion && (
+        // Va debajo de las tarjetas y, si la página es más larga que la
+        // pantalla, queda pegada sobre la barra de secciones.
+        <div className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-10 -mx-4 mt-4 border-t border-line bg-bg px-4 py-2">
+          <div className="flex flex-wrap gap-2">{accion}</div>
         </div>
       )}
     </LayoutComensal>
