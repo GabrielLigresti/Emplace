@@ -24,6 +24,11 @@ function repoFalso(rol: Rol, gestores = 1): jest.Mocked<RolRepository> {
     crear: jest.fn(),
     actualizar: jest.fn().mockResolvedValue(rol),
     desactivar: jest.fn(),
+    contarEmpleados: jest.fn().mockResolvedValue({ activos: 0, inactivos: 0 }),
+    eliminar: jest.fn().mockResolvedValue(true),
+    listarEmpleadosActivos: jest.fn(),
+    buscarEmpleadosActivos: jest.fn().mockResolvedValue([]),
+    asignarEmpleados: jest.fn().mockResolvedValue(undefined),
     contarGestoresDeRoles: jest.fn().mockResolvedValue(gestores),
   };
 }
@@ -114,5 +119,139 @@ describe('rolService', () => {
       'editar',
       'eliminar',
     ]);
+  });
+
+  it('autobloqueo: no deja que un usuario se quite la gestión de roles de su propio rol', async () => {
+    const repo = repoFalso(admin, 5);
+
+    await expect(
+      createRolService(repo).actualizar(R, 'admin', input(admin, { permisos: ['rol.ver'] }), {
+        id: 'yo',
+        rolId: 'admin',
+      }),
+    ).rejects.toMatchObject({ status: 409, message: expect.stringContaining('perderías') });
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it('autobloqueo: tampoco desactivando su propio rol', async () => {
+    const repo = repoFalso(admin, 5);
+
+    await expect(
+      createRolService(repo).actualizar(R, 'admin', input(admin, { activo: false }), {
+        id: 'yo',
+        rolId: 'admin',
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  describe('asignarEmpleados', () => {
+    const gestor = (id: string) => ({
+      id,
+      rol: { id: 'admin', activo: true, permisos: admin.permisos },
+    });
+    const comun = (id: string) => ({
+      id,
+      rol: { id: 'otro', activo: true, permisos: mozo.permisos },
+    });
+
+    it('autobloqueo: no deja moverse a uno mismo a un rol sin gestión de roles', async () => {
+      const repo = repoFalso(mozo);
+      repo.buscarEmpleadosActivos.mockResolvedValue([gestor('yo')]);
+
+      await expect(
+        createRolService(repo).asignarEmpleados(R, 'mozo', ['yo'], { id: 'yo', rolId: 'admin' }),
+      ).rejects.toMatchObject({ status: 409, message: expect.stringContaining('perderías') });
+      expect(repo.asignarEmpleados).not.toHaveBeenCalled();
+    });
+
+    it('E2: excluye a todos los movidos al contar los gestores que quedan', async () => {
+      const repo = repoFalso(mozo, 0);
+      repo.buscarEmpleadosActivos.mockResolvedValue([gestor('a'), gestor('b')]);
+
+      await expect(
+        createRolService(repo).asignarEmpleados(R, 'mozo', ['a', 'b'], { id: 'yo', rolId: 'x' }),
+      ).rejects.toMatchObject({ status: 409 });
+      expect(repo.contarGestoresDeRoles).toHaveBeenCalledWith(R, { usuarioIds: ['a', 'b'] });
+      expect(repo.asignarEmpleados).not.toHaveBeenCalled();
+    });
+
+    it('E2: mueve si queda otro gestor', async () => {
+      const repo = repoFalso(mozo, 1);
+      repo.buscarEmpleadosActivos.mockResolvedValue([gestor('a'), comun('b')]);
+
+      await createRolService(repo).asignarEmpleados(R, 'mozo', ['a', 'b'], {
+        id: 'yo',
+        rolId: 'x',
+      });
+
+      expect(repo.asignarEmpleados).toHaveBeenCalledWith(R, 'mozo', ['a', 'b']);
+    });
+
+    it('no consulta gestores si ninguno de los movidos gestionaba roles', async () => {
+      const repo = repoFalso(mozo, 0);
+      repo.buscarEmpleadosActivos.mockResolvedValue([comun('a')]);
+
+      await createRolService(repo).asignarEmpleados(R, 'mozo', ['a'], { id: 'yo', rolId: 'x' });
+
+      expect(repo.contarGestoresDeRoles).not.toHaveBeenCalled();
+    });
+
+    it('responde 404 si algún empleado no es del restaurante o está inactivo', async () => {
+      const repo = repoFalso(mozo);
+      repo.buscarEmpleadosActivos.mockResolvedValue([comun('a')]);
+
+      await expect(
+        createRolService(repo).asignarEmpleados(R, 'mozo', ['a', 'b'], { id: 'yo', rolId: 'x' }),
+      ).rejects.toMatchObject({ status: 404 });
+    });
+
+    it('responde 409 si el rol destino está desactivado', async () => {
+      const repo = repoFalso({ ...mozo, activo: false });
+
+      await expect(
+        createRolService(repo).asignarEmpleados(R, 'mozo', ['a'], { id: 'yo', rolId: 'x' }),
+      ).rejects.toMatchObject({ status: 409 });
+    });
+  });
+
+  describe('eliminar', () => {
+    it('se bloquea si hay empleados activos asignados', async () => {
+      const repo = repoFalso(mozo);
+      repo.contarEmpleados.mockResolvedValue({ activos: 2, inactivos: 1 });
+
+      await expect(createRolService(repo).eliminar(R, 'mozo')).rejects.toMatchObject({
+        status: 409,
+        message: expect.stringContaining('2 empleado(s) activo(s)'),
+      });
+      expect(repo.eliminar).not.toHaveBeenCalled();
+    });
+
+    it('se bloquea si solo hay empleados dados de baja, y lo aclara', async () => {
+      const repo = repoFalso(mozo);
+      repo.contarEmpleados.mockResolvedValue({ activos: 0, inactivos: 3 });
+
+      await expect(createRolService(repo).eliminar(R, 'mozo')).rejects.toMatchObject({
+        status: 409,
+        message: `El rol "${mozo.nombre}" tiene 3 empleado(s) dado(s) de baja asignado(s): cambiales el rol desde Personal antes de eliminarlo`,
+      });
+      expect(repo.eliminar).not.toHaveBeenCalled();
+    });
+
+    it('borra el rol sin empleados', async () => {
+      const repo = repoFalso(mozo);
+
+      await createRolService(repo).eliminar(R, 'mozo');
+
+      expect(repo.eliminar).toHaveBeenCalledWith(R, 'mozo');
+    });
+
+    it('responde 409 si apareció un empleado durante la transacción', async () => {
+      const repo = repoFalso(mozo);
+      repo.eliminar.mockResolvedValue(false);
+
+      await expect(createRolService(repo).eliminar(R, 'mozo')).rejects.toMatchObject({
+        status: 409,
+      });
+    });
   });
 });

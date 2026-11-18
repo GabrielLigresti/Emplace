@@ -407,9 +407,43 @@ export function Modal({
   // Escape cierra desde cualquier lugar de la página.
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null;
-    dialogo.current?.focus();
+    const d = dialogo.current;
+    // Un campo que ya tomó el foco (autoFocus) se respeta; si no, el primero.
+    if (d && !d.contains(document.activeElement)) {
+      const campo = d.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
+      );
+      (campo ?? d).focus();
+    }
     const alPresionar = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') cerrar.current();
+      if (e.key === 'Escape') {
+        cerrar.current();
+      } else if (e.key === 'Tab' && d) {
+        // El foco no sale del diálogo: Tab y Shift+Tab dan la vuelta.
+        const foco = [
+          ...d.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ];
+        if (foco.length === 0) {
+          e.preventDefault();
+          d.focus();
+          return;
+        }
+        const primero = foco[0];
+        const ultimo = foco[foco.length - 1];
+        const activo = document.activeElement;
+        if (e.shiftKey && (activo === primero || activo === d)) {
+          e.preventDefault();
+          ultimo?.focus();
+        } else if (!e.shiftKey && activo === ultimo) {
+          e.preventDefault();
+          primero?.focus();
+        } else if (!d.contains(activo)) {
+          e.preventDefault();
+          primero?.focus();
+        }
+      }
     };
     document.addEventListener('keydown', alPresionar);
     return () => {

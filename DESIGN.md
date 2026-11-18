@@ -19,6 +19,9 @@ colors:
   amarillo-riesgo-suave: "#fefce8"
   rojo-falta: "#b91c1c"
   rojo-falta-suave: "#fef2f2"
+  rol-mozo: "#2f6f8f"
+  rol-cocinero: "#9b3d2b"
+  rol-otro: "#6b5b95"
   papel: "#f3f2f2"
   papel-hondo: "#eae9e9"
   tinta-clasica: "#201f1d"
@@ -239,6 +242,9 @@ Un verde comestible sobre blanco y grises fríos, con tres tonos de estado que n
 - **Azul Listo** (#1d5fb4) sobre **#eaf1fb**: OK, Listo, Aprobado, Confirmada, mesa libre, guardado con éxito.
 - **Amarillo Riesgo** (#a16207) sobre **#fefce8**: en riesgo, inasistencia.
 - **Rojo Falta** (#b91c1c) sobre **#fef2f2**: faltante, error, cancelado, rechazado.
+
+### Categoría de rol
+- **Colores de categoría de rol** (Mozo #2f6f8f, Cocinero #9b3d2b, Otro #6b5b95): punto de 12 px junto al nombre del rol; nunca texto, fondo de botón ni estado.
 
 ### Named Rules
 **The Albahaca Touch Rule.** (Vale hoy para el dorado del comensal.) El acento solo marca lo que se puede tocar o lo que está en curso. Si un elemento con el acento no hace nada y no está pasando, no lleva el acento.
