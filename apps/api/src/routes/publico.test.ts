@@ -6,7 +6,7 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/publico.service', () => ({
+jest.mock('../services/publico/publico.service', () => ({
   publicoService: {
     buscar: jest.fn(),
     barrios: jest.fn(),
@@ -25,7 +25,7 @@ const RESULTADO = {
 
 describe('/api/publico', () => {
   const app = createApp();
-  const { publicoService } = jest.requireMock('../services/publico.service');
+  const { publicoService } = jest.requireMock('../services/publico/publico.service');
 
   beforeEach(() => {
     publicoService.buscar.mockResolvedValue([RESULTADO]);

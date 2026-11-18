@@ -9,7 +9,7 @@ import {
   type CuentaEmpleadoInput,
 } from '@pgim/shared';
 import { autenticar, soloTipo, tenant, validar } from '../middleware/auth';
-import { cuentaService } from '../services/cuenta.service';
+import { cuentaService } from '../services/cuenta/cuenta.service';
 
 // CU-20: autenticación sin permiso especial. El usuarioId sale siempre de la
 // sesión (req.sesion), nunca del body ni de la URL.

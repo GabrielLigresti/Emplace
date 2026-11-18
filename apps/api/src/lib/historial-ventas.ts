@@ -5,7 +5,7 @@ import {
   sumarDias,
   fechaDe,
   type MesaCandidata,
-} from '../domain/franjas';
+} from '../domain/franjas/franjas';
 import { crearPrng } from './prng';
 
 // Generador puro del historial de ventas del seed: mismas reservas para la misma

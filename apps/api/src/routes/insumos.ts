@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { idParamSchema, insumoInputSchema, type InsumoInput } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { insumoService } from '../services/insumo.service';
+import { insumoService } from '../services/insumo/insumo.service';
 
 export const insumosRouter = Router();
 

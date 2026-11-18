@@ -1,4 +1,4 @@
-import type { BusEventos } from '../domain/eventos';
+import type { BusEventos } from '../domain/eventos/eventos';
 import type { CuentaMesaRepository } from '../repositories/cuenta-mesa.repository';
 
 // RegistroVisitas (Observer): al cerrarse la mesa, registra la visita del

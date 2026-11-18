@@ -7,7 +7,7 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/cuenta.service', () => ({
+jest.mock('../services/cuenta/cuenta.service', () => ({
   cuentaService: {
     obtener: jest.fn().mockResolvedValue({ tipo: 'COMENSAL' }),
     actualizarComensal: jest.fn().mockResolvedValue({ tipo: 'COMENSAL' }),
@@ -17,7 +17,7 @@ jest.mock('../services/cuenta.service', () => ({
   },
 }));
 
-const { cuentaService } = jest.requireMock('../services/cuenta.service');
+const { cuentaService } = jest.requireMock('../services/cuenta/cuenta.service');
 
 beforeEach(() => jest.clearAllMocks());
 

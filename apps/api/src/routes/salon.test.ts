@@ -9,11 +9,11 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/salon.service', () => ({
+jest.mock('../services/salon/salon.service', () => ({
   salonService: { estado: jest.fn() },
 }));
 
-const { salonService } = jest.requireMock('../services/salon.service');
+const { salonService } = jest.requireMock('../services/salon/salon.service');
 
 describe('GET /api/salon/estado', () => {
   const app = createApp();

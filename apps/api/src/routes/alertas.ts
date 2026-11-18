@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { idParamSchema, tiposAlertaVisibles } from '@pgim/shared';
 import { autenticar, requiereAlgunPermiso, tenant, validarParams } from '../middleware/auth';
-import { alertaService } from '../services/alerta.service';
+import { alertaService } from '../services/alerta/alerta.service';
 import { sucursalDeTrabajo } from './reservas';
 
 // Alertas de stock y de platos sin receta (secuencia de CU-04) y de inasistencia (CU-21).

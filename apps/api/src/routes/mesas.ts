@@ -7,7 +7,7 @@ import {
   type MesaInput,
 } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { mesaService } from '../services/mesa.service';
+import { mesaService } from '../services/mesa/mesa.service';
 
 // CU-14: el salón se ve con sucursal.ver y se edita con sucursal.editar.
 export const mesasRouter = Router({ mergeParams: true });

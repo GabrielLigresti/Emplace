@@ -12,7 +12,7 @@ import {
   type CambioSalon,
   type MapaEditado,
 } from '@pgim/shared';
-import { esEventoReserva, type BusEventos } from '../domain/eventos';
+import { esEventoReserva, type BusEventos } from '../domain/eventos/eventos';
 
 // Oyentes del bus de eventos que avisan por Socket.IO. Son efectos
 // secundarios: si un aviso no llega, la operación ya quedó guardada igual.

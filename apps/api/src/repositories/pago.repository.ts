@@ -1,6 +1,6 @@
 import type { EstadoPago, EstadoPagoComensal, MetodoPago } from '@pgim/shared';
-import { calcularPuntos } from '../domain/beneficio';
-import { estadoDePago, formatearComprobante } from '../domain/pago';
+import { calcularPuntos } from '../domain/beneficio/beneficio';
+import { estadoDePago, formatearComprobante } from '../domain/pago/pago';
 import { prisma } from '../lib/prisma';
 import { totalesDeCuenta } from './cuenta-mesa.repository';
 import {

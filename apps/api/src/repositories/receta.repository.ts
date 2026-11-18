@@ -1,6 +1,6 @@
 import type { UnidadBase, UnidadMedida } from '@pgim/shared';
 import type { Prisma } from '../generated/prisma/client';
-import type { Componente, Receta } from '../domain/receta';
+import type { Componente, Receta } from '../domain/receta/receta';
 import { prisma } from '../lib/prisma';
 import { bloquearStockDeSucursal } from './bloqueo-stock';
 import { existeNombreComponente, usosDeComponente } from './componente.repository';

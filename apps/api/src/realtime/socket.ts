@@ -8,9 +8,9 @@ import {
   salaSucursal,
   type Sesion,
 } from '@pgim/shared';
-import type { BusEventos } from '../domain/eventos';
+import type { BusEventos } from '../domain/eventos/eventos';
 import { COOKIE_SESION, verificarToken } from '../lib/jwt';
-import { authService } from '../services/auth.service';
+import { authService } from '../services/auth/auth.service';
 import { registrarNotificadores } from './notificadores';
 
 // Lee la cookie de sesión del handshake (mismo JWT que la API REST).

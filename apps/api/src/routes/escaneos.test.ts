@@ -16,7 +16,7 @@ jest.mock('@pgim/shared', () => ({
 
 // Las rutas se prueban sin base: el servicio se reemplaza y los casos de negocio
 // (plato ajeno, escaneo activo, rechazo) se simulan con el error que lanza.
-jest.mock('../services/escaneo.service', () => ({
+jest.mock('../services/escaneo/escaneo.service', () => ({
   escaneoService: {
     requisitos: jest.fn(),
     crear: jest.fn(),
@@ -35,7 +35,7 @@ const { cookieConPermisos } =
   require('../test/sesion-falsa') as typeof import('../test/sesion-falsa');
 const { AppError } = require('../lib/errors') as typeof import('../lib/errors');
 const { mp4Falso } = require('../test/mp4-falso') as typeof import('../test/mp4-falso');
-const { escaneoService } = jest.requireMock('../services/escaneo.service') as {
+const { escaneoService } = jest.requireMock('../services/escaneo/escaneo.service') as {
   escaneoService: Record<'requisitos' | 'crear' | 'ultimo' | 'publicar' | 'descartar', jest.Mock>;
 };
 

@@ -12,7 +12,7 @@
 //   npm run db:reubicar-mesas -w @pgim/api -- --aplicar escribe, una transacción por sucursal
 // Orden de despliegue: correrlo en staging y, después de db:deploy, en producción.
 import { prisma } from '../src/lib/prisma';
-import { planificarReubicacion } from '../src/domain/reubicacion-mesas';
+import { planificarReubicacion } from '../src/domain/reubicacion-mesas/reubicacion-mesas';
 
 const formato = (p: { posX: number; posY: number }) => `(${p.posX}, ${p.posY})`;
 

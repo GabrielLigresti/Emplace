@@ -1,4 +1,4 @@
-import { crearBusEventos, type EventoReserva } from '../domain/eventos';
+import { crearBusEventos, type EventoReserva } from '../domain/eventos/eventos';
 import { registrarNotificadores } from './notificadores';
 
 const evento: EventoReserva = {

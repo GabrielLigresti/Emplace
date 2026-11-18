@@ -6,7 +6,7 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/menu.service', () => ({
+jest.mock('../services/menu/menu.service', () => ({
   menuService: { actualizarPlato: jest.fn().mockResolvedValue({}), crearPlato: jest.fn() },
 }));
 
