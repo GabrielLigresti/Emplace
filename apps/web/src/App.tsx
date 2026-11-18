@@ -140,7 +140,7 @@ export default function App() {
                     element={conPermiso('beneficio.ver', <BeneficiosPage />)}
                   />
                   <Route path="roles" element={conPermiso('rol.ver', <RolesPage />)} />
-                  <Route path="roles/nuevo" element={conPermiso('rol.editar', <EditorRolPage />)} />
+                  <Route path="roles/nuevo" element={conPermiso('rol.crear', <EditorRolPage />)} />
                   <Route
                     path="roles/:id/:pestana"
                     element={conPermiso('rol.editar', <EditorRolPage />)}

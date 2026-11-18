@@ -75,7 +75,7 @@ function Editor({
   pestana: Pestana;
   recargarRoles(): void;
 }) {
-  const { sesion, recargarSesion } = useSesion();
+  const { sesion, recargarSesion, tienePermiso } = useSesion();
   const confirmar = useConfirmar();
   const navegar = useNavigate();
   const accion = useGuardar();
@@ -84,6 +84,7 @@ function Editor({
   const nuevo = rol === null;
   const base = rol ? `/panel/roles/${rol.id}` : null;
   const titulo = nuevo ? 'Crear rol' : `Editar rol: ${rol.nombre}`;
+  const puedeCrear = tienePermiso('rol.crear');
   const esRolPropio = !!rol && sesion?.rol?.id === rol.id;
   const sinPermisos = borrador.permisos.length === 0;
   const sinNombre = borrador.nombre.trim() === '';
@@ -166,11 +167,12 @@ function Editor({
           >
             {roles.map((r) => {
               const actual = r.id === rol?.id;
+              const destino = `/panel/roles/${r.id}/${pestana === 'empleados' ? 'empleados' : 'permisos'}`;
               return (
                 <Link
                   key={r.id}
-                  to={`/panel/roles/${r.id}/${pestana === 'empleados' ? 'empleados' : 'permisos'}`}
-                  onClick={(e) => void salir(e, `/panel/roles/${r.id}/permisos`)}
+                  to={destino}
+                  onClick={(e) => void salir(e, destino)}
                   aria-current={actual ? 'page' : undefined}
                   className={`inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 text-sm sm:min-h-9 lg:rounded-control lg:border-transparent ${
                     actual
@@ -187,14 +189,16 @@ function Editor({
               );
             })}
           </nav>
-          <Link
-            to="/panel/roles/nuevo"
-            onClick={(e) => void salir(e, '/panel/roles/nuevo')}
-            aria-label="Crear rol"
-            className="inline-flex size-11 shrink-0 items-center justify-center rounded-cuadrado bg-panel text-ink hover:bg-line lg:order-first lg:self-start"
-          >
-            <Plus aria-hidden className="size-[18px]" />
-          </Link>
+          {puedeCrear && (
+            <Link
+              to="/panel/roles/nuevo"
+              onClick={(e) => void salir(e, '/panel/roles/nuevo')}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-control bg-panel px-3 text-sm font-medium text-ink hover:bg-line sm:min-h-9 lg:order-first lg:self-start"
+            >
+              <Plus aria-hidden className="size-4" />
+              Crear rol
+            </Link>
+          )}
         </div>
       </aside>
 
@@ -217,7 +221,9 @@ function Editor({
           {tab('empleados', `Empleados (${rol?.cantidadEmpleados ?? 0})`)}
         </nav>
 
-        {pestana === 'general' && <PestanaGeneral borrador={borrador} onCambiar={cambiar} />}
+        {pestana === 'general' && (
+          <PestanaGeneral borrador={borrador} esRolPropio={esRolPropio} onCambiar={cambiar} />
+        )}
         {pestana === 'permisos' && (
           <PestanaPermisos
             permisos={borrador.permisos}
