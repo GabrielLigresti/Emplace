@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, TriangleAlert } from 'lucide-react';
-import type { CodigoPermiso } from '@pgim/shared';
+import { PERMISOS_GESTION_ROLES, type CodigoPermiso } from '@pgim/shared';
 import { Boton, Etiqueta, claseInput } from '../../../components/ui';
 import { CATALOGO_PERMISOS, GRUPOS_PERMISOS, infoPermiso } from '../../../lib/catalogo-permisos';
 
@@ -13,11 +13,14 @@ function Interruptor({
   activo,
   nombre,
   disabled,
+  descritoPor,
   onCambiar,
 }: {
   activo: boolean;
   nombre: string;
   disabled?: boolean;
+  // Ids de los textos que describen el interruptor.
+  descritoPor?: string;
   onCambiar(valor: boolean): void;
 }) {
   return (
@@ -26,6 +29,7 @@ function Interruptor({
       role="switch"
       aria-checked={activo}
       aria-label={nombre}
+      aria-describedby={descritoPor}
       disabled={disabled}
       onClick={() => onCambiar(!activo)}
       className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50 ${activo ? 'bg-accent' : 'bg-line-strong'}`}
@@ -38,7 +42,7 @@ function Interruptor({
   );
 }
 
-const PROTEGIDOS: readonly CodigoPermiso[] = ['rol.ver', 'rol.editar'];
+const PROTEGIDOS = PERMISOS_GESTION_ROLES;
 
 export function PestanaPermisos({
   permisos,
@@ -53,6 +57,9 @@ export function PestanaPermisos({
   const [busqueda, setBusqueda] = useState('');
   const filtro = sinAcentos(busqueda.trim());
   const total = Object.keys(CATALOGO_PERMISOS).length;
+
+  // En el rol propio se conservan los permisos que permiten seguir gestionando roles.
+  const restablecidos = esRolPropio ? permisos.filter((p) => PROTEGIDOS.includes(p)) : [];
 
   function alternar(codigo: CodigoPermiso, valor: boolean) {
     onCambiar(valor ? [...permisos, codigo] : permisos.filter((p) => p !== codigo));
@@ -86,7 +93,11 @@ export function PestanaPermisos({
         <p className="text-sm text-meta tabular-nums">
           {permisos.length} de {total} habilitados
         </p>
-        <Boton variante="fantasma" onClick={() => onCambiar([])} disabled={permisos.length === 0}>
+        <Boton
+          variante="fantasma"
+          onClick={() => onCambiar(restablecidos)}
+          disabled={permisos.length === restablecidos.length}
+        >
           Restablecer permisos
         </Boton>
       </div>
@@ -119,9 +130,11 @@ export function PestanaPermisos({
                         </Etiqueta>
                       )}
                     </p>
-                    <p className="text-sm text-meta">{info.descripcion}</p>
+                    <p id={`perm-desc-${codigo}`} className="text-sm text-meta">
+                      {info.descripcion}
+                    </p>
                     {bloqueado && (
-                      <p className="text-xs text-meta">
+                      <p id={`perm-nota-${codigo}`} className="text-xs text-meta">
                         Es tu rol: no podés quitarte este permiso.
                       </p>
                     )}
@@ -130,6 +143,7 @@ export function PestanaPermisos({
                     activo={permisos.includes(codigo)}
                     nombre={info.nombre}
                     disabled={bloqueado}
+                    descritoPor={`perm-desc-${codigo}${bloqueado ? ` perm-nota-${codigo}` : ''}`}
                     onCambiar={(v) => alternar(codigo, v)}
                   />
                 </li>

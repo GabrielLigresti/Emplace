@@ -5,9 +5,12 @@ import type { BorradorRol } from './useBorradorRol';
 
 export function PestanaGeneral({
   borrador,
+  esRolPropio,
   onCambiar,
 }: {
   borrador: BorradorRol;
+  // El rol editado es el del usuario de la sesión.
+  esRolPropio: boolean;
   onCambiar(parcial: Partial<BorradorRol>): void;
 }) {
   return (
@@ -37,8 +40,10 @@ export function PestanaGeneral({
         <Casilla
           etiqueta="Rol activo"
           checked={borrador.activo}
+          disabled={esRolPropio}
           onChange={(activo) => onCambiar({ activo })}
         />
+        {esRolPropio && <p className="text-xs text-meta">Es tu rol: no podés desactivarlo.</p>}
         <p className="text-xs text-meta">
           Un rol desactivado no se puede asignar. Para desactivarlo no tiene que tener empleados.
         </p>
