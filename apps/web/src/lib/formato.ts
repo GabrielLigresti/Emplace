@@ -52,6 +52,15 @@ export const NOMBRE_UNIDAD: Record<UnidadMedida, string> = {
   UNIDAD: 'Unidades',
 };
 
+// Nombre completo en singular, para "Costo por litro": "l" se confunde con un 1.
+export const UNIDAD_SINGULAR: Record<UnidadMedida, string> = {
+  GRAMO: 'gramo',
+  KILOGRAMO: 'kilogramo',
+  MILILITRO: 'mililitro',
+  LITRO: 'litro',
+  UNIDAD: 'unidad',
+};
+
 // "AAAA-MM-DD" → "21/09/2026", sin pasar por Date para que la zona horaria no corra el día.
 export const formatoFecha = (fecha: string) => fecha.split('-').reverse().join('/');
 
