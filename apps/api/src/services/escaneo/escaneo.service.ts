@@ -1,5 +1,6 @@
 import {
   CRITERIOS_FOTO,
+  LIMITE_MODELO_MB,
   VISTAS,
   type Escaneo,
   type InformeCalidad,
@@ -138,6 +139,9 @@ export function createEscaneoService(repo: EscaneoRepository, deps: Dependencias
     resultado: Extract<ResultadoEscaneo, { estado: 'LISTO' }>,
   ) {
     try {
+      if (resultado.glb.length > LIMITE_MODELO_MB * 1024 * 1024) {
+        throw new AppError(400, `El modelo supera el límite de ${LIMITE_MODELO_MB} MB`);
+      }
       deps.modelos.validarGlb(resultado.glb);
       if (resultado.usdz) deps.modelos.validarUsdz(resultado.usdz);
     } catch (e) {

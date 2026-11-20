@@ -1,5 +1,6 @@
 import {
   CRITERIOS_FOTO,
+  LIMITE_MODELO_MB,
   UMBRALES_POR_DEFECTO,
   VISTAS,
   type EstadoEscaneo,
@@ -638,6 +639,21 @@ describe('procesarEnCurso', () => {
       expect.objectContaining({ message: 'El archivo no es un modelo .glb' }),
     );
     expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
+  });
+
+  it('PROCESANDO listo con un .glb que supera el tope: FALLIDO sin guardar nada', async () => {
+    const enorme = Buffer.alloc(LIMITE_MODELO_MB * 1024 * 1024 + 1);
+    const proveedor = proveedorFalso({
+      consultar: jest.fn().mockResolvedValue({ estado: 'LISTO', glb: enorme }),
+    });
+    const { service, repo, deps } = armar([procesando()], proveedor);
+    await service.procesarEnCurso();
+    expect(deps.modelos.guardarModelo).not.toHaveBeenCalled();
+    expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PROCESANDO', {
+      estado: 'FALLIDO',
+      error: 'No pudimos armar el modelo con estas fotos',
+      rutaFotos: null,
+    });
   });
 
   it('PROCESANDO listo: si el estado cambió, borra los modelos recién guardados y las fotos', async () => {
