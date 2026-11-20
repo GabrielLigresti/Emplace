@@ -84,7 +84,9 @@ export function Campo({
   const id = useId();
   const idAyuda = `${id}-ayuda`;
   const idError = `${id}-error`;
-  const descripcion = [ayuda && idAyuda, error && idError].filter(Boolean).join(' ');
+  // Respeta la descripción que ya traiga el control (por ejemplo, un texto fuera del campo).
+  const propia = isValidElement(children) ? children.props['aria-describedby'] : undefined;
+  const descripcion = [propia, ayuda && idAyuda, error && idError].filter(Boolean).join(' ');
   const control = isValidElement(children)
     ? cloneElement(children, {
         id,

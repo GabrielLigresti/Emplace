@@ -1,10 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import {
   CONVERSION,
   ETIQUETA_MOTIVO_MERMA,
-  ETIQUETA_UNIDAD,
   MOTIVOS_MERMA,
+  convertirUnidad,
   unidadesCompatibles,
   type ComponenteStock,
   type MotivoMerma,
@@ -12,7 +12,13 @@ import {
   type UnidadMedida,
 } from '@pgim/shared';
 import { Aviso, Boton, Campo, Modal, claseInput, propsDecimal } from '../../../components/ui';
-import { aNumero, formatoCantidadLegible, formatoPesos } from '../../../lib/formato';
+import {
+  UNIDAD_SINGULAR,
+  aNumero,
+  formatoCantidadLegible,
+  formatoPesos,
+  formatoPesosUnitario,
+} from '../../../lib/formato';
 import { useGuardar } from '../../../lib/useGuardar';
 import { formatoDiferencia } from './tanda';
 
@@ -45,15 +51,29 @@ export function FormMovimiento({
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState<UnidadMedida>(unidadInicial(componente));
   const [costo, setCosto] = useState('');
+  // El costo sigue a la unidad de la cantidad hasta que el usuario elige otra
+  // o escribe un costo.
+  const [unidadPrecioElegida, setUnidadPrecioElegida] = useState<UnidadMedida | null>(null);
   const [motivoMerma, setMotivoMerma] = useState<MotivoMerma | ''>('');
   const [observacion, setObservacion] = useState('');
   const [motivo, setMotivo] = useState('');
   const { enviar, enviando, error } = useGuardar();
+  const idIva = useId();
 
   const unidades = unidadesCompatibles(componente.unidadBase);
   const factor = CONVERSION[unidad].factor;
-  const etiquetaUnidad = ETIQUETA_UNIDAD[unidad];
+  const unidadPrecio = unidadPrecioElegida ?? unidad;
   const contada = aNumero(cantidad);
+  const costoIngresado = aNumero(costo);
+  // El precio se carga en la unidad que elija el usuario y se pasa a la unidad
+  // de la cantidad, que es la que espera la API.
+  const costoPorUnidad = Number.isNaN(costoIngresado)
+    ? Number.NaN
+    : costoIngresado * convertirUnidad(1, unidad, unidadPrecio);
+  const totalCompra =
+    Number.isNaN(contada) || Number.isNaN(costoPorUnidad) || costoPorUnidad < 0
+      ? null
+      : contada * costoPorUnidad;
   const diferencia = Number.isNaN(contada) ? null : contada * factor - componente.existencia;
   const quedaria = Number.isNaN(contada) ? null : componente.existencia - contada * factor;
   const textoDiferencia =
@@ -66,7 +86,7 @@ export function FormMovimiento({
     // Un campo vacío viaja como NaN y la API responde con su mensaje.
     const cuerpo: MovimientoInput =
       tipo === 'INGRESO'
-        ? { ...base, tipo, cantidad: aNumero(cantidad), costoUnitario: aNumero(costo), ...nota }
+        ? { ...base, tipo, cantidad: aNumero(cantidad), costoUnitario: costoPorUnidad, ...nota }
         : tipo === 'MERMA'
           ? {
               ...base,
@@ -94,7 +114,9 @@ export function FormMovimiento({
   const ultimoCosto =
     componente.costoCompraVigente === null
       ? ''
-      : `Último costo: ${formatoPesos(componente.costoCompraVigente * factor)} por ${etiquetaUnidad}. `;
+      : `Último costo: ${formatoPesosUnitario(
+          componente.costoCompraVigente * CONVERSION[unidadPrecio].factor,
+        )} por ${UNIDAD_SINGULAR[unidadPrecio]}`;
 
   return (
     <Modal titulo={`${TITULO[tipo]} · ${componente.nombre}`} onCerrar={onCerrar}>
@@ -116,7 +138,7 @@ export function FormMovimiento({
           </p>
         )}
 
-        <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_8.5rem] gap-3">
           <Campo etiqueta={tipo === 'AJUSTE' ? 'Cantidad contada' : 'Cantidad'}>
             <input
               {...propsDecimal}
@@ -129,12 +151,18 @@ export function FormMovimiento({
           <Campo etiqueta="Unidad">
             <select
               value={unidad}
-              onChange={(e) => setUnidad(e.target.value as UnidadMedida)}
+              onChange={(e) => {
+                // Con un costo ya escrito, su unidad queda fija: no se reinterpreta el número.
+                if (costo.trim() !== '' && unidadPrecioElegida === null) {
+                  setUnidadPrecioElegida(unidad);
+                }
+                setUnidad(e.target.value as UnidadMedida);
+              }}
               className={claseInput}
             >
               {unidades.map((u) => (
                 <option key={u} value={u}>
-                  {ETIQUETA_UNIDAD[u]}
+                  {UNIDAD_SINGULAR[u]}
                 </option>
               ))}
             </select>
@@ -170,18 +198,59 @@ export function FormMovimiento({
         )}
 
         {tipo === 'INGRESO' && (
-          <Campo
-            etiqueta={`Costo por ${etiquetaUnidad}`}
-            ayuda={`${ultimoCosto}Precio de contado, sin IVA si el restaurante es Responsable Inscripto; con IVA si es monotributista.`}
-          >
-            <input
-              {...propsDecimal}
-              required
-              value={costo}
-              onChange={(e) => setCosto(e.target.value)}
-              className={claseInput}
-            />
-          </Campo>
+          <>
+            <div
+              className={
+                unidades.length > 1 ? 'grid grid-cols-[minmax(0,1fr)_8.5rem] gap-3' : undefined
+              }
+            >
+              <Campo
+                etiqueta={unidades.length > 1 ? 'Costo' : `Costo por ${UNIDAD_SINGULAR[unidad]}`}
+                ayuda={ultimoCosto || undefined}
+              >
+                <input
+                  {...propsDecimal}
+                  required
+                  value={costo}
+                  onChange={(e) => setCosto(e.target.value)}
+                  aria-describedby={idIva}
+                  className={claseInput}
+                />
+              </Campo>
+              {unidades.length > 1 && (
+                <Campo etiqueta="Por">
+                  <select
+                    value={unidadPrecio}
+                    aria-label="Unidad del costo"
+                    onChange={(e) => setUnidadPrecioElegida(e.target.value as UnidadMedida)}
+                    className={claseInput}
+                  >
+                    {unidades.map((u) => (
+                      <option key={u} value={u}>
+                        {UNIDAD_SINGULAR[u]}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              )}
+            </div>
+            {totalCompra !== null && (
+              <div className="space-y-0.5 text-sm tabular-nums">
+                {unidadPrecio !== unidad && (
+                  <p className="text-meta">
+                    Equivale a {formatoPesosUnitario(costoPorUnidad)} por {UNIDAD_SINGULAR[unidad]}
+                  </p>
+                )}
+                <p className="font-medium text-text">
+                  Total de la compra: {formatoPesos(totalCompra)}
+                </p>
+              </div>
+            )}
+            <p id={idIva} className="text-xs text-meta">
+              Precio de contado, sin IVA si el restaurante es Responsable Inscripto; con IVA si es
+              monotributista.
+            </p>
+          </>
         )}
 
         {tipo === 'MERMA' && (
