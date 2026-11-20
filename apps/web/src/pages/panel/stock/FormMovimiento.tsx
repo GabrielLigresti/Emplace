@@ -17,6 +17,7 @@ import {
   aNumero,
   formatoCantidadLegible,
   formatoPesos,
+  formatoPesosUnitario,
 } from '../../../lib/formato';
 import { useGuardar } from '../../../lib/useGuardar';
 import { formatoDiferencia } from './tanda';
@@ -50,7 +51,8 @@ export function FormMovimiento({
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState<UnidadMedida>(unidadInicial(componente));
   const [costo, setCosto] = useState('');
-  const [unidadPrecio, setUnidadPrecio] = useState<UnidadMedida>(unidadInicial(componente));
+  // El costo sigue a la unidad de la cantidad hasta que el usuario elige otra.
+  const [unidadPrecioElegida, setUnidadPrecioElegida] = useState<UnidadMedida | null>(null);
   const [motivoMerma, setMotivoMerma] = useState<MotivoMerma | ''>('');
   const [observacion, setObservacion] = useState('');
   const [motivo, setMotivo] = useState('');
@@ -58,6 +60,7 @@ export function FormMovimiento({
 
   const unidades = unidadesCompatibles(componente.unidadBase);
   const factor = CONVERSION[unidad].factor;
+  const unidadPrecio = unidadPrecioElegida ?? unidad;
   const contada = aNumero(cantidad);
   const costoIngresado = aNumero(costo);
   // El precio se carga en la unidad que elija el usuario y se pasa a la unidad
@@ -66,7 +69,9 @@ export function FormMovimiento({
     ? Number.NaN
     : costoIngresado * convertirUnidad(1, unidad, unidadPrecio);
   const totalCompra =
-    Number.isNaN(contada) || Number.isNaN(costoPorUnidad) ? null : contada * costoPorUnidad;
+    Number.isNaN(contada) || Number.isNaN(costoPorUnidad) || costoPorUnidad < 0
+      ? null
+      : contada * costoPorUnidad;
   const diferencia = Number.isNaN(contada) ? null : contada * factor - componente.existencia;
   const quedaria = Number.isNaN(contada) ? null : componente.existencia - contada * factor;
   const textoDiferencia =
@@ -107,9 +112,9 @@ export function FormMovimiento({
   const ultimoCosto =
     componente.costoCompraVigente === null
       ? ''
-      : `Último costo: ${formatoPesos(
+      : `Último costo: ${formatoPesosUnitario(
           componente.costoCompraVigente * CONVERSION[unidadPrecio].factor,
-        )} por ${UNIDAD_SINGULAR[unidadPrecio]}. `;
+        )} por ${UNIDAD_SINGULAR[unidadPrecio]}`;
 
   return (
     <Modal titulo={`${TITULO[tipo]} · ${componente.nombre}`} onCerrar={onCerrar}>
@@ -186,10 +191,14 @@ export function FormMovimiento({
 
         {tipo === 'INGRESO' && (
           <>
-            <div className="grid grid-cols-[minmax(0,1fr)_8.5rem] gap-3">
+            <div
+              className={
+                unidades.length > 1 ? 'grid grid-cols-[minmax(0,1fr)_8.5rem] gap-3' : undefined
+              }
+            >
               <Campo
-                etiqueta={`Costo por ${UNIDAD_SINGULAR[unidadPrecio]}`}
-                ayuda={`${ultimoCosto}Precio de contado, sin IVA si el restaurante es Responsable Inscripto; con IVA si es monotributista.`}
+                etiqueta={unidades.length > 1 ? 'Costo' : `Costo por ${UNIDAD_SINGULAR[unidad]}`}
+                ayuda={ultimoCosto || undefined}
               >
                 <input
                   {...propsDecimal}
@@ -199,35 +208,38 @@ export function FormMovimiento({
                   className={claseInput}
                 />
               </Campo>
-              <Campo etiqueta="Precio por">
-                <select
-                  value={unidadPrecio}
-                  onChange={(e) => setUnidadPrecio(e.target.value as UnidadMedida)}
-                  className={claseInput}
-                >
-                  {unidades.map((u) => (
-                    <option key={u} value={u}>
-                      {UNIDAD_SINGULAR[u]}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
+              {unidades.length > 1 && (
+                <Campo etiqueta="Por">
+                  <select
+                    value={unidadPrecio}
+                    onChange={(e) => setUnidadPrecioElegida(e.target.value as UnidadMedida)}
+                    className={claseInput}
+                  >
+                    {unidades.map((u) => (
+                      <option key={u} value={u}>
+                        {UNIDAD_SINGULAR[u]}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              )}
             </div>
             {totalCompra !== null && (
-              <p className="text-sm text-meta tabular-nums">
+              <div className="space-y-0.5 text-sm tabular-nums">
                 {unidadPrecio !== unidad && (
-                  <>
-                    Equivale a{' '}
-                    <span className="font-medium text-text">
-                      {formatoPesos(costoPorUnidad)} por {UNIDAD_SINGULAR[unidad]}
-                    </span>
-                    .{' '}
-                  </>
+                  <p className="text-meta">
+                    Equivale a {formatoPesosUnitario(costoPorUnidad)} por {UNIDAD_SINGULAR[unidad]}
+                  </p>
                 )}
-                Total de la compra:{' '}
-                <span className="font-medium text-text">{formatoPesos(totalCompra)}</span>
-              </p>
+                <p className="font-medium text-text">
+                  Total de la compra: {formatoPesos(totalCompra)}
+                </p>
+              </div>
             )}
+            <p className="text-xs text-meta">
+              Precio de contado, sin IVA si el restaurante es Responsable Inscripto; con IVA si es
+              monotributista.
+            </p>
           </>
         )}
 
