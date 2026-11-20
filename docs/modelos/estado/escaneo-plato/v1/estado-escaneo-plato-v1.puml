@@ -27,7 +27,7 @@ state EN_REVISION
 state PUBLICADO
 state DESCARTADO
 state FALLIDO
-[*] --> PENDIENTE : enviar fotos (permiso "editar menú")\n[informe de calidad sin rechazos\ny 4 fotos JPEG válidas]\n/ guarda las fotos
+[*] --> PENDIENTE : enviar fotos (permiso "editar menú")\n[informe de calidad sin rechazos,\n4 fotos JPEG válidas\ny plato con diámetro]\n/ guarda las fotos
 PENDIENTE --> PROCESANDO : enviar (tarea periódica)\n/ el proveedor devuelve el id de la tarea
 PENDIENTE --> FALLIDO : fallar (tarea periódica)\n[error al enviar]\n/ borra las fotos
 PROCESANDO --> EN_REVISION : completar (tarea periódica)\n[proveedor listo y .glb válido]\n/ guarda el modelo y borra las fotos
