@@ -2,6 +2,7 @@ import { env } from '../config/env';
 import { AppError } from '../lib/errors';
 import type { Proveedor3D } from './proveedor-3d';
 import { ProveedorSimulado } from './proveedor-simulado';
+import { ProveedorTripo } from './proveedor-tripo';
 
 export interface RegistroProveedores {
   // El que se usa para los escaneos nuevos.
@@ -25,7 +26,19 @@ export function crearRegistro(proveedores: Proveedor3D[], activo: string): Regis
   };
 }
 
+// Tripo solo está disponible si hay clave; el simulado siempre.
+export function proveedoresDisponibles(
+  e: { TRIPO_API_KEY?: string; SIMULADO_DEMORA_MS: number; SIMULADO_FALLA: boolean },
+  f?: typeof fetch,
+): Proveedor3D[] {
+  const proveedores: Proveedor3D[] = [
+    new ProveedorSimulado({ demoraMs: e.SIMULADO_DEMORA_MS, fallar: e.SIMULADO_FALLA }),
+  ];
+  if (e.TRIPO_API_KEY) proveedores.push(new ProveedorTripo({ apiKey: e.TRIPO_API_KEY, fetch: f }));
+  return proveedores;
+}
+
 export const registroProveedores: RegistroProveedores = crearRegistro(
-  [new ProveedorSimulado({ demoraMs: env.SIMULADO_DEMORA_MS, fallar: env.SIMULADO_FALLA })],
+  proveedoresDisponibles(env),
   env.PROVEEDOR_3D,
 );

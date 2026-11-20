@@ -1,6 +1,6 @@
 import { AppError } from '../lib/errors';
 import type { Proveedor3D } from './proveedor-3d';
-import { crearRegistro } from './registro';
+import { crearRegistro, proveedoresDisponibles } from './registro';
 
 function falso(nombre: string): Proveedor3D {
   return {
@@ -36,5 +36,22 @@ describe('registro de proveedores 3D', () => {
 
   it('falla al crearse si el activo no está registrado', () => {
     expect(() => crearRegistro([a], 'zzz')).toThrow(Error);
+  });
+
+  describe('proveedoresDisponibles', () => {
+    const base = { SIMULADO_DEMORA_MS: 0, SIMULADO_FALLA: false };
+
+    it('sin TRIPO_API_KEY no incluye tripo', () => {
+      expect(proveedoresDisponibles(base).map((p) => p.nombre)).toEqual(['simulado']);
+    });
+
+    it('con TRIPO_API_KEY incluye tripo', () => {
+      const nombres = proveedoresDisponibles({ ...base, TRIPO_API_KEY: 'k' }).map((p) => p.nombre);
+      expect(nombres).toEqual(['simulado', 'tripo']);
+    });
+
+    it('pedir tripo como activo sin clave lanza un error', () => {
+      expect(() => crearRegistro(proveedoresDisponibles(base), 'tripo')).toThrow(Error);
+    });
   });
 });
