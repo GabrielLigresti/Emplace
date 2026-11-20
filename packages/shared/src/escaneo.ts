@@ -11,8 +11,8 @@ export const ESTADOS_ESCANEO = [
 
 export type EstadoEscaneo = (typeof ESTADOS_ESCANEO)[number];
 
-// Tope del video que sube el restaurante (MP4 o MOV).
-export const LIMITE_VIDEO_MB = 100;
+// Tope de cada foto del escaneo (JPEG).
+export const LIMITE_FOTO_MB = 5;
 
 export interface Escaneo {
   id: string;
