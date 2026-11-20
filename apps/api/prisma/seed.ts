@@ -182,6 +182,7 @@ const PLATOS: {
   nombre: string;
   categoria: NombreCategoria;
   precio: number;
+  diametroCm: number;
   descripcion: string;
   foto: string;
   receta?: RecetaSeed;
@@ -192,6 +193,7 @@ const PLATOS: {
     nombre: 'Provoleta',
     categoria: 'Entradas',
     precio: 7500,
+    diametroCm: 20,
     descripcion: 'Queso provolone a la parrilla con orégano.',
     foto: 'provoleta.jpg',
     receta: {
@@ -208,6 +210,7 @@ const PLATOS: {
     nombre: 'Empanada de carne',
     categoria: 'Entradas',
     precio: 2500,
+    diametroCm: 22,
     descripcion: 'Cortada a cuchillo, al horno.',
     foto: 'empanada-de-carne.jpg',
     receta: {
@@ -225,6 +228,7 @@ const PLATOS: {
     nombre: 'Bife de chorizo con papas',
     categoria: 'Principales',
     precio: 18000,
+    diametroCm: 28,
     descripcion: 'Bife de 400 g con papas fritas y salsa criolla.',
     foto: 'bife-de-chorizo-con-papas.jpg',
     receta: {
@@ -243,6 +247,7 @@ const PLATOS: {
     nombre: 'Milanesa con puré',
     categoria: 'Principales',
     precio: 14000,
+    diametroCm: 30,
     descripcion: 'Milanesa de ternera con puré de papas.',
     foto: 'milanesa-con-pure.jpg',
     receta: {
@@ -262,6 +267,7 @@ const PLATOS: {
     nombre: 'Flan casero',
     categoria: 'Postres',
     precio: 5500,
+    diametroCm: 20,
     descripcion: 'Con dulce de leche o crema.',
     foto: 'flan-casero.jpg',
     receta: {
@@ -278,6 +284,7 @@ const PLATOS: {
     nombre: 'Agua mineral',
     categoria: 'Bebidas',
     precio: 2000,
+    diametroCm: 22,
     descripcion: 'Botella de 500 ml, con o sin gas.',
     foto: 'agua-mineral.jpg',
     reventa: 'Agua mineral 500 ml',
@@ -364,6 +371,7 @@ async function seedMenuEInventario(
     const datos = {
       categoriaId: categoriaIds.get(plato.categoria)!,
       precio: plato.precio,
+      diametroCm: plato.diametroCm,
       descripcion: plato.descripcion,
       fotoUrl: `/fotos-demo/${plato.foto}`,
       disponible: true,
@@ -568,6 +576,7 @@ async function seedSegundoRestaurante(tx: Prisma.TransactionClient, passwordHash
       nombre: 'Ñoquis con tuco',
       categoria: 'Principales',
       precio: 9500,
+      diametroCm: 26,
       descripcion: 'Ñoquis de papa caseros con salsa de tomate.',
       receta: NOQUIS as RecetaSeed | null,
       insumo: null as string | null,
@@ -576,6 +585,7 @@ async function seedSegundoRestaurante(tx: Prisma.TransactionClient, passwordHash
       nombre: 'Gaseosa cola 500 ml',
       categoria: 'Bebidas',
       precio: 2800,
+      diametroCm: 22,
       descripcion: 'Botella individual.',
       receta: null,
       insumo: 'Gaseosa cola 500 ml',
@@ -586,6 +596,7 @@ async function seedSegundoRestaurante(tx: Prisma.TransactionClient, passwordHash
     const datos = {
       categoriaId: categorias.get(plato.categoria)!,
       precio: plato.precio,
+      diametroCm: plato.diametroCm,
       descripcion: plato.descripcion,
       // Sin foto: las de /fotos-demo son solo de La Parrilla Demo.
       fotoUrl: null,

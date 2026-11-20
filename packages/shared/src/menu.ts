@@ -45,6 +45,12 @@ export const platoInputSchema = z.object({
   activo: z.boolean().optional(),
   // Reventa: el plato se vende como viene y descuenta 1 unidad de este insumo.
   insumoReventaId: z.uuid('Elegí un insumo').nullish(),
+  // Diámetro del plato en cm: con él el escaneo lleva el modelo a tamaño real.
+  diametroCm: z
+    .number()
+    .positive('El diámetro tiene que estar entre 0 y 60 cm')
+    .max(60, 'El diámetro tiene que estar entre 0 y 60 cm')
+    .nullish(),
 });
 
 export type PlatoInput = z.infer<typeof platoInputSchema>;
@@ -71,6 +77,7 @@ export interface Plato {
   descripcion: string | null;
   precio: number;
   fotoUrl: string | null;
+  diametroCm: number | null;
   disponible: boolean;
   activo: boolean;
   categoria: { id: string; nombre: string; requiereReceta: boolean };

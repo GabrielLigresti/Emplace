@@ -273,6 +273,8 @@ function FormularioPlato({
   const [nombre, setNombre] = useState(plato?.nombre ?? '');
   const [descripcion, setDescripcion] = useState(plato?.descripcion ?? '');
   const [precio, setPrecio] = useState(plato ? String(plato.precio) : '');
+  const diametroInicial = plato?.diametroCm != null ? String(plato.diametroCm) : '';
+  const [diametro, setDiametro] = useState(diametroInicial);
   const [fotoUrl, setFotoUrl] = useState(plato?.fotoUrl ?? '');
   const [disponible, setDisponible] = useState(plato?.disponible ?? true);
   const [activo, setActivo] = useState(plato?.activo ?? true);
@@ -314,6 +316,7 @@ function FormularioPlato({
       nombre,
       descripcion: descripcion || null,
       precio: aNumero(precio),
+      diametroCm: diametro.trim() === '' ? null : aNumero(diametro),
       // La foto subida ya está guardada y la API no acepta su ruta: se omite.
       fotoUrl: fotoUrl.startsWith(PREFIJO_FOTO_SUBIDA) ? undefined : fotoUrl.trim() || null,
       disponible,
@@ -366,6 +369,21 @@ function FormularioPlato({
             />
           </Campo>
         </div>
+        <Campo
+          etiqueta="Diámetro del plato (cm)"
+          ayuda={
+            plato?.modeloRa && diametro.trim() !== diametroInicial
+              ? 'El modelo publicado mantiene su tamaño hasta que vuelvas a escanear el plato'
+              : 'Opcional. Se usa para escanear el plato y mostrarlo a tamaño real.'
+          }
+        >
+          <input
+            {...propsDecimal}
+            value={diametro}
+            onChange={(e) => setDiametro(e.target.value)}
+            className={claseInput}
+          />
+        </Campo>
         <Campo etiqueta="Descripción">
           <textarea
             rows={2}
