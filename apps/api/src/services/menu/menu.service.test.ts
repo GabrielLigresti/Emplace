@@ -371,7 +371,18 @@ describe('diámetro del plato', () => {
       diametroCm: 61,
     });
     expect(r.success).toBe(false);
-    expect(r.error?.issues[0]?.message).toBe('El diámetro tiene que estar entre 0 y 60 cm');
+    expect(r.error?.issues[0]?.message).toBe('El diámetro tiene que estar entre 1 y 60 cm');
+  });
+
+  it.each([0.04, 0.5, 25.35])('el esquema rechaza el diámetro %s', (diametroCm) => {
+    const r = platoInputSchema.safeParse({ ...plato, categoriaId: crypto.randomUUID(), diametroCm });
+    expect(r.success).toBe(false);
+  });
+
+  it('el esquema acepta diámetros con un decimal, como 25,3 cm', () => {
+    const base = { ...plato, categoriaId: crypto.randomUUID() };
+    expect(platoInputSchema.safeParse({ ...base, diametroCm: 25.3 }).success).toBe(true);
+    expect(platoInputSchema.safeParse({ ...base, diametroCm: 1 }).success).toBe(true);
   });
 
   it('el esquema acepta un diámetro de 26 cm, null o sin dato', () => {

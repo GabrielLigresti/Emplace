@@ -201,7 +201,7 @@ describe('POST /api/platos/:id/escaneos', () => {
     expect(escaneoService.crear).not.toHaveBeenCalled();
   });
 
-  it('responde 404 si el plato es de otro restaurante y no guarda nada', async () => {
+  it('responde 404 si el plato es de otro restaurante', async () => {
     escaneoService.crear.mockRejectedValue(new AppError(404, 'El plato no existe'));
 
     const res = await enviar();

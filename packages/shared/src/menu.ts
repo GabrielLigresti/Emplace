@@ -48,8 +48,10 @@ export const platoInputSchema = z.object({
   // Diámetro del plato en cm: con él el escaneo lleva el modelo a tamaño real.
   diametroCm: z
     .number()
-    .positive('El diámetro tiene que estar entre 0 y 60 cm')
-    .max(60, 'El diámetro tiene que estar entre 0 y 60 cm')
+    .min(1, 'El diámetro tiene que estar entre 1 y 60 cm')
+    .max(60, 'El diámetro tiene que estar entre 1 y 60 cm')
+    // Hasta un decimal (con tolerancia por los flotantes: 25.3 * 10 no es exacto).
+    .refine((v) => Math.abs(v * 10 - Math.round(v * 10)) < 1e-9, 'Usá hasta un decimal')
     .nullish(),
 });
 
