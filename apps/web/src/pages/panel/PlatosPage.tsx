@@ -229,7 +229,15 @@ export function PlatosPage() {
         />
       )}
       {modelo && (
-        <EscaneoModal plato={modelo} onCerrar={() => setModelo(null)} onCambio={platos.recargar} />
+        <EscaneoModal
+          plato={modelo}
+          onCerrar={() => setModelo(null)}
+          onCambio={platos.recargar}
+          onEditarPlato={() => {
+            setModelo(null);
+            setPlato(modelo);
+          }}
+        />
       )}
       {categoria && (
         <FormularioCategoria

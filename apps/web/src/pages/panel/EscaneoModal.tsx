@@ -29,6 +29,7 @@ type Modo = 'inicio' | 'escaneando' | 'fotos';
 type Dimensiones = { src: string; ancho: number; profundidad: number };
 
 const MENSAJE_SIN_DIAMETRO = 'Cargá el diámetro del plato para escanearlo';
+const MOTIVO_PORCION = 'Ingresá la porción en gramos, con un número entero mayor a 0';
 const MENSAJE_SIN_SOPORTE = 'El escaneo se hace desde un celular Android con Chrome';
 const PROGRESO_INICIAL: ProgresoEscaneo = {
   fase: 'colocar',
@@ -134,10 +135,13 @@ export function EscaneoModal({
   plato,
   onCerrar,
   onCambio,
+  onEditarPlato,
 }: {
   plato: Plato;
   onCerrar(): void;
   onCambio(): void;
+  // Abre el formulario del plato (por ejemplo, para cargar el diámetro).
+  onEditarPlato(): void;
 }) {
   const actual = plato.modeloRa;
   const { escaneo, error: errorConsulta, recargar } = useEscaneo(plato.id);
@@ -157,6 +161,13 @@ export function EscaneoModal({
   const [avisoNoEnviado, setAvisoNoEnviado] = useState(false);
   // Escaneos fallidos cuyo aviso se cerró en esta apertura (cubre también si localStorage falla).
   const [fallasCerradas, setFallasCerradas] = useState<string[]>([]);
+
+  const gramosPorcion = Number(porcion);
+  const porcionValida =
+    porcion.trim() !== '' &&
+    Number.isInteger(gramosPorcion) &&
+    gramosPorcion >= 1 &&
+    gramosPorcion <= 10000;
 
   const estado = escaneo?.estado;
   const vista =
@@ -184,6 +195,8 @@ export function EscaneoModal({
   const mandaElEscaneo = vista === 'generando' || vista === 'revision';
   useLayoutEffect(() => {
     if (!mandaElEscaneo) return;
+    // Si había una sesión de cámara abierta, se corta antes de volver al inicio.
+    cortar.current?.abort();
     setModo('inicio');
     setFotos(null);
     setInforme(null);
@@ -236,8 +249,12 @@ export function EscaneoModal({
     setFallasCerradas((ids) => [...ids, id]);
   }
 
-  function datosMedidas(): ModeloRaInput | string {
+  // `conservarEscala`: al guardar solo la porción de un modelo ya publicado, la escala no se
+  // recalcula (el modelo publicado mantiene su tamaño hasta volver a escanear).
+  function datosMedidas(conservarEscala = false): ModeloRaInput | string {
     const gramos = Number(porcion);
+    if (!porcionValida) return MOTIVO_PORCION;
+    if (conservarEscala && actual) return { escalaReal: actual.escalaReal, porcionGramos: gramos };
     if (plato.diametroCm === null) return MENSAJE_SIN_DIAMETRO;
     if (!medidasVista) return 'Esperá a que cargue la vista previa para guardar';
     return {
@@ -260,7 +277,7 @@ export function EscaneoModal({
 
   function guardar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const datos = datosMedidas();
+    const datos = datosMedidas(true);
     if (typeof datos === 'string') return setError(datos);
     void ejecutar(async () => {
       await api(`/platos/${plato.id}/modelo-ra`, { method: 'PUT', body: datos });
@@ -326,13 +343,27 @@ export function EscaneoModal({
     setModo('escaneando');
     const control = new AbortController();
     cortar.current = control;
+    let modulo: typeof import('../../lib/escaneo-webxr');
+    let umbrales: UmbralesCalidad;
     try {
-      const [{ iniciarEscaneo }, umbrales] = await Promise.all([
+      [modulo, umbrales] = await Promise.all([
         import('../../lib/escaneo-webxr'),
         api<UmbralesCalidad>('/escaneos/requisitos'),
       ]);
+    } catch (e) {
+      // Sin respuesta de la API (red caída o error del servidor): no es un problema de la cámara.
+      if (cortar.current === control) cortar.current = null;
+      if (e instanceof ApiError || e instanceof TypeError) {
+        setError('No pudimos conectarnos. Revisá la conexión e intentá de nuevo.');
+      } else {
+        setError('No pudimos abrir la cámara. Revisá el permiso e intentá de nuevo.');
+      }
+      setModo('inicio');
+      return;
+    }
+    try {
       if (!capa.current) return;
-      const resultado = await iniciarEscaneo({
+      const resultado = await modulo.iniciarEscaneo({
         overlay: capa.current,
         diametroCm,
         umbrales,
@@ -387,7 +418,11 @@ export function EscaneoModal({
   }
 
   const camposMedidas = (
-    <Campo etiqueta="Porción (g)">
+    <Campo
+      etiqueta="Porción (g)"
+      ayuda="Los comensales la ven junto al plato, por ejemplo 350 g."
+      error={porcionValida ? undefined : MOTIVO_PORCION}
+    >
       <input
         type="number"
         inputMode="numeric"
@@ -413,6 +448,9 @@ export function EscaneoModal({
       ? MENSAJE_SIN_DIAMETRO
       : `Se va a ver en su tamaño real: el plato mide ${String(plato.diametroCm).replace('.', ',')} cm de diámetro.`;
   const puedeEscanear = plato.diametroCm !== null && soporta === true;
+  // Un solo motivo por vez: el diámetro tiene prioridad sobre el soporte del dispositivo.
+  const sinDiametro = plato.diametroCm === null;
+  const mostrarEscanear = soporta !== false;
 
   const cuerpo = (() => {
     switch (vista) {
@@ -427,8 +465,8 @@ export function EscaneoModal({
               <Loader aria-hidden className="size-8 text-accent motion-safe:animate-spin" />
               <p className="text-lg font-semibold text-ink">Estamos armando el modelo</p>
               <p className="max-w-[45ch] text-sm text-meta">
-                Puede tardar unos minutos. Podés cerrar esta ventana: el plato queda como Generando
-                hasta que esté listo.
+                Puede tardar unos minutos. Podés cerrar esta ventana: en la lista de platos vas a
+                ver «Generando» hasta que esté listo.
               </p>
             </div>
             <Pie>
@@ -496,7 +534,7 @@ export function EscaneoModal({
               >
                 Descartar
               </Boton>
-              <Boton type="submit" disabled={enviando}>
+              <Boton type="submit" disabled={enviando || !porcionValida}>
                 <Check aria-hidden className="size-4" />
                 {enviando ? 'Publicando…' : 'Publicar'}
               </Boton>
@@ -514,8 +552,8 @@ export function EscaneoModal({
             )}
             {actual && (
               <>
-                {camposMedidas}
                 <p className="text-sm text-meta">{textoTamano}</p>
+                {camposMedidas}
               </>
             )}
             {puedeEscanear && (
@@ -523,10 +561,6 @@ export function EscaneoModal({
                 Vas a caminar alrededor del plato con el celular y la app saca 4 fotos sola.
               </p>
             )}
-            {plato.diametroCm === null && (
-              <p className="text-sm text-meta">{MENSAJE_SIN_DIAMETRO}</p>
-            )}
-            {soporta === false && <p className="text-sm text-meta">{MENSAJE_SIN_SOPORTE}</p>}
             <Aviso
               accion={
                 fallaVisible && (
@@ -540,6 +574,18 @@ export function EscaneoModal({
                 (fallaVisible.error ?? 'No pudimos armar el modelo. Probá de nuevo.')}
             </Aviso>
             <Aviso>{error}</Aviso>
+            <Aviso
+              tono="info"
+              accion={
+                sinDiametro && (
+                  <Boton variante="fantasma" onClick={onEditarPlato}>
+                    Editar plato
+                  </Boton>
+                )
+              }
+            >
+              {sinDiametro ? MENSAJE_SIN_DIAMETRO : soporta === false ? MENSAJE_SIN_SOPORTE : null}
+            </Aviso>
             <Pie>
               {actual && (
                 <Boton
@@ -551,15 +597,21 @@ export function EscaneoModal({
                   Quitar modelo
                 </Boton>
               )}
+              {mostrarEscanear && (
+                <Boton
+                  variante={actual ? 'secundario' : 'principal'}
+                  onClick={() => void escanear()}
+                  disabled={enviando || !puedeEscanear}
+                >
+                  <Camera aria-hidden className="size-4" />
+                  Escanear plato
+                </Boton>
+              )}
               {actual && (
-                <Boton type="submit" variante="secundario" disabled={enviando}>
+                <Boton type="submit" disabled={enviando || !porcionValida}>
                   {enviando ? 'Guardando…' : 'Guardar'}
                 </Boton>
               )}
-              <Boton onClick={() => void escanear()} disabled={enviando || !puedeEscanear}>
-                <Camera aria-hidden className="size-4" />
-                Escanear plato
-              </Boton>
             </Pie>
           </form>
         );
