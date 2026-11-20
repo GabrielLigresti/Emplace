@@ -6,40 +6,37 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
-import { Box, Check, Loader, Video } from 'lucide-react';
+import { Box, Camera, Check, Loader } from 'lucide-react';
 import {
-  LIMITE_VIDEO_MB,
-  diametroPorEscala,
+  VISTAS,
   escalaPorDiametro,
-  evaluarCalidad,
   type Escaneo,
   type InformeCalidad as Informe,
   type ModeloRaInput,
   type Plato,
   type UmbralesCalidad,
+  type VistaEscaneo,
 } from '@pgim/shared';
 import { useConfirmar } from '../../components/Confirmacion';
-import {
-  Aviso,
-  Boton,
-  Campo,
-  Etiqueta,
-  Modal,
-  Vacio,
-  claseInput,
-  propsDecimal,
-} from '../../components/ui';
-import { ApiError, api, enviarVideo } from '../../lib/api';
-import { aNumero } from '../../lib/formato';
-import { muestrearVideo } from '../../lib/muestreo-video';
+import { Aviso, Boton, Campo, Etiqueta, Modal, Vacio, claseInput } from '../../components/ui';
+import { ApiError, api, enviarFotos } from '../../lib/api';
+import type { ProgresoEscaneo } from '../../lib/escaneo-webxr';
 import { useEscaneo } from '../../lib/useEscaneo';
 import { useModelViewer } from '../../lib/useModelViewer';
-import { InformeCalidad } from './InformeCalidad';
+import { InformeCalidad, NOMBRES_VISTA } from './InformeCalidad';
 
-type Modo = 'inicio' | 'elegir' | 'revisando' | 'informe';
+type Modo = 'inicio' | 'escaneando' | 'fotos';
 type Dimensiones = { src: string; ancho: number; profundidad: number };
 
-const CUADROS = 30;
+const MENSAJE_SIN_DIAMETRO = 'Cargá el diámetro del plato para escanearlo';
+const MENSAJE_SIN_SOPORTE = 'El escaneo se hace desde un celular Android con Chrome';
+const PROGRESO_INICIAL: ProgresoEscaneo = {
+  fase: 'colocar',
+  tramos: [],
+  vistas: { front: false, left: false, back: false, right: false },
+  mensaje: 'Mové el celular despacio hasta ver la mesa',
+};
+const frenarSeleccion = (e: Event) => e.preventDefault();
 const CLAVE_FALLA_VISTA = 'pgim:escaneo-falla-vista:';
 
 // localStorage puede no estar disponible (modo privado, cuota): nunca debe romper la pantalla.
@@ -131,7 +128,7 @@ function Vista({
   );
 }
 
-// CU-16, modelo 3D del plato: se escanea con un video, se revisa la calidad antes
+// CU-16, modelo 3D del plato: se escanea con 4 fotos, se revisa la calidad antes
 // de enviarlo, se espera el modelo y se revisa el borrador antes de publicarlo.
 export function EscaneoModal({
   plato,
@@ -147,10 +144,12 @@ export function EscaneoModal({
   const confirmar = useConfirmar();
 
   const [modo, setModo] = useState<Modo>('inicio');
-  const [avance, setAvance] = useState(0);
-  const [video, setVideo] = useState<File | null>(null);
+  const [fotos, setFotos] = useState<Record<VistaEscaneo, Blob> | null>(null);
   const [informe, setInforme] = useState<Informe | null>(null);
-  const [diametro, setDiametro] = useState('');
+  const [progreso, setProgreso] = useState<ProgresoEscaneo>(PROGRESO_INICIAL);
+  const [soporta, setSoporta] = useState<boolean | null>(null);
+  const capa = useRef<HTMLDivElement>(null);
+  const cortar = useRef<AbortController | null>(null);
   const [porcion, setPorcion] = useState(actual ? String(actual.porcionGramos) : '');
   const [medidas, setMedidas] = useState<Dimensiones | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -178,7 +177,7 @@ export function EscaneoModal({
     estadoPrevio.current = estado;
   });
 
-  // Cuando manda el estado del escaneo (generando o para revisar), lo del video anterior ya
+  // Cuando manda el estado del escaneo (generando o para revisar), lo de las fotos anteriores ya
   // no aplica: ni su informe ni el error de ese envío. Si el escaneo falla, se vuelve al inicio.
   // El aviso de "no se envió" sí se conserva. Va en un efecto de layout para que un error viejo
   // no llegue a pintarse en la vista de revisión.
@@ -186,10 +185,43 @@ export function EscaneoModal({
   useLayoutEffect(() => {
     if (!mandaElEscaneo) return;
     setModo('inicio');
-    setVideo(null);
+    setFotos(null);
     setInforme(null);
     setError(null);
   }, [mandaElEscaneo]);
+
+  // Si el dispositivo puede escanear (WebXR); en la compu no, y el modal sigue
+  // sirviendo para revisar y publicar.
+  useEffect(() => {
+    let vigente = true;
+    void import('../../lib/escaneo-webxr')
+      .then((m) => m.soportaEscaneoRa())
+      .catch(() => false)
+      .then((ok) => {
+        if (vigente) setSoporta(ok);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  // Si se cierra el modal con el escaneo abierto, se corta la sesión.
+  useEffect(() => () => cortar.current?.abort(), []);
+
+  // Miniaturas de las 4 fotos antes de enviar; se liberan al volver o desmontar.
+  const [miniaturas, setMiniaturas] = useState<Record<VistaEscaneo, string> | null>(null);
+  useEffect(() => {
+    if (!fotos) {
+      setMiniaturas(null);
+      return;
+    }
+    const urls = {} as Record<VistaEscaneo, string>;
+    for (const v of VISTAS) urls[v] = URL.createObjectURL(fotos[v]);
+    setMiniaturas(urls);
+    return () => {
+      for (const v of VISTAS) URL.revokeObjectURL(urls[v]);
+    };
+  }, [fotos]);
 
   // El último escaneo fallido se avisa hasta que el usuario lo cierra, tenga o no modelo el plato.
   const fallaVisible =
@@ -204,30 +236,12 @@ export function EscaneoModal({
     setFallasCerradas((ids) => [...ids, id]);
   }
 
-  // Cada vista empieza con su propio diámetro: el borrador no hereda el del modelo publicado.
-  const precargado = useRef<string | null>(null);
-  useEffect(() => {
-    setDiametro('');
-    precargado.current = null;
-  }, [vista]);
-
-  // El diámetro inicial del modelo publicado se deduce de su escala guardada, una sola vez
-  // por modelo: si después se vacía el campo, no se vuelve a completar.
-  useEffect(() => {
-    if (vista !== 'inicio' || !actual || !medidasVista) return;
-    if (precargado.current === actual.urlModelo) return;
-    precargado.current = actual.urlModelo;
-    const cm = diametroPorEscala(actual.escalaReal, medidasVista.ancho, medidasVista.profundidad);
-    setDiametro(String(cm).replace('.', ','));
-  }, [vista, actual, medidasVista]);
-
   function datosMedidas(): ModeloRaInput | string {
-    const cm = aNumero(diametro);
-    const gramos = aNumero(porcion);
-    if (!Number.isFinite(cm) || cm <= 0) return 'Indicá el diámetro del plato';
+    const gramos = Number(porcion);
+    if (plato.diametroCm === null) return MENSAJE_SIN_DIAMETRO;
     if (!medidasVista) return 'Esperá a que cargue la vista previa para guardar';
     return {
-      escalaReal: escalaPorDiametro(cm, medidasVista.ancho, medidasVista.profundidad),
+      escalaReal: escalaPorDiametro(plato.diametroCm, medidasVista.ancho, medidasVista.profundidad),
       porcionGramos: gramos,
     };
   }
@@ -304,37 +318,52 @@ export function EscaneoModal({
     }, 'No se pudo quitar el modelo');
   }
 
-  async function revisarVideo(archivo: File) {
+  async function escanear() {
+    if (plato.diametroCm === null) return;
+    const diametroCm = plato.diametroCm;
     setError(null);
-    if (archivo.size > LIMITE_VIDEO_MB * 1024 * 1024) {
-      return setError(`El video supera los ${LIMITE_VIDEO_MB} MB`);
-    }
-    setVideo(archivo);
-    setAvance(0);
-    setModo('revisando');
+    setProgreso(PROGRESO_INICIAL);
+    setModo('escaneando');
+    const control = new AbortController();
+    cortar.current = control;
     try {
-      const [muestreo, umbrales] = await Promise.all([
-        muestrearVideo(archivo, CUADROS, (hechos) => setAvance(hechos)),
+      const [{ iniciarEscaneo }, umbrales] = await Promise.all([
+        import('../../lib/escaneo-webxr'),
         api<UmbralesCalidad>('/escaneos/requisitos'),
       ]);
-      setInforme(evaluarCalidad(muestreo.muestras, muestreo.metadatos, umbrales));
-      setModo('informe');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'No pudimos leer el video');
-      setModo('elegir');
+      if (!capa.current) return;
+      const resultado = await iniciarEscaneo({
+        overlay: capa.current,
+        diametroCm,
+        umbrales,
+        onProgreso: setProgreso,
+        signal: control.signal,
+      });
+      if (resultado.estado === 'completo') {
+        setFotos(resultado.fotos);
+        setInforme(resultado.informe);
+        setModo('fotos');
+      } else {
+        setModo('inicio');
+      }
+    } catch {
+      setError('No pudimos abrir la cámara. Revisá el permiso e intentá de nuevo.');
+      setModo('inicio');
+    } finally {
+      if (cortar.current === control) cortar.current = null;
     }
   }
 
   function enviar() {
-    if (!video || !informe) return;
+    if (!fotos || !informe) return;
     void ejecutar(async () => {
       // Cada envío empieza limpio: el aviso de un intento anterior no vale para este.
       setAvisoNoEnviado(false);
       try {
-        await enviarVideo<Escaneo>(`/platos/${plato.id}/escaneos`, video, informe);
+        await enviarFotos<Escaneo>(`/platos/${plato.id}/escaneos`, fotos, informe);
       } catch (e) {
-        // Un escaneo que ya estaba en curso: se muestra ese en vez del informe y se avisa
-        // que este video no se envió.
+        // Un escaneo que ya estaba en curso: se muestra ese en vez de las fotos y se avisa
+        // que estas no se enviaron.
         if (e instanceof ApiError && e.status === 409) {
           setAvisoNoEnviado(true);
           recargar();
@@ -342,53 +371,48 @@ export function EscaneoModal({
         }
         throw e;
       }
-      setVideo(null);
+      setFotos(null);
       setInforme(null);
       setModo('inicio');
       recargar();
       onCambio();
-    }, 'No se pudo enviar el video');
+    }, 'No pudimos enviar las fotos');
   }
 
-  function grabarDeNuevo() {
-    setVideo(null);
+  function escanearDeNuevo() {
+    setFotos(null);
     setInforme(null);
     setError(null);
-    setModo('elegir');
+    setModo('inicio');
   }
 
   const camposMedidas = (
-    <div className="grid grid-cols-2 gap-3">
-      <Campo etiqueta="Diámetro del plato (cm)">
-        <input
-          {...propsDecimal}
-          required
-          value={diametro}
-          onChange={(e) => setDiametro(e.target.value)}
-          className={claseInput}
-        />
-      </Campo>
-      <Campo etiqueta="Porción (g)">
-        <input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          required
-          value={porcion}
-          onChange={(e) => setPorcion(e.target.value)}
-          className={claseInput}
-        />
-      </Campo>
-    </div>
+    <Campo etiqueta="Porción (g)">
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        required
+        value={porcion}
+        onChange={(e) => setPorcion(e.target.value)}
+        className={claseInput}
+      />
+    </Campo>
   );
 
   const avisoNoEnviadoTexto = (
     <Aviso>
       {avisoNoEnviado
-        ? 'Ya había un escaneo en curso para este plato. Tu video no se envió.'
+        ? 'Ya había un escaneo en curso para este plato. Tus fotos no se enviaron.'
         : null}
     </Aviso>
   );
+
+  const textoTamano =
+    plato.diametroCm === null
+      ? MENSAJE_SIN_DIAMETRO
+      : `Se va a ver en su tamaño real: el plato mide ${String(plato.diametroCm).replace('.', ',')} cm de diámetro.`;
+  const puedeEscanear = plato.diametroCm !== null && soporta === true;
 
   const cuerpo = (() => {
     switch (vista) {
@@ -415,87 +439,30 @@ export function EscaneoModal({
           </>
         );
 
-      case 'elegir':
+      case 'escaneando':
         return (
-          <div className="space-y-4">
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-text">
-              <li>Poné el plato sobre una mesa, con luz pareja y sin flash</li>
-              <li>Grabá una vuelta lenta y completa alrededor, de 30 a 60 segundos</li>
-              <li>Mantené el plato entero en cuadro</li>
-            </ol>
-            <label className="grid cursor-pointer justify-items-center gap-1 rounded-panel border-2 border-dashed border-line-strong px-4 py-8 text-center hover:bg-panel has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-accent/20">
-              <Video aria-hidden className="size-7 text-meta" strokeWidth={1.6} />
-              <span className="font-semibold text-ink">Grabar o elegir un video</span>
-              <span className="text-xs text-meta">MP4 o MOV, hasta {LIMITE_VIDEO_MB} MB</span>
-              <input
-                type="file"
-                accept="video/mp4,video/quicktime"
-                onChange={(e) => {
-                  const archivo = e.target.files?.[0];
-                  if (archivo) void revisarVideo(archivo);
-                }}
-                className="sr-only"
-              />
-            </label>
-            <Aviso>{error}</Aviso>
-            <Pie>
-              <Boton
-                variante="secundario"
-                onClick={() => {
-                  setError(null);
-                  setModo('inicio');
-                }}
-              >
-                Volver
-              </Boton>
-            </Pie>
+          <div className="grid h-64 place-content-center justify-items-center gap-2 text-center">
+            <Loader aria-hidden className="size-8 text-accent motion-safe:animate-spin" />
+            <p className="text-lg font-semibold text-ink">Abriendo la cámara…</p>
           </div>
         );
 
-      case 'revisando':
-        return (
-          <div className="space-y-3 py-6">
-            <p className="text-lg font-semibold text-ink">Revisando el video…</p>
-            <div
-              role="progressbar"
-              aria-label="Revisando el video"
-              aria-valuemin={0}
-              aria-valuemax={CUADROS}
-              aria-valuenow={avance}
-              className="h-1 overflow-hidden rounded-full bg-line"
-            >
-              <div
-                className="h-full bg-accent motion-safe:transition-[width]"
-                style={{ width: `${(avance / CUADROS) * 100}%` }}
-              />
-            </div>
-            <p className="text-xs tabular-nums text-meta">
-              {avance} de {CUADROS}
-            </p>
-          </div>
-        );
-
-      case 'informe': {
+      case 'fotos': {
         if (!informe) return null;
         const nivel = informe.nivelGlobal;
         return (
           <div className="space-y-4">
-            <InformeCalidad informe={informe} />
+            <InformeCalidad informe={informe} miniaturas={miniaturas ?? undefined} />
             <Aviso>{error}</Aviso>
             <Pie>
-              {nivel === 'OK' && (
-                <Boton variante="fantasma" onClick={grabarDeNuevo} disabled={enviando}>
-                  Elegir otro
-                </Boton>
-              )}
-              {nivel === 'ADVERTENCIA' && (
-                <Boton variante="secundario" onClick={grabarDeNuevo} disabled={enviando}>
-                  Grabar de nuevo
-                </Boton>
-              )}
-              {nivel === 'RECHAZO' ? (
-                <Boton onClick={grabarDeNuevo}>Grabar de nuevo</Boton>
-              ) : (
+              <Boton
+                variante={nivel === 'RECHAZO' ? 'principal' : 'secundario'}
+                onClick={escanearDeNuevo}
+                disabled={enviando}
+              >
+                Volver a escanear
+              </Boton>
+              {nivel !== 'RECHAZO' && (
                 <Boton onClick={enviar} disabled={enviando}>
                   {enviando ? 'Enviando…' : nivel === 'OK' ? 'Enviar' : 'Enviar igual'}
                 </Boton>
@@ -517,9 +484,7 @@ export function EscaneoModal({
                 onMedidas={setMedidas}
               />
             )}
-            <p className="text-sm text-meta">
-              Indicá el diámetro del plato para que se vea en su tamaño real.
-            </p>
+            <p className="text-sm text-meta">{textoTamano}</p>
             {camposMedidas}
             <Aviso>{error}</Aviso>
             <Pie>
@@ -547,7 +512,21 @@ export function EscaneoModal({
             ) : (
               <Vacio icono={Box} titulo="Este plato todavía no tiene modelo 3D" />
             )}
-            {actual && camposMedidas}
+            {actual && (
+              <>
+                {camposMedidas}
+                <p className="text-sm text-meta">{textoTamano}</p>
+              </>
+            )}
+            {puedeEscanear && (
+              <p className="text-sm text-meta">
+                Vas a caminar alrededor del plato con el celular y la app saca 4 fotos sola.
+              </p>
+            )}
+            {plato.diametroCm === null && (
+              <p className="text-sm text-meta">{MENSAJE_SIN_DIAMETRO}</p>
+            )}
+            {soporta === false && <p className="text-sm text-meta">{MENSAJE_SIN_SOPORTE}</p>}
             <Aviso
               accion={
                 fallaVisible && (
@@ -577,14 +556,8 @@ export function EscaneoModal({
                   {enviando ? 'Guardando…' : 'Guardar'}
                 </Boton>
               )}
-              <Boton
-                onClick={() => {
-                  setError(null);
-                  setModo('elegir');
-                }}
-                disabled={enviando}
-              >
-                <Video aria-hidden className="size-4" />
+              <Boton onClick={() => void escanear()} disabled={enviando || !puedeEscanear}>
+                <Camera aria-hidden className="size-4" />
                 Escanear plato
               </Boton>
             </Pie>
@@ -596,6 +569,40 @@ export function EscaneoModal({
   return (
     <Modal titulo={`Modelo 3D: ${plato.nombre}`} onCerrar={onCerrar}>
       <div aria-live="polite">{cuerpo}</div>
+      {/* Capa sobre la cámara durante el escaneo (dom-overlay de WebXR). */}
+      <div ref={capa} className={modo === 'escaneando' ? 'fixed inset-0 z-50' : 'hidden'}>
+        <div className="absolute inset-x-4 top-4 space-y-2 rounded-panel bg-black/60 px-4 py-3 text-center text-white">
+          <p className="font-medium">{plato.nombre}</p>
+          <p className="text-base" aria-live="polite">
+            {progreso.mensaje}
+          </p>
+          <ul className="flex flex-wrap justify-center gap-2">
+            {VISTAS.map((v) => (
+              <li
+                key={v}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  progreso.vistas[v] ? 'bg-ok text-white' : 'border border-white/50 text-white/80'
+                }`}
+              >
+                {progreso.vistas[v] && <Check aria-hidden className="size-3.5" />}
+                {NOMBRES_VISTA[v]}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="absolute inset-x-4 bottom-8 flex justify-center">
+          <button
+            type="button"
+            ref={(b) => {
+              b?.addEventListener('beforexrselect', frenarSeleccion);
+            }}
+            onClick={() => cortar.current?.abort()}
+            className="min-h-12 rounded-full bg-surface px-6 font-semibold text-ink shadow-flotante"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
     </Modal>
   );
 }

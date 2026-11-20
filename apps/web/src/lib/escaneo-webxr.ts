@@ -58,6 +58,8 @@ export interface OpcionesEscaneo {
   diametroCm: number;
   umbrales: UmbralesCalidad;
   onProgreso(p: ProgresoEscaneo): void;
+  // Al abortarse, la sesión termina y el resultado es `cancelado`.
+  signal?: AbortSignal;
 }
 
 // getCameraImage (módulo camera-access) todavía no está en @types/webxr.
@@ -235,7 +237,7 @@ function aBlob(lienzo: HTMLCanvasElement): Promise<Blob | null> {
 // navegador rechaza la sesión (sin permiso de cámara, por ejemplo) la promesa
 // falla y el modal muestra el aviso.
 export async function iniciarEscaneo(opciones: OpcionesEscaneo): Promise<ResultadoEscaneoRa> {
-  const { overlay, diametroCm, umbrales, onProgreso } = opciones;
+  const { overlay, diametroCm, umbrales, onProgreso, signal } = opciones;
 
   const renderer = new WebGLRenderer({ alpha: true, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -318,6 +320,7 @@ export async function iniciarEscaneo(opciones: OpcionesEscaneo): Promise<Resulta
       liberado = true;
       sesion.removeEventListener('select', alTocar);
       sesion.removeEventListener('end', alTerminar);
+      signal?.removeEventListener('abort', alAbortar);
       renderer.setAnimationLoop(null);
       fuenteImpacto?.cancel();
       fuenteImpacto = null;
@@ -336,6 +339,10 @@ export async function iniciarEscaneo(opciones: OpcionesEscaneo): Promise<Resulta
         resolverPromesa({ estado: 'cancelado' });
       }
     };
+
+    function alAbortar() {
+      void sesion.end().catch(() => undefined);
+    }
 
     const terminarCompleto = () => {
       if (resuelto) return;
@@ -537,6 +544,8 @@ export async function iniciarEscaneo(opciones: OpcionesEscaneo): Promise<Resulta
     renderer.setAnimationLoop(alCuadro);
     sesion.addEventListener('select', alTocar);
     sesion.addEventListener('end', alTerminar);
+    if (signal?.aborted) alAbortar();
+    else signal?.addEventListener('abort', alAbortar, { once: true });
     void (async () => {
       try {
         await conCapaClasica(() => renderer.xr.setSession(sesion));
