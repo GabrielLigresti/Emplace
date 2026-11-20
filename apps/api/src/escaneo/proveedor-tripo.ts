@@ -69,7 +69,8 @@ export class ProveedorTripo implements Proveedor3D {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        inputs: tokens.map((file_token) => ({ file_token })),
+        // Cada token va asociado a su vista: [{ front: token }, { left: token }, …].
+        inputs: VISTAS.map((vista, i) => ({ [vista]: tokens[i] })),
         model: 'v3.1-20260211',
         texture: true,
         pbr: true,

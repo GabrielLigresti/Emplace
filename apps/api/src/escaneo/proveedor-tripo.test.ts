@@ -71,8 +71,8 @@ describe('ProveedorTripo', () => {
       expect(crear.url).toBe(`${BASE}/generation/multiview-to-model`);
       expect((crear.init.headers as Record<string, string>).Authorization).toBe('Bearer k');
       expect(JSON.parse(crear.init.body as string)).toEqual({
-        inputs: [1, 2, 3, 4].map((n) => ({
-          file_token: `file_00000000-0000-0000-0000-00000000000${n}`,
+        inputs: ['front', 'left', 'back', 'right'].map((vista, i) => ({
+          [vista]: `file_00000000-0000-0000-0000-00000000000${i + 1}`,
         })),
         model: 'v3.1-20260211',
         texture: true,
