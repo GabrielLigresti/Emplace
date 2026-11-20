@@ -249,6 +249,12 @@ export async function iniciarEscaneo(opciones: OpcionesEscaneo): Promise<Resulta
   const { anillo: reticula } = crearAnillo();
   escena.add(reticula);
 
+  // Si se canceló mientras se cargaba, no se abre la cámara.
+  if (signal?.aborted) {
+    renderer.dispose();
+    return { estado: 'cancelado' };
+  }
+
   let sesion: XRSession;
   try {
     sesion = await navigator.xr!.requestSession('immersive-ar', {

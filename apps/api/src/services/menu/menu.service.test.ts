@@ -375,7 +375,11 @@ describe('diámetro del plato', () => {
   });
 
   it.each([0.04, 0.5, 25.35])('el esquema rechaza el diámetro %s', (diametroCm) => {
-    const r = platoInputSchema.safeParse({ ...plato, categoriaId: crypto.randomUUID(), diametroCm });
+    const r = platoInputSchema.safeParse({
+      ...plato,
+      categoriaId: crypto.randomUUID(),
+      diametroCm,
+    });
     expect(r.success).toBe(false);
   });
 
