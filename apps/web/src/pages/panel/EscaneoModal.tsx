@@ -353,6 +353,11 @@ export function EscaneoModal({
     } catch (e) {
       // Sin respuesta de la API (red caída o error del servidor): no es un problema de la cámara.
       if (cortar.current === control) cortar.current = null;
+      // Si la sesión ya se cortó (Cancelar o llegó otro escaneo), el error no aplica.
+      if (control.signal.aborted) {
+        setModo('inicio');
+        return;
+      }
       if (e instanceof ApiError || e instanceof TypeError) {
         setError('No pudimos conectarnos. Revisá la conexión e intentá de nuevo.');
       } else {
@@ -378,7 +383,9 @@ export function EscaneoModal({
         setModo('inicio');
       }
     } catch {
-      setError('No pudimos abrir la cámara. Revisá el permiso e intentá de nuevo.');
+      if (!control.signal.aborted) {
+        setError('No pudimos abrir la cámara. Revisá el permiso e intentá de nuevo.');
+      }
       setModo('inicio');
     } finally {
       if (cortar.current === control) cortar.current = null;
