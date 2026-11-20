@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import {
   CONVERSION,
@@ -51,12 +51,14 @@ export function FormMovimiento({
   const [cantidad, setCantidad] = useState('');
   const [unidad, setUnidad] = useState<UnidadMedida>(unidadInicial(componente));
   const [costo, setCosto] = useState('');
-  // El costo sigue a la unidad de la cantidad hasta que el usuario elige otra.
+  // El costo sigue a la unidad de la cantidad hasta que el usuario elige otra
+  // o escribe un costo.
   const [unidadPrecioElegida, setUnidadPrecioElegida] = useState<UnidadMedida | null>(null);
   const [motivoMerma, setMotivoMerma] = useState<MotivoMerma | ''>('');
   const [observacion, setObservacion] = useState('');
   const [motivo, setMotivo] = useState('');
   const { enviar, enviando, error } = useGuardar();
+  const idIva = useId();
 
   const unidades = unidadesCompatibles(componente.unidadBase);
   const factor = CONVERSION[unidad].factor;
@@ -149,7 +151,13 @@ export function FormMovimiento({
           <Campo etiqueta="Unidad">
             <select
               value={unidad}
-              onChange={(e) => setUnidad(e.target.value as UnidadMedida)}
+              onChange={(e) => {
+                // Con un costo ya escrito, su unidad queda fija: no se reinterpreta el número.
+                if (costo.trim() !== '' && unidadPrecioElegida === null) {
+                  setUnidadPrecioElegida(unidad);
+                }
+                setUnidad(e.target.value as UnidadMedida);
+              }}
               className={claseInput}
             >
               {unidades.map((u) => (
@@ -205,6 +213,7 @@ export function FormMovimiento({
                   required
                   value={costo}
                   onChange={(e) => setCosto(e.target.value)}
+                  aria-describedby={idIva}
                   className={claseInput}
                 />
               </Campo>
@@ -212,6 +221,7 @@ export function FormMovimiento({
                 <Campo etiqueta="Por">
                   <select
                     value={unidadPrecio}
+                    aria-label="Unidad del costo"
                     onChange={(e) => setUnidadPrecioElegida(e.target.value as UnidadMedida)}
                     className={claseInput}
                   >
@@ -236,7 +246,7 @@ export function FormMovimiento({
                 </p>
               </div>
             )}
-            <p className="text-xs text-meta">
+            <p id={idIva} className="text-xs text-meta">
               Precio de contado, sin IVA si el restaurante es Responsable Inscripto; con IVA si es
               monotributista.
             </p>
