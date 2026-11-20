@@ -149,7 +149,18 @@ describe('ProveedorTripo', () => {
       }
     });
 
-    it('success sin model_url da FALLIDO', async () => {
+    it('success sin model_url baja pbr_model', async () => {
+      const glb = Buffer.from([5, 6]);
+      const { proveedor, llamadas } = armar([
+        tarea('success', { pbr_model: 'https://cdn.example/pbr.glb' }),
+        new Response(glb, { status: 200 }),
+      ]);
+      const r = await proveedor.consultar('t');
+      expect(r.estado).toBe('LISTO');
+      expect(llamadas[1]!.url).toBe('https://cdn.example/pbr.glb');
+    });
+
+    it('success sin model_url ni pbr_model da FALLIDO', async () => {
       const { proveedor } = armar([tarea('success', {})]);
       await expect(proveedor.consultar('t')).resolves.toEqual({
         estado: 'FALLIDO',

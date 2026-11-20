@@ -106,7 +106,8 @@ export class ProveedorTripo implements Proveedor3D {
       return { estado: 'FALLIDO', motivo: MOTIVO_FALLA };
     }
 
-    const url = r.data?.output?.model_url;
+    // Con pbr, Tripo puede dejar el modelo en pbr_model en lugar de model_url.
+    const url = r.data?.output?.model_url || r.data?.output?.pbr_model;
     if (typeof url !== 'string' || !url) {
       console.error(`Tripo: la tarea terminó sin model_url (request_id ${r.requestId ?? '-'})`);
       return { estado: 'FALLIDO', motivo: MOTIVO_FALLA };
