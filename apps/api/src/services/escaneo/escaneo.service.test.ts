@@ -1,10 +1,12 @@
 import {
-  CRITERIOS,
+  CRITERIOS_FOTO,
   UMBRALES_POR_DEFECTO,
+  VISTAS,
   type EstadoEscaneo,
   type InformeCalidad,
   type NivelCalidad,
   type Plato,
+  type VistaEscaneo,
 } from '@pgim/shared';
 import type { Proveedor3D } from '../../escaneo/proveedor-3d';
 import { ProveedorSimulado } from '../../escaneo/proveedor-simulado';
@@ -12,33 +14,41 @@ import type { RegistroProveedores } from '../../escaneo/registro';
 import * as archivosModelo from '../../lib/archivos-modelo';
 import { AppError } from '../../lib/errors';
 import type { EscaneoRepository, FilaEscaneo } from '../../repositories/escaneo.repository';
-import { mp4Falso } from '../../test/mp4-falso';
+import { jpegFalso } from '../../test/jpeg-falso';
 import { createEscaneoService } from './escaneo.service';
 
 const R = 'restaurante';
 const AHORA = new Date('2026-11-05T12:00:00Z');
+const ANGULOS: Record<VistaEscaneo, number> = { front: 0, left: 90, back: 180, right: 270 };
 
-// Los cinco criterios en OK, salvo los que se pisen.
-const criterios = (
-  niveles: Partial<Record<InformeCalidad['criterios'][number]['criterio'], NivelCalidad>> = {},
-): InformeCalidad['criterios'] =>
-  CRITERIOS.map((c) => ({
-    criterio: c.id,
-    nivel: niveles[c.id] ?? 'OK',
-    valor: 1,
-    mensaje: null,
-  }));
-
-const informe = (parcial: Partial<InformeCalidad> = {}): InformeCalidad => ({
-  version: 1,
+// Las 4 vistas con los 5 criterios en OK, salvo los que se pisen en `niveles` (por vista).
+const informe = (
+  niveles: Partial<
+    Record<VistaEscaneo, Partial<Record<(typeof CRITERIOS_FOTO)[number], NivelCalidad>>>
+  > = {},
+  parcial: Partial<InformeCalidad> = {},
+): InformeCalidad => ({
+  version: 2,
   nivelGlobal: 'OK',
-  metadatos: { ancho: 1920, alto: 1080, duracionS: 30 },
-  criterios: criterios(),
+  fotos: VISTAS.map((vista) => ({
+    vista,
+    anguloGrados: ANGULOS[vista],
+    ancho: 1280,
+    alto: 960,
+    criterios: CRITERIOS_FOTO.map((criterio) => ({
+      criterio,
+      nivel: niveles[vista]?.[criterio] ?? 'OK',
+      valor: 1,
+      mensaje: null,
+    })),
+  })),
   ...parcial,
 });
 
-const video = (o: Partial<Parameters<typeof mp4Falso>[0]> = {}) =>
-  mp4Falso({ ancho: 1920, alto: 1080, duracionS: 30, ...o });
+const fotos = (ancho = 1280, alto = 960) => {
+  const f = jpegFalso(ancho, alto);
+  return { front: f, left: f, back: f, right: f };
+};
 
 function fila(parcial: Partial<FilaEscaneo> = {}): FilaEscaneo {
   return {
@@ -49,7 +59,7 @@ function fila(parcial: Partial<FilaEscaneo> = {}): FilaEscaneo {
     estado: 'EN_REVISION',
     proveedor: 'simulado',
     tareaProveedorId: 't',
-    rutaVideo: null,
+    rutaFotos: null,
     urlModelo: '/api/uploads/modelos/nuevo.glb',
     urlModeloIos: null,
     calidad: informe(),
@@ -59,6 +69,8 @@ function fila(parcial: Partial<FilaEscaneo> = {}): FilaEscaneo {
     ...parcial,
   };
 }
+
+const PLATO = { diametroCm: 26 } as Plato;
 
 function montar(opciones: { repo?: Partial<EscaneoRepository>; plato?: Plato | null } = {}) {
   const repo = {
@@ -72,12 +84,14 @@ function montar(opciones: { repo?: Partial<EscaneoRepository>; plato?: Plato | n
   } as jest.Mocked<EscaneoRepository>;
   const deps = {
     menu: {
-      buscarPlato: jest.fn().mockResolvedValue(opciones.plato === undefined ? {} : opciones.plato),
+      buscarPlato: jest
+        .fn()
+        .mockResolvedValue(opciones.plato === undefined ? PLATO : opciones.plato),
     },
-    videos: {
-      guardarVideo: jest.fn().mockResolvedValue('/uploads/escaneos/v.mp4'),
-      leerVideo: jest.fn(),
-      borrarVideo: jest.fn().mockResolvedValue(undefined),
+    fotos: {
+      guardarFotos: jest.fn().mockResolvedValue('/uploads/escaneos/abc'),
+      leerFotos: jest.fn(),
+      borrarFotos: jest.fn().mockResolvedValue(undefined),
     },
     modelos: {
       validarGlb: jest.fn(),
@@ -102,17 +116,19 @@ async function falla(promesa: Promise<unknown>, status: number, mensaje: string)
 }
 
 describe('crear', () => {
-  it('guarda el video y crea el escaneo PENDIENTE con el proveedor activo', async () => {
+  it('guarda las fotos y crea el escaneo PENDIENTE con el proveedor activo', async () => {
     const { service, repo, deps } = montar();
-    const escaneo = await service.crear(R, 'bife', 'emp', video(), informe());
-    expect(deps.videos.guardarVideo).toHaveBeenCalledWith(expect.any(Buffer), 'mp4');
+    const escaneo = await service.crear(R, 'bife', 'emp', fotos(), informe());
+    expect(deps.fotos.guardarFotos).toHaveBeenCalledWith(
+      expect.objectContaining({ front: expect.any(Buffer), right: expect.any(Buffer) }),
+    );
     expect(repo.crear).toHaveBeenCalledWith(
       expect.objectContaining({
         restauranteId: R,
         itemMenuId: 'bife',
         empleadoId: 'emp',
         proveedor: 'simulado',
-        rutaVideo: '/uploads/escaneos/v.mp4',
+        rutaFotos: '/uploads/escaneos/abc',
       }),
     );
     expect(escaneo).toMatchObject({
@@ -124,38 +140,75 @@ describe('crear', () => {
 
   it('404 si el plato no es del restaurante', async () => {
     const { service, deps } = montar({ plato: null });
-    await falla(service.crear(R, 'x', 'emp', video(), informe()), 404, 'El plato no existe');
-    expect(deps.videos.guardarVideo).not.toHaveBeenCalled();
+    await falla(service.crear(R, 'x', 'emp', fotos(), informe()), 404, 'El plato no existe');
+    expect(deps.fotos.guardarFotos).not.toHaveBeenCalled();
   });
 
-  it('400 si el archivo no es un MP4', async () => {
+  it('422 si el plato no tiene diámetro (Foco 2), sin guardar ni crear nada', async () => {
+    const { service, repo, deps } = montar({ plato: { diametroCm: null } as Plato });
+    await falla(
+      service.crear(R, 'bife', 'emp', fotos(), informe()),
+      422,
+      'Cargá el diámetro del plato para escanearlo',
+    );
+    expect(deps.fotos.guardarFotos).not.toHaveBeenCalled();
+    expect(repo.crear).not.toHaveBeenCalled();
+  });
+
+  it('422 si al informe le falta la vista back', async () => {
+    const { service, repo } = montar();
+    const sinBack = informe();
+    sinBack.fotos = sinBack.fotos.filter((f) => f.vista !== 'back');
+    await falla(
+      service.crear(R, 'bife', 'emp', fotos(), sinBack),
+      422,
+      'El informe de calidad está incompleto',
+    );
+    expect(repo.crear).not.toHaveBeenCalled();
+  });
+
+  it('422 si el informe repite una vista en lugar de traer las 4', async () => {
     const { service } = montar();
-    await expect(
-      service.crear(R, 'bife', 'emp', Buffer.from('nada'), informe()),
-    ).rejects.toMatchObject({ status: 400 });
+    const repetida = informe();
+    repetida.fotos = [
+      repetida.fotos[0]!,
+      repetida.fotos[0]!,
+      repetida.fotos[2]!,
+      repetida.fotos[3]!,
+    ];
+    await falla(
+      service.crear(R, 'bife', 'emp', fotos(), repetida),
+      422,
+      'El informe de calidad está incompleto',
+    );
+  });
+
+  it('422 si a una foto le falta un criterio', async () => {
+    const { service } = montar();
+    const incompleto = informe();
+    incompleto.fotos[1]!.criterios = incompleto.fotos[1]!.criterios.slice(1);
+    await falla(
+      service.crear(R, 'bife', 'emp', fotos(), incompleto),
+      422,
+      'El informe de calidad está incompleto',
+    );
   });
 
   it('422 si el informe ya trae RECHAZO', async () => {
     const { service } = montar();
     await falla(
-      service.crear(R, 'bife', 'emp', video(), informe({ nivelGlobal: 'RECHAZO' })),
+      service.crear(R, 'bife', 'emp', fotos(), informe({}, { nivelGlobal: 'RECHAZO' })),
       422,
-      'El video no pasó la revisión de calidad',
+      'Las fotos no pasaron la revisión de calidad',
     );
   });
 
-  it('422 si un criterio trae RECHAZO aunque el nivel global diga OK', async () => {
+  it('422 si un criterio de una foto trae RECHAZO aunque el nivel global diga OK', async () => {
     const { service, repo } = montar();
     await falla(
-      service.crear(
-        R,
-        'bife',
-        'emp',
-        video(),
-        informe({ criterios: criterios({ NITIDEZ: 'RECHAZO' }) }),
-      ),
+      service.crear(R, 'bife', 'emp', fotos(), informe({ left: { NITIDEZ: 'RECHAZO' } })),
       422,
-      'El video no pasó la revisión de calidad',
+      'Las fotos no pasaron la revisión de calidad',
     );
     expect(repo.crear).not.toHaveBeenCalled();
   });
@@ -166,101 +219,54 @@ describe('crear', () => {
       R,
       'bife',
       'emp',
-      video(),
-      informe({ nivelGlobal: 'ADVERTENCIA', criterios: criterios({ NITIDEZ: 'ADVERTENCIA' }) }),
+      fotos(),
+      informe({ front: { BRILLOS: 'ADVERTENCIA' } }, { nivelGlobal: 'ADVERTENCIA' }),
     );
     expect(repo.crear).toHaveBeenCalled();
   });
 
-  it('422 si el informe trae seis criterios, uno repetido', async () => {
-    const { service, repo } = montar();
-    const cinco = criterios();
+  it('422 si una foto no es un JPEG', async () => {
+    const { service, deps } = montar();
+    const f = { ...fotos(), back: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0, 0, 0, 0]) };
     await falla(
-      service.crear(R, 'bife', 'emp', video(), informe({ criterios: [...cinco, cinco[0]!] })),
+      service.crear(R, 'bife', 'emp', f, informe()),
       422,
-      'El informe de calidad está incompleto',
+      'Las fotos tienen que ser JPEG',
     );
-    expect(repo.crear).not.toHaveBeenCalled();
+    expect(deps.fotos.guardarFotos).not.toHaveBeenCalled();
   });
 
-  it('422 si al informe le falta algún criterio', async () => {
-    const { service, repo } = montar();
+  it('422 si el lado menor de una foto está por debajo del mínimo del proveedor', async () => {
+    const { service, deps } = montar();
+    const chica = { ...fotos(), right: jpegFalso(400, 300) };
+    const i = informe();
+    i.fotos.find((f) => f.vista === 'right')!.ancho = 400;
+    i.fotos.find((f) => f.vista === 'right')!.alto = 300;
     await falla(
-      service.crear(R, 'bife', 'emp', video(), informe({ criterios: criterios().slice(1) })),
+      service.crear(R, 'bife', 'emp', chica, i),
       422,
-      'El informe de calidad está incompleto',
+      'El informe de calidad no corresponde a estas fotos',
     );
-    expect(repo.crear).not.toHaveBeenCalled();
-  });
-
-  it('422 si el informe repite un criterio en lugar de traer los cinco', async () => {
-    const { service } = montar();
-    const [primero, ...resto] = criterios();
-    await falla(
-      service.crear(
-        R,
-        'bife',
-        'emp',
-        video(),
-        informe({ criterios: [primero!, primero!, ...resto.slice(1)] }),
-      ),
-      422,
-      'El informe de calidad está incompleto',
-    );
-  });
-
-  it('422 si el formato real no cumple los requisitos del proveedor', async () => {
-    const { service } = montar();
-    const corto = video({ duracionS: 5 });
-    await falla(
-      service.crear(
-        R,
-        'bife',
-        'emp',
-        corto,
-        informe({ metadatos: { ancho: 1920, alto: 1080, duracionS: 5 } }),
-      ),
-      422,
-      'El video tiene que durar entre 10 segundos y 3 minutos',
-    );
+    expect(deps.fotos.guardarFotos).not.toHaveBeenCalled();
   });
 
   it.each([
-    ['la duración', { ancho: 1920, alto: 1080, duracionS: 32 }],
-    ['el lado menor', { ancho: 1920, alto: 1070, duracionS: 30 }],
-    ['el lado mayor', { ancho: 1900, alto: 1080, duracionS: 30 }],
-  ])('422 si difiere %s del informe', async (_caso, metadatos) => {
+    ['el ancho', 1290, 960],
+    ['el alto', 1280, 950],
+  ])('422 si difiere %s del informe', async (_caso, ancho, alto) => {
     const { service, deps } = montar();
     await falla(
-      service.crear(R, 'bife', 'emp', video(), informe({ metadatos })),
+      service.crear(R, 'bife', 'emp', fotos(ancho, alto), informe()),
       422,
-      'El informe de calidad no corresponde a este video',
+      'El informe de calidad no corresponde a estas fotos',
     );
-    expect(deps.videos.guardarVideo).not.toHaveBeenCalled();
+    expect(deps.fotos.guardarFotos).not.toHaveBeenCalled();
   });
 
-  it('acepta un video vertical: tkhd 1920x1080 e informe 1080x1920', async () => {
-    const { service } = montar();
-    const escaneo = await service.crear(
-      R,
-      'bife',
-      'emp',
-      video(),
-      informe({ metadatos: { ancho: 1080, alto: 1920, duracionS: 30 } }),
-    );
-    expect(escaneo.estado).toBe('PENDIENTE');
-  });
-
-  it('tolera hasta 1 s y 2 px de diferencia', async () => {
+  it('tolera hasta 2 px de diferencia', async () => {
     const { service } = montar();
     await expect(
-      service.crear(
-        R,
-        'bife',
-        'emp',
-        video(),
-        informe({ metadatos: { ancho: 1922, alto: 1078, duracionS: 31 } }),
-      ),
+      service.crear(R, 'bife', 'emp', fotos(1282, 958), informe()),
     ).resolves.toBeDefined();
   });
 
@@ -270,32 +276,32 @@ describe('crear', () => {
         repo: { ultimoDelPlato: jest.fn().mockResolvedValue(fila({ estado })) },
       });
       await falla(
-        service.crear(R, 'bife', 'emp', video(), informe()),
+        service.crear(R, 'bife', 'emp', fotos(), informe()),
         409,
         'Este plato ya tiene un escaneo en curso',
       );
-      expect(deps.videos.guardarVideo).not.toHaveBeenCalled();
+      expect(deps.fotos.guardarFotos).not.toHaveBeenCalled();
     }
   });
 
-  it('409 y borra el video si el índice único rechaza el alta (P2002)', async () => {
+  it('409 y borra las fotos si el índice único rechaza el alta (P2002)', async () => {
     const { service, deps } = montar({
       repo: { crear: jest.fn().mockRejectedValue({ code: 'P2002' }) },
     });
     await falla(
-      service.crear(R, 'bife', 'emp', video(), informe()),
+      service.crear(R, 'bife', 'emp', fotos(), informe()),
       409,
       'Este plato ya tiene un escaneo en curso',
     );
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 
-  it('borra el video y propaga cualquier otro error del repositorio', async () => {
+  it('borra las fotos y propaga cualquier otro error del repositorio', async () => {
     const { service, deps } = montar({
       repo: { crear: jest.fn().mockRejectedValue(new Error('caída')) },
     });
-    await expect(service.crear(R, 'bife', 'emp', video(), informe())).rejects.toThrow('caída');
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    await expect(service.crear(R, 'bife', 'emp', fotos(), informe())).rejects.toThrow('caída');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 
   it.each(['FALLIDO', 'DESCARTADO', 'PUBLICADO'] as EstadoEscaneo[])(
@@ -304,7 +310,7 @@ describe('crear', () => {
       const { service } = montar({
         repo: { ultimoDelPlato: jest.fn().mockResolvedValue(fila({ estado })) },
       });
-      await expect(service.crear(R, 'bife', 'emp', video(), informe())).resolves.toMatchObject({
+      await expect(service.crear(R, 'bife', 'emp', fotos(), informe())).resolves.toMatchObject({
         estado: 'PENDIENTE',
       });
     },
@@ -451,7 +457,7 @@ describe('procesarEnCurso', () => {
     const m = montar({ repo: { enCurso: jest.fn().mockResolvedValue(filas) } });
     m.deps.proveedores.buscar = jest.fn().mockReturnValue(proveedor);
     m.deps.ahora = () => ahora;
-    m.deps.videos.leerVideo.mockResolvedValue(video());
+    m.deps.fotos.leerFotos.mockResolvedValue(fotos());
     return { ...m, proveedor, service: createEscaneoService(m.repo, m.deps as never) };
   }
 
@@ -459,7 +465,7 @@ describe('procesarEnCurso', () => {
     fila({
       estado: 'PENDIENTE',
       tareaProveedorId: null,
-      rutaVideo: '/uploads/escaneos/v.mp4',
+      rutaFotos: '/uploads/escaneos/abc',
       urlModelo: null,
       ...p,
     });
@@ -472,34 +478,30 @@ describe('procesarEnCurso', () => {
   });
   afterEach(() => error.mockRestore());
 
-  it('PENDIENTE: envía el video y pasa a PROCESANDO con el id de tarea', async () => {
+  it('PENDIENTE: envía las fotos y pasa a PROCESANDO con el id de tarea', async () => {
     const { service, repo, proveedor, deps } = armar([pendiente()]);
     await service.procesarEnCurso();
-    expect(deps.videos.leerVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
-    expect(proveedor.iniciar).toHaveBeenCalledWith(expect.any(Buffer), 'mp4');
+    expect(deps.fotos.leerFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
+    expect(proveedor.iniciar).toHaveBeenCalledWith(
+      expect.objectContaining({ front: expect.any(Buffer), left: expect.any(Buffer) }),
+    );
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PENDIENTE', {
       estado: 'PROCESANDO',
       tareaProveedorId: 'tarea-1',
     });
-    expect(deps.videos.borrarVideo).not.toHaveBeenCalled();
+    expect(deps.fotos.borrarFotos).not.toHaveBeenCalled();
   });
 
-  it('PENDIENTE: toma el formato de la extensión del video (.mov)', async () => {
-    const { service, proveedor } = armar([pendiente({ rutaVideo: '/uploads/escaneos/v.mov' })]);
-    await service.procesarEnCurso();
-    expect(proveedor.iniciar).toHaveBeenCalledWith(expect.any(Buffer), 'mov');
-  });
-
-  it('PENDIENTE: si iniciar lanza, pasa a FALLIDO y borra el video', async () => {
+  it('PENDIENTE: si iniciar lanza, pasa a FALLIDO y borra las fotos', async () => {
     const proveedor = proveedorFalso({ iniciar: jest.fn().mockRejectedValue(new Error('red')) });
     const { service, repo, deps } = armar([pendiente()], proveedor);
     await service.procesarEnCurso();
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PENDIENTE', {
       estado: 'FALLIDO',
-      error: 'No pudimos enviar el video',
-      rutaVideo: null,
+      error: 'No pudimos enviar las fotos',
+      rutaFotos: null,
     });
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 
   it('PROCESANDO en proceso y sin vencer: no cambia nada', async () => {
@@ -507,19 +509,19 @@ describe('procesarEnCurso', () => {
     const { service, repo, deps } = armar([f]);
     await service.procesarEnCurso();
     expect(repo.cambiarEstado).not.toHaveBeenCalled();
-    expect(deps.videos.borrarVideo).not.toHaveBeenCalled();
+    expect(deps.fotos.borrarFotos).not.toHaveBeenCalled();
   });
 
-  it('PROCESANDO pasado el timeout: FALLIDO y borra el video', async () => {
+  it('PROCESANDO pasado el timeout: FALLIDO y borra las fotos', async () => {
     const f = procesando({ actualizadoEn: new Date(AHORA.getTime() - 30 * MINUTO - 1) });
     const { service, repo, deps } = armar([f]);
     await service.procesarEnCurso();
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PROCESANDO', {
       estado: 'FALLIDO',
       error: 'El escaneo tardó demasiado',
-      rutaVideo: null,
+      rutaFotos: null,
     });
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 
   it('PROCESANDO con el proveedor caído: reintenta y, vencido, pasa a FALLIDO', async () => {
@@ -537,7 +539,7 @@ describe('procesarEnCurso', () => {
     expect(b.repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PROCESANDO', {
       estado: 'FALLIDO',
       error: 'El escaneo tardó demasiado',
-      rutaVideo: null,
+      rutaFotos: null,
     });
   });
 
@@ -559,7 +561,7 @@ describe('procesarEnCurso', () => {
     expect(b.repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PROCESANDO', {
       estado: 'FALLIDO',
       error: 'El escaneo tardó demasiado',
-      rutaVideo: null,
+      rutaFotos: null,
     });
   });
 
@@ -573,11 +575,11 @@ describe('procesarEnCurso', () => {
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PENDIENTE', {
       estado: 'FALLIDO',
       error: 'El escaneo tardó demasiado',
-      rutaVideo: null,
+      rutaFotos: null,
     });
   });
 
-  it('PROCESANDO listo: guarda el modelo, pasa a EN_REVISION y borra el video', async () => {
+  it('PROCESANDO listo: guarda el modelo, pasa a EN_REVISION y borra las fotos', async () => {
     const proveedor = proveedorFalso({
       consultar: jest.fn().mockResolvedValue({ estado: 'LISTO', glb: GLB, usdz: USDZ }),
     });
@@ -593,9 +595,9 @@ describe('procesarEnCurso', () => {
       estado: 'EN_REVISION',
       urlModelo: '/m/a.glb',
       urlModeloIos: '/m/a.usdz',
-      rutaVideo: null,
+      rutaFotos: null,
     });
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
     expect(deps.modelos.borrarModelo).not.toHaveBeenCalled();
   });
 
@@ -627,18 +629,18 @@ describe('procesarEnCurso', () => {
     expect(deps.modelos.guardarModelo).not.toHaveBeenCalled();
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PROCESANDO', {
       estado: 'FALLIDO',
-      error: 'No pudimos armar el modelo con este video',
-      rutaVideo: null,
+      error: 'No pudimos armar el modelo con estas fotos',
+      rutaFotos: null,
     });
     expect(error).toHaveBeenCalledWith(
       expect.any(String),
       'e1',
       expect.objectContaining({ message: 'El archivo no es un modelo .glb' }),
     );
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 
-  it('PROCESANDO listo: si el estado cambió, borra los modelos recién guardados y el video', async () => {
+  it('PROCESANDO listo: si el estado cambió, borra los modelos recién guardados y las fotos', async () => {
     const proveedor = proveedorFalso({
       consultar: jest.fn().mockResolvedValue({ estado: 'LISTO', glb: GLB, usdz: USDZ }),
     });
@@ -648,7 +650,7 @@ describe('procesarEnCurso', () => {
     await service.procesarEnCurso();
     expect(deps.modelos.borrarModelo).toHaveBeenCalledWith('/m/a.glb');
     expect(deps.modelos.borrarModelo).toHaveBeenCalledWith('/m/a.usdz');
-    expect(deps.videos.borrarVideo).not.toHaveBeenCalled();
+    expect(deps.fotos.borrarFotos).not.toHaveBeenCalled();
   });
 
   it('PROCESANDO listo: si falla guardar el .usdz, borra el .glb ya guardado y reintenta después', async () => {
@@ -665,18 +667,18 @@ describe('procesarEnCurso', () => {
     expect(error).toHaveBeenCalled();
   });
 
-  it('PROCESANDO fallido en el proveedor: FALLIDO con el motivo y borra el video', async () => {
+  it('PROCESANDO fallido en el proveedor: FALLIDO con el motivo y borra las fotos', async () => {
     const proveedor = proveedorFalso({
-      consultar: jest.fn().mockResolvedValue({ estado: 'FALLIDO', motivo: 'Video borroso' }),
+      consultar: jest.fn().mockResolvedValue({ estado: 'FALLIDO', motivo: 'Fotos borrosas' }),
     });
     const { service, repo, deps } = armar([procesando()], proveedor);
     await service.procesarEnCurso();
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e1', 'PROCESANDO', {
       estado: 'FALLIDO',
-      error: 'Video borroso',
-      rutaVideo: null,
+      error: 'Fotos borrosas',
+      rutaFotos: null,
     });
-    expect(deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 
   it('si el primer escaneo lanza, el segundo igual se procesa', async () => {
@@ -685,18 +687,18 @@ describe('procesarEnCurso', () => {
       [pendiente({ id: 'e1' }), pendiente({ id: 'e2' })],
       proveedor,
     );
-    deps.videos.leerVideo.mockRejectedValueOnce(new Error('disco'));
-    deps.videos.leerVideo.mockResolvedValue(video());
+    deps.fotos.leerFotos.mockRejectedValueOnce(new Error('disco'));
+    deps.fotos.leerFotos.mockResolvedValue(fotos());
     repo.cambiarEstado.mockRejectedValueOnce(new Error('caída'));
     await service.procesarEnCurso();
     expect(error).toHaveBeenCalled();
     expect(repo.cambiarEstado).toHaveBeenCalledWith(R, 'e2', 'PENDIENTE', expect.anything());
   });
 
-  it('si borrar el video falla, el escaneo igual queda FALLIDO', async () => {
+  it('si borrar las fotos falla, el escaneo igual queda FALLIDO', async () => {
     const proveedor = proveedorFalso({ iniciar: jest.fn().mockRejectedValue(new Error('red')) });
     const { service, repo, deps } = armar([pendiente(), pendiente({ id: 'e2' })], proveedor);
-    deps.videos.borrarVideo.mockRejectedValueOnce(new Error('disco'));
+    deps.fotos.borrarFotos.mockRejectedValueOnce(new Error('disco'));
     await service.procesarEnCurso();
     expect(repo.cambiarEstado).toHaveBeenCalledTimes(2);
   });
@@ -716,7 +718,7 @@ describe('procesarEnCurso', () => {
     const m = montar();
     m.deps.proveedores.buscar = jest.fn().mockReturnValue(simulado);
     m.deps.ahora = () => ahora;
-    m.deps.videos.leerVideo.mockResolvedValue(video());
+    m.deps.fotos.leerFotos.mockResolvedValue(fotos());
     m.deps.modelos.validarGlb.mockImplementation(archivosModelo.validarGlb);
     m.deps.modelos.guardarModelo.mockResolvedValue('/api/uploads/modelos/x.glb');
     const service = createEscaneoService(repo, m.deps as never);
@@ -731,8 +733,8 @@ describe('procesarEnCurso', () => {
     expect(actual).toMatchObject({
       estado: 'EN_REVISION',
       urlModelo: '/api/uploads/modelos/x.glb',
-      rutaVideo: null,
+      rutaFotos: null,
     });
-    expect(m.deps.videos.borrarVideo).toHaveBeenCalledWith('/uploads/escaneos/v.mp4');
+    expect(m.deps.fotos.borrarFotos).toHaveBeenCalledWith('/uploads/escaneos/abc');
   });
 });

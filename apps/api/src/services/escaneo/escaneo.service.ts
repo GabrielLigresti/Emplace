@@ -1,5 +1,6 @@
 import {
-  CRITERIOS,
+  CRITERIOS_FOTO,
+  VISTAS,
   type Escaneo,
   type InformeCalidad,
   type ModeloRaInput,
@@ -7,12 +8,12 @@ import {
 } from '@pgim/shared';
 import { env } from '../../config/env';
 import { estadoDeEscaneo, ESTADOS_ESCANEO_ACTIVOS } from '../../domain/escaneo/escaneo';
-import type { Proveedor3D, ResultadoEscaneo } from '../../escaneo/proveedor-3d';
+import type { FotosEscaneo, Proveedor3D, ResultadoEscaneo } from '../../escaneo/proveedor-3d';
 import { registroProveedores, type RegistroProveedores } from '../../escaneo/registro';
 import * as archivosModelo from '../../lib/archivos-modelo';
-import * as archivosVideo from '../../lib/archivos-video';
+import * as archivosFotos from '../../lib/archivos-fotos';
 import { AppError, esClaveDuplicada } from '../../lib/errors';
-import { formatoVideo, leerMetadatosMp4 } from '../../lib/mp4';
+import { leerDimensionesJpeg } from '../../lib/jpeg';
 import {
   escaneoRepository,
   type EscaneoRepository,
@@ -22,7 +23,7 @@ import { menuRepository, type MenuRepository } from '../../repositories/menu.rep
 
 export interface DependenciasEscaneo {
   menu: Pick<MenuRepository, 'buscarPlato'>;
-  videos: Pick<typeof archivosVideo, 'guardarVideo' | 'leerVideo' | 'borrarVideo'>;
+  fotos: Pick<typeof archivosFotos, 'guardarFotos' | 'leerFotos' | 'borrarFotos'>;
   modelos: Pick<
     typeof archivosModelo,
     'validarGlb' | 'validarUsdz' | 'guardarModelo' | 'borrarModelo'
@@ -32,8 +33,7 @@ export interface DependenciasEscaneo {
   timeoutMin: number;
 }
 
-// Diferencia tolerada entre el informe del navegador y el MP4 que llegó.
-const TOLERANCIA_DURACION_S = 1;
+// Diferencia tolerada entre el informe del navegador y el JPEG que llegó.
 const TOLERANCIA_PX = 2;
 
 const ESCANEO_EN_CURSO = 'Este plato ya tiene un escaneo en curso';
@@ -68,47 +68,63 @@ export function createEscaneoService(repo: EscaneoRepository, deps: Dependencias
     }
   }
 
-  function verificarInforme(informe: InformeCalidad, real: ReturnType<typeof leerMetadatosMp4>) {
-    const m = informe.metadatos;
-    // Lado menor y mayor: el navegador informa la orientación ya rotada y el tkhd no.
-    const difiere =
-      Math.abs(m.duracionS - real.duracionS) > TOLERANCIA_DURACION_S ||
-      Math.abs(Math.min(m.ancho, m.alto) - Math.min(real.ancho, real.alto)) > TOLERANCIA_PX ||
-      Math.abs(Math.max(m.ancho, m.alto) - Math.max(real.ancho, real.alto)) > TOLERANCIA_PX;
-    if (difiere) throw new AppError(422, 'El informe de calidad no corresponde a este video');
+  // El informe tiene que traer las 4 vistas, cada una con los 5 criterios.
+  function informeCompleto(informe: InformeCalidad) {
+    const vistas = informe.fotos.map((f) => f.vista);
+    if (informe.fotos.length !== VISTAS.length || VISTAS.some((v) => !vistas.includes(v))) {
+      return false;
+    }
+    return informe.fotos.every((f) => {
+      const criterios = f.criterios.map((c) => c.criterio);
+      return (
+        criterios.length === CRITERIOS_FOTO.length &&
+        CRITERIOS_FOTO.every((c) => criterios.includes(c))
+      );
+    });
   }
 
-  // Un borrado que falla no revierte el cambio de estado: queda un video huérfano.
-  async function borrarVideo(ruta: string | null) {
-    if (!ruta) return;
-    try {
-      await deps.videos.borrarVideo(ruta);
-    } catch (e) {
-      console.error('No se pudo borrar el video del escaneo', ruta, e);
+  // Cada JPEG tiene que ser legible, cumplir el piso del proveedor y coincidir con el informe.
+  function verificarFotos(fotos: FotosEscaneo, informe: InformeCalidad, ladoMenorMinPx: number) {
+    for (const foto of informe.fotos) {
+      const real = leerDimensionesJpeg(fotos[foto.vista]);
+      const difiere =
+        Math.min(real.ancho, real.alto) < ladoMenorMinPx ||
+        Math.abs(real.ancho - foto.ancho) > TOLERANCIA_PX ||
+        Math.abs(real.alto - foto.alto) > TOLERANCIA_PX;
+      if (difiere) throw new AppError(422, 'El informe de calidad no corresponde a estas fotos');
     }
   }
 
-  // Pasa a FALLIDO con el motivo; el video ya no hace falta y se descarta con la fila.
+  // Un borrado que falla no revierte el cambio de estado: queda una carpeta huérfana.
+  async function borrarFotos(ruta: string | null) {
+    if (!ruta) return;
+    try {
+      await deps.fotos.borrarFotos(ruta);
+    } catch (e) {
+      console.error('No se pudieron borrar las fotos del escaneo', ruta, e);
+    }
+  }
+
+  // Pasa a FALLIDO con el motivo; las fotos ya no hacen falta y se descarta con la fila.
   async function fallar(fila: FilaEscaneo, motivo: string) {
     const estado = estadoDeEscaneo(fila.estado).fallar();
     const cambio = await repo.cambiarEstado(fila.restauranteId, fila.id, fila.estado, {
       estado,
       error: motivo,
-      rutaVideo: null,
+      rutaFotos: null,
     });
-    if (cambio) await borrarVideo(fila.rutaVideo);
+    if (cambio) await borrarFotos(fila.rutaFotos);
   }
 
   async function enviar(fila: FilaEscaneo, proveedor: Proveedor3D) {
     let tareaProveedorId: string;
     try {
-      if (!fila.rutaVideo) throw new Error('El escaneo no tiene video');
-      const video = await deps.videos.leerVideo(fila.rutaVideo);
-      const formato = fila.rutaVideo.toLowerCase().endsWith('.mov') ? 'mov' : 'mp4';
-      tareaProveedorId = await proveedor.iniciar(video, formato);
+      if (!fila.rutaFotos) throw new Error('El escaneo no tiene fotos');
+      const fotos = await deps.fotos.leerFotos(fila.rutaFotos);
+      tareaProveedorId = await proveedor.iniciar(fotos);
     } catch (e) {
-      console.error('No se pudo enviar el video del escaneo', fila.id, e);
-      return fallar(fila, 'No pudimos enviar el video');
+      console.error('No se pudieron enviar las fotos del escaneo', fila.id, e);
+      return fallar(fila, 'No pudimos enviar las fotos');
     }
     const estado = estadoDeEscaneo(fila.estado).enviar();
     await repo.cambiarEstado(fila.restauranteId, fila.id, fila.estado, {
@@ -127,7 +143,7 @@ export function createEscaneoService(repo: EscaneoRepository, deps: Dependencias
     } catch (e) {
       if (e instanceof AppError) {
         console.error('El modelo del escaneo no es válido', fila.id, e);
-        return fallar(fila, 'No pudimos armar el modelo con este video');
+        return fallar(fila, 'No pudimos armar el modelo con estas fotos');
       }
       throw e;
     }
@@ -145,13 +161,13 @@ export function createEscaneoService(repo: EscaneoRepository, deps: Dependencias
         estado,
         urlModelo,
         urlModeloIos,
-        rutaVideo: null,
+        rutaFotos: null,
       });
     } finally {
       // Si algo falló o el escaneo ya cambió de estado, los archivos no los usa nadie.
       if (!cambio) for (const url of guardados) await borrarArchivo(url);
     }
-    if (cambio) await borrarVideo(fila.rutaVideo);
+    if (cambio) await borrarFotos(fila.rutaFotos);
   }
 
   async function consultar(fila: FilaEscaneo, proveedor: Proveedor3D) {
@@ -181,57 +197,46 @@ export function createEscaneoService(repo: EscaneoRepository, deps: Dependencias
       restauranteId: string,
       platoId: string,
       empleadoId: string,
-      video: Buffer,
+      fotos: FotosEscaneo,
       informe: InformeCalidad,
     ): Promise<Escaneo> {
-      if (!(await deps.menu.buscarPlato(restauranteId, platoId))) {
-        throw new AppError(404, 'El plato no existe');
+      const plato = await deps.menu.buscarPlato(restauranteId, platoId);
+      if (!plato) throw new AppError(404, 'El plato no existe');
+      if (plato.diametroCm == null) {
+        throw new AppError(422, 'Cargá el diámetro del plato para escanearlo');
       }
-      const real = leerMetadatosMp4(video);
       // El nivel global lo calcula el navegador: no se le cree si los criterios dicen otra cosa.
-      const informados = new Set(informe.criterios.map((c) => c.criterio));
-      if (
-        informe.criterios.length !== CRITERIOS.length ||
-        CRITERIOS.some((c) => !informados.has(c.id))
-      ) {
+      if (!informeCompleto(informe)) {
         throw new AppError(422, 'El informe de calidad está incompleto');
       }
       if (
         informe.nivelGlobal === 'RECHAZO' ||
-        informe.criterios.some((c) => c.nivel === 'RECHAZO')
+        informe.fotos.some((f) => f.criterios.some((c) => c.nivel === 'RECHAZO'))
       ) {
-        throw new AppError(422, 'El video no pasó la revisión de calidad');
+        throw new AppError(422, 'Las fotos no pasaron la revisión de calidad');
       }
       const proveedor = deps.proveedores.activo();
-      const formato = CRITERIOS.find((c) => c.id === 'FORMATO')!.evaluar(
-        [],
-        real,
-        proveedor.requisitos(),
-      );
-      if (formato.nivel === 'RECHAZO') {
-        throw new AppError(422, formato.mensaje ?? 'El video no cumple el formato requerido');
-      }
-      verificarInforme(informe, real);
+      verificarFotos(fotos, informe, proveedor.requisitos().ladoMenorMinPx);
 
       const ultimo = await repo.ultimoDelPlato(restauranteId, platoId);
       if (ultimo && ESTADOS_ESCANEO_ACTIVOS.includes(ultimo.estado)) {
         throw new AppError(409, ESCANEO_EN_CURSO);
       }
 
-      const rutaVideo = await deps.videos.guardarVideo(video, formatoVideo(video));
+      const rutaFotos = await deps.fotos.guardarFotos(fotos);
       try {
         const fila = await repo.crear({
           restauranteId,
           itemMenuId: platoId,
           empleadoId,
           proveedor: proveedor.nombre,
-          rutaVideo,
+          rutaFotos,
           calidad: informe,
         });
         return aEscaneo(fila);
       } catch (e) {
         // Dos altas simultáneas: el índice único deja pasar una sola.
-        await deps.videos.borrarVideo(rutaVideo);
+        await deps.fotos.borrarFotos(rutaFotos);
         if (esClaveDuplicada(e)) throw new AppError(409, ESCANEO_EN_CURSO);
         throw e;
       }
@@ -280,7 +285,7 @@ export function createEscaneoService(repo: EscaneoRepository, deps: Dependencias
 
 export const escaneoService = createEscaneoService(escaneoRepository, {
   menu: menuRepository,
-  videos: archivosVideo,
+  fotos: archivosFotos,
   modelos: archivosModelo,
   proveedores: registroProveedores,
   ahora: () => new Date(),

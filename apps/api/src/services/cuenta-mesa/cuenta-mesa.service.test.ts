@@ -124,7 +124,7 @@ describe('cuentaMesaService.miMesa: estado de pago de cada pedido', () => {
   });
 
   it('reparte por fecha de creación aunque la lista venga en otro orden', async () => {
-    const desordenados = [tres[2], tres[0]];
+    const desordenados = [tres[2]!, tres[0]!];
     expect(await estados(mesa({ pedidos: desordenados, pagado: 1000 }))).toEqual({
       a: 'PAGADO',
       c: 'PENDIENTE',
