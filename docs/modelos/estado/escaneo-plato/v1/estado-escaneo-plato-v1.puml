@@ -27,11 +27,11 @@ state EN_REVISION
 state PUBLICADO
 state DESCARTADO
 state FALLIDO
-[*] --> PENDIENTE : subir video (permiso "editar menú")\n[informe de calidad sin rechazos\ny formato MP4/MOV válido]\n/ guarda el video
+[*] --> PENDIENTE : enviar fotos (permiso "editar menú")\n[informe de calidad sin rechazos\ny 4 fotos JPEG válidas]\n/ guarda las fotos
 PENDIENTE --> PROCESANDO : enviar (tarea periódica)\n/ el proveedor devuelve el id de la tarea
-PENDIENTE --> FALLIDO : fallar (tarea periódica)\n[error al enviar]\n/ borra el video
-PROCESANDO --> EN_REVISION : completar (tarea periódica)\n[proveedor listo y .glb válido]\n/ guarda el modelo y borra el video
-PROCESANDO --> FALLIDO : fallar (tarea periódica)\n[proveedor falla, .glb inválido\no más de 30 min]\n/ borra el video
+PENDIENTE --> FALLIDO : fallar (tarea periódica)\n[error al enviar]\n/ borra las fotos
+PROCESANDO --> EN_REVISION : completar (tarea periódica)\n[proveedor listo y .glb válido]\n/ guarda el modelo y borra las fotos
+PROCESANDO --> FALLIDO : fallar (tarea periódica)\n[proveedor falla, .glb inválido\no más de 30 min]\n/ borra las fotos
 EN_REVISION --> PUBLICADO : publicar (permiso "editar menú")\n[diámetro y porción]\n/ crea o reemplaza el modelo RA del plato
 EN_REVISION --> DESCARTADO : descartar (permiso "editar menú")\n/ borra el modelo generado
 PUBLICADO --> [*]
