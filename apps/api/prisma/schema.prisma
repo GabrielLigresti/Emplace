@@ -634,17 +634,18 @@ model Categoria {
 }
 
 model ItemMenu {
-  id            String  @id @default(uuid(7)) @db.Uuid
-  restauranteId String  @map("restaurante_id") @db.Uuid
-  categoriaId   String  @map("categoria_id") @db.Uuid
+  id            String   @id @default(uuid(7)) @db.Uuid
+  restauranteId String   @map("restaurante_id") @db.Uuid
+  categoriaId   String   @map("categoria_id") @db.Uuid
   nombre        String
-  descripcion   String? @db.Text
-  precio        Decimal @db.Decimal(12, 2)
-  fotoUrl       String? @map("foto_url")
+  descripcion   String?  @db.Text
+  precio        Decimal  @db.Decimal(12, 2)
+  fotoUrl       String?  @map("foto_url")
+  diametroCm    Decimal? @map("diametro_cm") @db.Decimal(4, 1)
   // Reventa: se vende como viene y descuenta 1 unidad del insumo por porción.
-  insumoId      String? @map("insumo_id") @db.Uuid
-  disponible    Boolean @default(true)
-  activo        Boolean @default(true)
+  insumoId      String?  @map("insumo_id") @db.Uuid
+  disponible    Boolean  @default(true)
+  activo        Boolean  @default(true)
 
   restaurante  Restaurante           @relation(fields: [restauranteId], references: [id])
   categoria    Categoria             @relation(fields: [categoriaId], references: [id])
@@ -686,7 +687,7 @@ model EscaneoPlato {
   estado           EstadoEscaneo @default(PENDIENTE)
   proveedor        String
   tareaProveedorId String?       @map("tarea_proveedor_id")
-  rutaVideo        String?       @map("ruta_video")
+  rutaFotos        String?       @map("ruta_fotos")
   urlModelo        String?       @map("url_modelo")
   urlModeloIos     String?       @map("url_modelo_ios")
   calidad          Json

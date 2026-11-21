@@ -2,16 +2,16 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import request from 'supertest';
-import type { InformeCalidad } from '@pgim/shared';
+import { CRITERIOS_FOTO, VISTAS, type InformeCalidad } from '@pgim/shared';
 
 jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-// Límite chico para probar el 413 sin mandar 100 MB.
+// Límite chico para probar el 413 sin mandar 5 MB.
 jest.mock('@pgim/shared', () => ({
   ...jest.requireActual('@pgim/shared'),
-  LIMITE_VIDEO_MB: 1,
+  LIMITE_FOTO_MB: 1,
 }));
 
 // Las rutas se prueban sin base: el servicio se reemplaza y los casos de negocio
@@ -34,7 +34,7 @@ const { createApp } = require('../app') as typeof import('../app');
 const { cookieConPermisos } =
   require('../test/sesion-falsa') as typeof import('../test/sesion-falsa');
 const { AppError } = require('../lib/errors') as typeof import('../lib/errors');
-const { mp4Falso } = require('../test/mp4-falso') as typeof import('../test/mp4-falso');
+const { jpegFalso } = require('../test/jpeg-falso') as typeof import('../test/jpeg-falso');
 const { escaneoService } = jest.requireMock('../services/escaneo/escaneo.service') as {
   escaneoService: Record<'requisitos' | 'crear' | 'ultimo' | 'publicar' | 'descartar', jest.Mock>;
 };
@@ -43,19 +43,26 @@ const ID = '01900000-0000-7000-8000-000000000011';
 const ESCANEO = { id: ID, platoId: ID, estado: 'PENDIENTE' };
 const EDITAR = ['menu.editar'] as const;
 
-const video = mp4Falso({ ancho: 1920, alto: 1080, duracionS: 20 });
+const foto = jpegFalso(1280, 960);
 
-function informe(mensaje: string | null = null, nivelGlobal: InformeCalidad['nivelGlobal'] = 'OK') {
+function informe(nivelGlobal: InformeCalidad['nivelGlobal'] = 'OK'): InformeCalidad {
   return {
-    version: 1,
+    version: 2,
     nivelGlobal,
-    metadatos: { ancho: 1920, alto: 1080, duracionS: 20 },
-    criterios: [{ criterio: 'NITIDEZ', nivel: nivelGlobal, valor: 1, mensaje }],
+    fotos: VISTAS.map((vista, i) => ({
+      vista,
+      anguloGrados: i * 90,
+      ancho: 1280,
+      alto: 960,
+      criterios: CRITERIOS_FOTO.map((criterio) => ({
+        criterio,
+        nivel: nivelGlobal,
+        valor: 1,
+        mensaje: null,
+      })),
+    })),
   };
 }
-
-const aBase64Url = (texto: string) => Buffer.from(texto, 'utf8').toString('base64url');
-const encabezado = (i: unknown) => aBase64Url(JSON.stringify(i));
 
 describe('modelos RA servidos como estáticos', () => {
   const app = createApp();
@@ -100,18 +107,26 @@ describe('retiro de la subida manual', () => {
 
 describe('POST /api/platos/:id/escaneos', () => {
   const app = createApp();
-  const enviar = (permisos: string[] = [...EDITAR]) =>
-    request(app)
+
+  // Multipart con las vistas indicadas y el informe (por defecto, uno válido).
+  function enviar(
+    opciones: { permisos?: string[]; vistas?: readonly string[]; informe?: string | null } = {},
+  ) {
+    const { permisos = [...EDITAR], vistas = VISTAS, informe: cuerpo } = opciones;
+    const pedido = request(app)
       .post(`/api/platos/${ID}/escaneos`)
-      .set('Cookie', cookieConPermisos(permisos as never))
-      .set('Content-Type', 'application/octet-stream');
+      .set('Cookie', cookieConPermisos(permisos as never));
+    for (const v of vistas)
+      pedido.attach(v, foto, { filename: `${v}.jpg`, contentType: 'image/jpeg' });
+    const texto = cuerpo === undefined ? JSON.stringify(informe()) : cuerpo;
+    if (texto !== null) pedido.field('informe', texto);
+    return pedido;
+  }
 
   beforeEach(() => jest.resetAllMocks());
 
   it('sin menu.editar responde 403', async () => {
-    const res = await enviar(['menu.ver'])
-      .set('X-Calidad-Video', encabezado(informe()))
-      .send(video);
+    const res = await enviar({ permisos: ['menu.ver'] });
 
     expect(res.status).toBe(403);
     expect(escaneoService.crear).not.toHaveBeenCalled();
@@ -120,76 +135,76 @@ describe('POST /api/platos/:id/escaneos', () => {
   it('sin sesión responde 401', async () => {
     const res = await request(app)
       .post(`/api/platos/${ID}/escaneos`)
-      .set('Content-Type', 'application/octet-stream')
-      .set('X-Calidad-Video', encabezado(informe()))
-      .send(video);
+      .attach('front', foto, 'front.jpg')
+      .field('informe', JSON.stringify(informe()));
 
     expect(res.status).toBe(401);
     expect(escaneoService.crear).not.toHaveBeenCalled();
   });
 
-  it('responde 413 si el video supera el límite', async () => {
-    const res = await enviar()
-      .set('X-Calidad-Video', encabezado(informe()))
-      .send(Buffer.alloc(1024 * 1024 + 1));
+  it('crea el escaneo con el empleado de la sesión y las 4 fotos', async () => {
+    escaneoService.crear.mockResolvedValue(ESCANEO);
+
+    const res = await enviar();
+
+    expect(res.status).toBe(201);
+    expect(res.body.estado).toBe('PENDIENTE');
+    const [restauranteId, platoId, empleadoId, fotos, enviado] =
+      escaneoService.crear.mock.calls[0]!;
+    expect(restauranteId).toEqual(expect.any(String));
+    expect(platoId).toBe(ID);
+    expect(empleadoId).toEqual(expect.any(String));
+    expect(Object.keys(fotos).sort()).toEqual([...VISTAS].sort());
+    for (const v of VISTAS) expect(Buffer.isBuffer(fotos[v])).toBe(true);
+    expect(enviado).toEqual(informe());
+  });
+
+  it('con solo la foto front responde 400 "Faltan fotos"', async () => {
+    const res = await enviar({ vistas: ['front'] });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Faltan fotos');
+    expect(escaneoService.crear).not.toHaveBeenCalled();
+  });
+
+  it('responde 413 si una foto supera el límite', async () => {
+    const pedido = request(app)
+      .post(`/api/platos/${ID}/escaneos`)
+      .set('Cookie', cookieConPermisos([...EDITAR]));
+    for (const v of VISTAS) {
+      pedido.attach(v, v === 'back' ? Buffer.alloc(1024 * 1024 + 1) : foto, `${v}.jpg`);
+    }
+    pedido.field('informe', JSON.stringify(informe()));
+
+    const res = await pedido;
 
     expect(res.status).toBe(413);
     expect(escaneoService.crear).not.toHaveBeenCalled();
   });
 
-  it('crea el escaneo con el empleado de la sesión', async () => {
-    escaneoService.crear.mockResolvedValue(ESCANEO);
+  it('rechaza una foto en un campo que no es una vista', async () => {
+    const res = await enviar().attach('extra', foto, 'extra.jpg');
 
-    const res = await enviar().set('X-Calidad-Video', encabezado(informe())).send(video);
-
-    expect(res.status).toBe(201);
-    expect(res.body.estado).toBe('PENDIENTE');
-    const [restauranteId, platoId, empleadoId, cuerpo, enviado] =
-      escaneoService.crear.mock.calls[0]!;
-    expect(restauranteId).toEqual(expect.any(String));
-    expect(platoId).toBe(ID);
-    expect(empleadoId).toEqual(expect.any(String));
-    expect(Buffer.isBuffer(cuerpo)).toBe(true);
-    expect(enviado).toEqual(informe());
-  });
-
-  it('decodifica un informe con tildes y "ñ" en un mensaje', async () => {
-    escaneoService.crear.mockResolvedValue(ESCANEO);
-    const conTildes = informe('Más luz: el plato está oscuro y borroso, probá otra vez');
-
-    const res = await enviar().set('X-Calidad-Video', encabezado(conTildes)).send(video);
-
-    expect(res.status).toBe(201);
-    expect(escaneoService.crear.mock.calls[0]![4]).toEqual(conTildes);
-  });
-
-  it.each([
-    ['falta', undefined],
-    ['no es base64', '%%%'],
-    ['no es JSON', aBase64Url('esto no es json')],
-    ['no es un informe', aBase64Url('{"version":2}')],
-  ])('si el encabezado %s responde 422 y no 500', async (_caso, valor) => {
-    const pedido = enviar();
-    if (valor !== undefined) pedido.set('X-Calidad-Video', valor);
-
-    const res = await pedido.send(video);
-
-    expect(res.status).toBe(422);
-    expect(res.body.error).toBe('Falta el informe de calidad del video');
+    expect(res.status).toBe(400);
     expect(escaneoService.crear).not.toHaveBeenCalled();
   });
 
-  it('con el cuerpo vacío responde 400', async () => {
-    const res = await enviar().set('X-Calidad-Video', encabezado(informe())).send(Buffer.alloc(0));
+  it.each([
+    ['falta', null],
+    ['no es JSON', 'esto no es json'],
+    ['no es un informe', '{"version":1}'],
+  ])('si el informe %s responde 422 y no 500', async (_caso, valor) => {
+    const res = await enviar({ informe: valor });
 
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('Falta el video');
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('Falta el informe de calidad de las fotos');
+    expect(escaneoService.crear).not.toHaveBeenCalled();
   });
 
   it('responde 404 si el plato es de otro restaurante', async () => {
     escaneoService.crear.mockRejectedValue(new AppError(404, 'El plato no existe'));
 
-    const res = await enviar().set('X-Calidad-Video', encabezado(informe())).send(video);
+    const res = await enviar();
 
     expect(res.status).toBe(404);
   });
@@ -199,21 +214,26 @@ describe('POST /api/platos/:id/escaneos', () => {
       new AppError(409, 'Este plato ya tiene un escaneo en curso'),
     );
 
-    const res = await enviar().set('X-Calidad-Video', encabezado(informe())).send(video);
+    expect((await enviar()).status).toBe(409);
+  });
 
-    expect(res.status).toBe(409);
+  it('responde 422 si el plato no tiene diámetro', async () => {
+    escaneoService.crear.mockRejectedValue(
+      new AppError(422, 'Cargá el diámetro del plato para escanearlo'),
+    );
+
+    const res = await enviar();
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('Cargá el diámetro del plato para escanearlo');
   });
 
   it('responde 422 si el informe es un rechazo', async () => {
     escaneoService.crear.mockRejectedValue(
-      new AppError(422, 'El video no pasó la revisión de calidad'),
+      new AppError(422, 'Las fotos no pasaron la revisión de calidad'),
     );
 
-    const res = await enviar()
-      .set('X-Calidad-Video', encabezado(informe('Muy oscuro', 'RECHAZO')))
-      .send(video);
-
-    expect(res.status).toBe(422);
+    expect((await enviar({ informe: JSON.stringify(informe('RECHAZO')) })).status).toBe(422);
   });
 });
 

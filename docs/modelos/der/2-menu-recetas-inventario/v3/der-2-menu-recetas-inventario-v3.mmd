@@ -10,7 +10,7 @@ erDiagram
     ITEM_MENU ||--o| MODELO_RA : se_visualiza_con
     ITEM_MENU ||--o{ ESCANEO_PLATO : se_escanea_con
     RESTAURANTE ||--o{ ESCANEO_PLATO : escanea
-    EMPLEADO ||--o{ ESCANEO_PLATO : sube_video
+    EMPLEADO ||--o{ ESCANEO_PLATO : escanea
     ITEM_MENU |o--o| RECETA : se_prepara_con
     COMPONENTE_INVENTARIO |o--o{ ITEM_MENU : se_revende_como
     COMPONENTE_INVENTARIO |o--o| RECETA : intermedio_se_elabora_con
@@ -55,6 +55,7 @@ erDiagram
         numeric precio
         varchar foto_url "null si no tiene foto"
         uuid insumo_id FK "reventa: se vende como viene, 1 unidad por porcion; null si no"
+        numeric diametro_cm "null si no se cargo; obligatorio para escanear"
         bool disponible
         bool activo
     }
@@ -70,14 +71,14 @@ erDiagram
         uuid id PK
         uuid restaurante_id FK
         uuid item_menu_id FK "unico entre PENDIENTE, PROCESANDO y EN_REVISION (indice parcial)"
-        uuid empleado_id FK "quien subio el video"
+        uuid empleado_id FK "quien escaneo"
         EstadoEscaneo estado "PENDIENTE | PROCESANDO | EN_REVISION | PUBLICADO | DESCARTADO | FALLIDO"
         varchar proveedor "adaptador que lo procesa (simulado, ...)"
         varchar tarea_proveedor_id "null hasta PROCESANDO"
-        varchar ruta_video "archivo privado; null una vez borrado"
+        varchar ruta_fotos "carpeta privada; null una vez borrada"
         varchar url_modelo "glb generado; null hasta EN_REVISION"
         varchar url_modelo_ios "usdz generado; null si el proveedor no lo devuelve"
-        jsonb calidad "informe de calidad del video"
+        jsonb calidad "informe de calidad de las fotos"
         varchar error "null si no fallo"
         timestamptz creado_en
         timestamptz actualizado_en

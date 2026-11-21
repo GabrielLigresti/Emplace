@@ -24,4 +24,5 @@ export * from './pago';
 export * from './apertura';
 export * from './metrica';
 export * from './cuenta';
-export * from './calidad-video';
+export * from './calidad-fotos';
+export * from './geometria-escaneo';

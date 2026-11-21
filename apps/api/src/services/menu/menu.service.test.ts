@@ -41,6 +41,7 @@ const platoBase: Plato = {
   reventa: null,
   modeloRa: null,
   escaneo: null,
+  diametroCm: null,
 };
 
 const conModelo: Plato = {
@@ -331,5 +332,67 @@ describe('menuService.subirFoto', () => {
       createMenuService(repo, archivosFalsos(), fotos).subirFoto(R, 'otro', Buffer.from('x')),
     ).rejects.toMatchObject({ status: 404 });
     expect(fotos.guardarFoto).not.toHaveBeenCalled();
+  });
+});
+
+describe('diámetro del plato', () => {
+  it('crear guarda el diámetro', async () => {
+    const repo = repoFalso();
+    repo.crearPlato.mockResolvedValue({ ...platoBase, diametroCm: 26 });
+
+    const creado = await createMenuService(repo).crearPlato(R, { ...plato, diametroCm: 26 });
+
+    expect(repo.crearPlato).toHaveBeenCalledWith(R, expect.objectContaining({ diametroCm: 26 }));
+    expect(creado.diametroCm).toBe(26);
+  });
+
+  it('actualizar acepta diametroCm null', async () => {
+    const repo = repoFalso();
+    repo.buscarPlato.mockResolvedValue({ ...platoBase, diametroCm: 26 });
+    repo.actualizarPlato.mockResolvedValue({ ...platoBase, diametroCm: null });
+
+    const actualizado = await createMenuService(repo).actualizarPlato(R, 'bife', {
+      ...plato,
+      diametroCm: null,
+    });
+
+    expect(repo.actualizarPlato).toHaveBeenCalledWith(
+      R,
+      'bife',
+      expect.objectContaining({ diametroCm: null }),
+    );
+    expect(actualizado.diametroCm).toBeNull();
+  });
+
+  it('el esquema rechaza un diámetro de 61 cm', () => {
+    const r = platoInputSchema.safeParse({
+      ...plato,
+      categoriaId: crypto.randomUUID(),
+      diametroCm: 61,
+    });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0]?.message).toBe('El diámetro tiene que estar entre 1 y 60 cm');
+  });
+
+  it.each([0.04, 0.5, 25.35])('el esquema rechaza el diámetro %s', (diametroCm) => {
+    const r = platoInputSchema.safeParse({
+      ...plato,
+      categoriaId: crypto.randomUUID(),
+      diametroCm,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it('el esquema acepta diámetros con un decimal, como 25,3 cm', () => {
+    const base = { ...plato, categoriaId: crypto.randomUUID() };
+    expect(platoInputSchema.safeParse({ ...base, diametroCm: 25.3 }).success).toBe(true);
+    expect(platoInputSchema.safeParse({ ...base, diametroCm: 1 }).success).toBe(true);
+  });
+
+  it('el esquema acepta un diámetro de 26 cm, null o sin dato', () => {
+    const base = { ...plato, categoriaId: crypto.randomUUID() };
+    expect(platoInputSchema.safeParse({ ...base, diametroCm: 26 }).success).toBe(true);
+    expect(platoInputSchema.safeParse({ ...base, diametroCm: null }).success).toBe(true);
+    expect(platoInputSchema.safeParse(base).success).toBe(true);
   });
 });

@@ -1,8 +1,10 @@
-import type { UmbralesCalidad } from '@pgim/shared';
-import type { FormatoVideo } from '../lib/mp4';
+import type { UmbralesCalidad, VistaEscaneo } from '@pgim/shared';
 
-// Un proveedor convierte el video de un plato en un modelo 3D. El servicio
+// Un proveedor convierte las 4 fotos de un plato en un modelo 3D. El servicio
 // del escaneo lo usa solo a través de esta interfaz.
+
+// Una foto JPEG por vista.
+export type FotosEscaneo = Record<VistaEscaneo, Buffer>;
 
 export type ResultadoEscaneo =
   | { estado: 'EN_PROCESO' }
@@ -11,9 +13,9 @@ export type ResultadoEscaneo =
 
 export interface Proveedor3D {
   readonly nombre: string;
-  // Lo que le exige al video para poder procesarlo.
+  // Lo que le exige a las fotos para poder procesarlo.
   requisitos(): UmbralesCalidad;
-  // Envía el video y devuelve el id de la tarea en el proveedor.
-  iniciar(video: Buffer, formato: FormatoVideo): Promise<string>;
+  // Envía las fotos y devuelve el id de la tarea en el proveedor.
+  iniciar(fotos: FotosEscaneo): Promise<string>;
   consultar(tareaId: string): Promise<ResultadoEscaneo>;
 }

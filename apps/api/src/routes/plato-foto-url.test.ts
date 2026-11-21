@@ -41,3 +41,25 @@ describe('PUT /api/platos/:id: fotoUrl', () => {
     expect((await guardar('https://ejemplo.com/bife.jpg')).status).toBe(200);
   });
 });
+
+describe('PUT /api/platos/:id: diametroCm', () => {
+  const app = createApp();
+
+  it('sin menu.editar responde 403', async () => {
+    const res = await request(app)
+      .put(`/api/platos/${ID}`)
+      .set('Cookie', cookieConPermisos(['menu.ver']))
+      .send({ ...datos, diametroCm: 26 });
+    expect(res.status).toBe(403);
+  });
+
+  it('con menu.editar acepta el diámetro y rechaza uno de 61 cm con 400', async () => {
+    const guardar = (diametroCm: number) =>
+      request(app)
+        .put(`/api/platos/${ID}`)
+        .set('Cookie', cookieConPermisos(['menu.editar']))
+        .send({ ...datos, diametroCm });
+    expect((await guardar(26)).status).toBe(200);
+    expect((await guardar(61)).status).toBe(400);
+  });
+});

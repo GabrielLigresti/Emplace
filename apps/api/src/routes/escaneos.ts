@@ -1,26 +1,7 @@
 import { Router } from 'express';
-import {
-  idParamSchema,
-  informeCalidadSchema,
-  modeloRaInputSchema,
-  type InformeCalidad,
-  type ModeloRaInput,
-} from '@pgim/shared';
-import { AppError } from '../lib/errors';
+import { idParamSchema, modeloRaInputSchema, type ModeloRaInput } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
 import { escaneoService } from '../services/escaneo/escaneo.service';
-
-// El informe viaja en un encabezado (el video ocupa el cuerpo): JSON en UTF-8
-// codificado en base64url. Cualquier fallo al leerlo es el mismo 422.
-export function leerInformeCalidad(valor: string | undefined): InformeCalidad {
-  try {
-    if (!valor) throw new Error('sin encabezado');
-    const json = Buffer.from(valor, 'base64url').toString('utf8');
-    return informeCalidadSchema.parse(JSON.parse(json));
-  } catch {
-    throw new AppError(422, 'Falta el informe de calidad del video');
-  }
-}
 
 export const escaneosRouter = Router();
 

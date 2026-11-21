@@ -1,4 +1,4 @@
-import { API_PREFIX, type InformeCalidad } from '@pgim/shared';
+import { API_PREFIX, VISTAS, type InformeCalidad, type VistaEscaneo } from '@pgim/shared';
 
 export class ApiError extends Error {
   constructor(
@@ -31,18 +31,17 @@ export async function subirArchivo<T>(ruta: string, archivo: Blob) {
   return leerRespuesta<T>(res);
 }
 
-// Sube el video de un escaneo (POST binario). El informe de calidad viaja en el
-// encabezado X-Calidad-Video: JSON en UTF-8 codificado en base64url, sin relleno.
-export async function enviarVideo<T>(ruta: string, archivo: Blob, informe: InformeCalidad) {
-  const bytes = new TextEncoder().encode(JSON.stringify(informe));
-  let binario = '';
-  for (const b of bytes) binario += String.fromCharCode(b);
-  const codificado = btoa(binario).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const res = await fetch(`${API_PREFIX}${ruta}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/octet-stream', 'X-Calidad-Video': codificado },
-    body: archivo,
-  });
+// Sube las 4 fotos de un escaneo (multipart): un archivo por vista, con el nombre de
+// campo de la vista, y el informe de calidad como JSON en el campo `informe`.
+export async function enviarFotos<T>(
+  ruta: string,
+  fotos: Record<VistaEscaneo, Blob>,
+  informe: InformeCalidad,
+) {
+  const datos = new FormData();
+  for (const vista of VISTAS) datos.append(vista, fotos[vista], `${vista}.jpg`);
+  datos.append('informe', JSON.stringify(informe));
+  const res = await fetch(`${API_PREFIX}${ruta}`, { method: 'POST', body: datos });
   return leerRespuesta<T>(res);
 }
 

@@ -1,6 +1,9 @@
 import express, { Router, type RequestHandler } from 'express';
+import multer from 'multer';
 import {
-  LIMITE_VIDEO_MB,
+  LIMITE_FOTO_MB,
+  VISTAS,
+  informeCalidadSchema,
   categoriaInputSchema,
   idParamSchema,
   menuInputSchema,
@@ -12,10 +15,11 @@ import {
   type ModeloRaInput,
   type PlatoInput,
 } from '@pgim/shared';
+import { AppError } from '../lib/errors';
+import type { FotosEscaneo } from '../escaneo/proveedor-3d';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
 import { escaneoService } from '../services/escaneo/escaneo.service';
 import { menuService } from '../services/menu/menu.service';
-import { leerInformeCalidad } from './escaneos';
 
 // Categorías, platos y menús comparten los permisos menu.* (el Jefe de cocina tiene el ABM completo).
 
@@ -130,31 +134,51 @@ platosRouter.put(
   },
 );
 
-// Escaneo del plato: el video llega como cuerpo binario y el informe de calidad
-// del navegador en el encabezado X-Calidad-Video.
-const archivoVideo = express.raw({
-  type: 'application/octet-stream',
-  limit: `${LIMITE_VIDEO_MB}mb`,
-});
+// Escaneo del plato: 4 fotos JPEG (una por vista) y el informe de calidad del
+// navegador, en un multipart. Todo queda en memoria hasta que el servicio lo valida.
+const subirFotos = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: LIMITE_FOTO_MB * 1024 * 1024, files: VISTAS.length, fields: 1 },
+}).fields(VISTAS.map((name) => ({ name, maxCount: 1 })));
 
-// El encabezado se valida antes de leer el cuerpo: un pedido sin informe no sube nada.
-const informeDelEncabezado: RequestHandler = (req, res, next) => {
-  res.locals.informe = leerInformeCalidad(req.header('X-Calidad-Video'));
-  next();
+const recibirFotos: RequestHandler = (req, res, next) => {
+  subirFotos(req, res, (err?: unknown) => {
+    if (err instanceof multer.MulterError) {
+      next(
+        err.code === 'LIMIT_FILE_SIZE'
+          ? new AppError(413, `Cada foto puede pesar hasta ${LIMITE_FOTO_MB} MB`)
+          : new AppError(400, 'Las fotos del escaneo no son válidas'),
+      );
+      return;
+    }
+    next(err);
+  });
 };
+
+function leerInforme(valor: unknown): InformeCalidad {
+  try {
+    if (typeof valor !== 'string') throw new Error('sin informe');
+    return informeCalidadSchema.parse(JSON.parse(valor));
+  } catch {
+    throw new AppError(422, 'Falta el informe de calidad de las fotos');
+  }
+}
 
 platosRouter.post(
   '/:id/escaneos',
   requierePermiso('menu.editar'),
   validarParams(idParamSchema),
-  informeDelEncabezado,
-  archivoVideo,
+  recibirFotos,
   async (req, res) => {
-    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
-      res.status(400).json({ error: 'Falta el video' });
+    const archivos = (req.files ?? {}) as Record<string, Express.Multer.File[] | undefined>;
+    if (VISTAS.some((v) => !archivos[v]?.[0] || archivos[v][0].size === 0)) {
+      res.status(400).json({ error: 'Faltan fotos' });
       return;
     }
-    const informe = res.locals.informe as InformeCalidad;
+    const informe = leerInforme((req.body as Record<string, unknown> | undefined)?.informe);
+    const fotos = Object.fromEntries(
+      VISTAS.map((v) => [v, archivos[v]![0]!.buffer]),
+    ) as FotosEscaneo;
     res
       .status(201)
       .json(
@@ -162,7 +186,7 @@ platosRouter.post(
           req.tenant!.restauranteId,
           req.params.id as string,
           req.sesion!.usuario.id,
-          req.body,
+          fotos,
           informe,
         ),
       );

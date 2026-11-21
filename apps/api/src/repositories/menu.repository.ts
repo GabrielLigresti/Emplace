@@ -70,6 +70,7 @@ const seleccionPlato = {
   descripcion: true,
   precio: true,
   fotoUrl: true,
+  diametroCm: true,
   disponible: true,
   activo: true,
   categoria: { select: { id: true, nombre: true, requiereReceta: true } },
@@ -89,6 +90,7 @@ function aPlato({ receta, insumo, modeloRa, escaneos, ...fila }: FilaPlato): Pla
     escaneo: escaneos[0] ?? null,
     modeloRa: modeloRa && { ...modeloRa, escalaReal: Number(modeloRa.escalaReal) },
     precio: Number(fila.precio),
+    diametroCm: fila.diametroCm === null ? null : Number(fila.diametroCm),
     tieneReceta: receta !== null,
     sinReceta: fila.categoria.requiereReceta && receta === null && insumo === null,
     reventa: insumo,
@@ -101,6 +103,8 @@ function columnasPlato(datos: PlatoInput) {
     nombre: datos.nombre,
     descripcion: datos.descripcion || null,
     precio: datos.precio,
+    // Sin el dato, el diámetro queda como estaba.
+    ...(datos.diametroCm !== undefined && { diametroCm: datos.diametroCm }),
     // Sin el dato, la foto queda como estaba (la subida desde la computadora
     // ya la guardó); vacía o null, se quita.
     ...(datos.fotoUrl !== undefined && { fotoUrl: datos.fotoUrl || null }),
