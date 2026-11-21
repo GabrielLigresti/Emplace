@@ -6,7 +6,7 @@ import {
   type FormEvent,
   type ReactNode,
 } from 'react';
-import { Box, Camera, Check, Loader } from 'lucide-react';
+import { Box, Camera, Check, Eye, Loader } from 'lucide-react';
 import {
   VISTAS,
   escalaPorDiametro,
@@ -17,12 +17,15 @@ import {
   type UmbralesCalidad,
   type VistaEscaneo,
 } from '@pgim/shared';
+import { CapaRa } from '../../components/CapaRa';
 import { useConfirmar } from '../../components/Confirmacion';
 import { Aviso, Boton, Campo, Etiqueta, Modal, Vacio, claseInput } from '../../components/ui';
 import { ApiError, api, enviarFotos } from '../../lib/api';
+import { formatoCantidad } from '../../lib/formato';
 import type { ProgresoEscaneo } from '../../lib/escaneo-webxr';
 import { useEscaneo } from '../../lib/useEscaneo';
 import { useModelViewer } from '../../lib/useModelViewer';
+import { useSesionRa } from '../../lib/useSesionRa';
 import { InformeCalidad, NOMBRES_VISTA } from './InformeCalidad';
 
 type Modo = 'inicio' | 'escaneando' | 'fotos';
@@ -70,20 +73,28 @@ function Pie({ children }: { children: ReactNode }) {
 // Vista previa del modelo. model-viewer 4.4 tira un error si se cambia el modelo
 // en vivo, así que la clave remonta el visor. Las medidas se leen con escala 1
 // al terminar de cargar: la escala real sale del diámetro que indica el restaurante.
+// Con `ra` (el borrador, ya medido) aparece "Ver en mi mesa" si el dispositivo tiene RA:
+// la propia de lib/ra-webxr en Android, o la de model-viewer (Quick Look o Scene Viewer).
 function Vista({
   src,
   nombre,
   borrador,
   onMedidas,
+  ra,
 }: {
   src: string;
   nombre: string;
   borrador?: boolean;
   onMedidas(d: Dimensiones): void;
+  ra?: { escalaReal: number; urlModeloIos: string | null; porcion?: string } | null;
 }) {
   const listo = useModelViewer();
   const visor = useRef<HTMLElementTagNameMap['model-viewer']>(null);
   const alMedir = useRef(onMedidas);
+  const { webXR, sesion, diagnostico, capa, abrir, salir } = useSesionRa();
+  const [puedeVerRa, setPuedeVerRa] = useState(false);
+  const [falloRa, setFalloRa] = useState(false);
+  const conRa = borrador === true;
   useEffect(() => {
     alMedir.current = onMedidas;
   });
@@ -100,30 +111,113 @@ function Vista({
     return () => el.removeEventListener('load', leer);
   }, [src, listo]);
 
+  // Sin WebXR, la RA la abre model-viewer; se muestra el botón solo si el dispositivo puede.
+  useEffect(() => {
+    const el = visor.current;
+    if (!conRa || !el || webXR !== false) return;
+    let vigente = true;
+    // El atributo `ar` se activa recién cuando se sabe que no hay WebXR: se espera a que
+    // model-viewer lo procese antes de leer canActivateAR.
+    const leer = () => {
+      void el.updateComplete.then(() => {
+        if (vigente) setPuedeVerRa(el.canActivateAR);
+      });
+    };
+    leer();
+    el.addEventListener('load', leer);
+    el.addEventListener('ar-status', leer);
+    return () => {
+      vigente = false;
+      el.removeEventListener('load', leer);
+      el.removeEventListener('ar-status', leer);
+    };
+  }, [conRa, webXR, src, listo]);
+
+  async function verEnMiMesa() {
+    if (!ra) return;
+    setFalloRa(false);
+    if (webXR) {
+      if (!(await abrir({ urlModelo: src, escalaReal: ra.escalaReal }))) setFalloRa(true);
+      return;
+    }
+    const el = visor.current;
+    if (!el) return;
+    // Al terminar la RA se restaura la escala, para no dejar la vista previa escalada ni
+    // leer medidas escaladas. En Scene Viewer y en Quick Look con ios-src la escala no se
+    // aplica (limitación conocida, igual que en el comensal).
+    const restaurar = (e: Event) => {
+      const estado = (e as CustomEvent<{ status: string }>).detail?.status;
+      if (estado !== 'not-presenting' && estado !== 'failed') return;
+      el.scale = '1 1 1';
+      el.removeEventListener('ar-status', restaurar);
+    };
+    el.addEventListener('ar-status', restaurar);
+    el.scale = `${ra.escalaReal} ${ra.escalaReal} ${ra.escalaReal}`;
+    try {
+      await el.activateAR();
+    } catch {
+      el.scale = '1 1 1';
+      el.removeEventListener('ar-status', restaurar);
+      setFalloRa(true);
+    }
+  }
+
+  const mostrarBoton = conRa && ra && (webXR === true || (webXR === false && puedeVerRa));
+
   return (
-    <div className="relative">
-      {listo ? (
-        <model-viewer
-          key={src}
-          ref={visor}
-          src={src}
-          alt={`Vista previa de ${nombre}`}
-          camera-controls
-          touch-action="pan-y"
-          style={{
-            width: '100%',
-            height: '16rem',
-            background: 'var(--color-panel)',
-            borderRadius: 10,
-          }}
-        />
-      ) : (
-        <div className="h-64 rounded-control bg-panel" />
+    <div className="space-y-3">
+      <div className="relative">
+        {listo ? (
+          <model-viewer
+            key={src}
+            ref={visor}
+            src={src}
+            ios-src={conRa ? (ra?.urlModeloIos ?? undefined) : undefined}
+            alt={`Vista previa de ${nombre}`}
+            ar={conRa && webXR === false}
+            ar-modes="quick-look scene-viewer"
+            ar-scale="fixed"
+            camera-controls
+            touch-action="pan-y"
+            style={{
+              width: '100%',
+              height: '16rem',
+              background: 'var(--color-panel)',
+              borderRadius: 10,
+            }}
+          >
+            {/* Oculta el botón por defecto de model-viewer: la única entrada es "Ver en mi mesa". */}
+            <button slot="ar-button" hidden />
+          </model-viewer>
+        ) : (
+          <div className="h-64 rounded-control bg-panel" />
+        )}
+        {borrador && (
+          <span className="absolute left-2 top-2">
+            <Etiqueta tono="warn">Borrador</Etiqueta>
+          </span>
+        )}
+      </div>
+      {mostrarBoton && (
+        <Boton variante="secundario" onClick={() => void verEnMiMesa()} disabled={sesion !== null}>
+          <Eye aria-hidden className="size-4" />
+          {sesion === 'abriendo' ? 'Abriendo…' : 'Ver en mi mesa'}
+        </Boton>
       )}
-      {borrador && (
-        <span className="absolute left-2 top-2">
-          <Etiqueta tono="warn">Borrador</Etiqueta>
-        </span>
+      {falloRa && (
+        <Aviso tono="bad">
+          No se pudo abrir la cámara para verlo en la mesa. Revisá el permiso e intentá de nuevo.
+        </Aviso>
+      )}
+      {conRa && (
+        <CapaRa
+          capa={capa}
+          sesion={sesion}
+          nombre={nombre}
+          porcion={ra?.porcion}
+          diagnostico={diagnostico}
+          alSalir={salir}
+        />
       )}
     </div>
   );
@@ -450,6 +544,20 @@ export function EscaneoModal({
     </Aviso>
   );
 
+  // "Ver en mi mesa" del borrador: a la escala que se guarda al publicar, cuando ya hay medidas.
+  const raBorrador =
+    escaneo?.urlModelo && plato.diametroCm !== null && medidasVista
+      ? {
+          escalaReal: escalaPorDiametro(
+            plato.diametroCm,
+            medidasVista.ancho,
+            medidasVista.profundidad,
+          ),
+          urlModeloIos: escaneo.urlModeloIos ?? null,
+          ...(porcionValida && { porcion: formatoCantidad(gramosPorcion, 'GRAMO') }),
+        }
+      : null;
+
   const textoTamano =
     plato.diametroCm === null
       ? MENSAJE_SIN_DIAMETRO
@@ -527,6 +635,7 @@ export function EscaneoModal({
                 nombre={plato.nombre}
                 borrador
                 onMedidas={setMedidas}
+                ra={raBorrador}
               />
             )}
             <p className="text-sm text-meta">{textoTamano}</p>
