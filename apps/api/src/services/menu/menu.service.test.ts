@@ -104,6 +104,7 @@ function repoFalso(categoria: Categoria | null = principales): jest.Mocked<MenuR
     contarPromociones: jest.fn().mockResolvedValue(0),
     crearMenu: jest.fn(),
     actualizarMenu: jest.fn(),
+    agregarPlatoAMenu: jest.fn(),
     borrarMenu: jest.fn(),
   };
 }
@@ -165,6 +166,37 @@ describe('menuService', () => {
       status: 400,
     });
     expect(repo.crearMenu).not.toHaveBeenCalled();
+  });
+
+  it('suma un plato activo al menú sin reenviar la lista', async () => {
+    const repo = repoFalso();
+    repo.contarPlatosActivos.mockResolvedValue(1);
+
+    await createMenuService(repo).agregarPlatoAMenu(R, 'primavera', 'milanesa');
+
+    expect(repo.contarPlatosActivos).toHaveBeenCalledWith(R, ['milanesa']);
+    expect(repo.agregarPlatoAMenu).toHaveBeenCalledWith(R, 'primavera', 'milanesa');
+    expect(repo.actualizarMenu).not.toHaveBeenCalled();
+  });
+
+  it('no suma un plato dado de baja o de otro restaurante', async () => {
+    const repo = repoFalso();
+    repo.contarPlatosActivos.mockResolvedValue(0);
+
+    await expect(
+      createMenuService(repo).agregarPlatoAMenu(R, 'primavera', 'milanesa'),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repo.agregarPlatoAMenu).not.toHaveBeenCalled();
+  });
+
+  it('no suma un plato a un menú que no existe', async () => {
+    const repo = repoFalso();
+    repo.buscarMenu.mockResolvedValue(null);
+
+    await expect(
+      createMenuService(repo).agregarPlatoAMenu(R, 'otro', 'milanesa'),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(repo.agregarPlatoAMenu).not.toHaveBeenCalled();
   });
 
   it('no borra un menú activo en alguna sucursal', async () => {

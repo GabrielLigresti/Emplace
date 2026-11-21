@@ -7,7 +7,7 @@ import {
   type CategoriaInput,
   type Insumo,
   type Menu,
-  type MenuInput,
+  type AgregarPlatoMenu,
   type Plato,
   type PlatoInput,
 } from '@pgim/shared';
@@ -44,8 +44,12 @@ export function PlatosPage() {
   const [plato, setPlato] = useState<Plato | 'nuevo' | null>(null);
   const [categoria, setCategoria] = useState<Categoria | 'nueva' | null>(null);
   const [modelo, setModelo] = useState<Plato | null>(null);
-  // Plato recién creado al que se le ofrece sumarse a un menú.
+  // Plato recién creado al que se le ofrece sumarse a un menú. Los menús se
+  // cargan con la pantalla para que la consulta aparezca enseguida.
   const [platoParaMenu, setPlatoParaMenu] = useState<Plato | null>(null);
+  const menus = useRecurso<Menu[]>(tienePermiso('menu.editar') ? '/menus' : null);
+  const hoy = hoyArgentina();
+  const actuales = menusActuales(menus.datos, hoy);
   const baja = useGuardar();
 
   function recargarTodo() {
@@ -237,12 +241,18 @@ export function PlatosPage() {
           onGuardado={(guardado, esNuevo) => {
             setPlato(null);
             recargarTodo();
-            if (esNuevo && tienePermiso('menu.editar')) setPlatoParaMenu(guardado);
+            if (esNuevo && actuales.length > 0) setPlatoParaMenu(guardado);
           }}
         />
       )}
-      {platoParaMenu && (
-        <AgregarAMenu plato={platoParaMenu} onCerrar={() => setPlatoParaMenu(null)} />
+      {platoParaMenu && actuales.length > 0 && (
+        <AgregarAMenu
+          plato={platoParaMenu}
+          menus={actuales}
+          hoy={hoy}
+          onRecargarMenus={menus.recargar}
+          onCerrar={() => setPlatoParaMenu(null)}
+        />
       )}
       {modelo && (
         <EscaneoModal
@@ -491,79 +501,76 @@ function FormularioPlato({
   );
 }
 
-// Después de crear un plato se ofrece sumarlo a un menú que no esté vencido.
-// Cancelar lo deja creado, sin menú. Los menús se piden recién acá porque
-// guardar uno reemplaza su lista de platos completa.
-function AgregarAMenu({ plato, onCerrar }: { plato: Plato; onCerrar(): void }) {
-  const menus = useRecurso<Menu[]>('/menus');
-  const platos = useRecurso<Plato[]>('/platos');
+// Menús a los que todavía tiene sentido sumar un plato: vigentes o por empezar.
+function menusActuales(menus: Menu[] | null, hoy: string) {
+  return menus?.filter((m) => estaVigente(m, hoy) || m.vigenciaDesde > hoy) ?? [];
+}
+
+// Después de crear un plato se ofrece sumarlo a uno de los menús actuales.
+// Cancelar lo deja creado, sin menú. El alta solo agrega el plato, así que no
+// pisa cambios que otro haya hecho en la lista del menú.
+function AgregarAMenu({
+  plato,
+  menus,
+  hoy,
+  onRecargarMenus,
+  onCerrar,
+}: {
+  plato: Plato;
+  menus: Menu[];
+  hoy: string;
+  onRecargarMenus(): void;
+  onCerrar(): void;
+}) {
   const [menuId, setMenuId] = useState('');
   const { enviar, enviando, error } = useGuardar();
-  const hoy = hoyArgentina();
-  const actuales = menus.datos?.filter((m) => estaVigente(m, hoy) || m.vigenciaDesde > hoy);
-
-  // Sin menús a los que sumarlo, no hay nada que preguntar.
-  useEffect(() => {
-    if (actuales?.length === 0) onCerrar();
-  }, [actuales?.length, onCerrar]);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const menu = actuales?.find((m) => m.id === menuId);
-    if (!menu || !platos.datos) return;
-    // La API solo acepta platos activos: los dados de baja se quitan, como al editar el menú.
-    const activos = new Set(platos.datos.filter((p) => p.activo).map((p) => p.id));
-    const datos: MenuInput = {
-      nombre: menu.nombre,
-      descripcion: menu.descripcion,
-      vigenciaDesde: menu.vigenciaDesde,
-      vigenciaHasta: menu.vigenciaHasta,
-      platoIds: [...new Set([...menu.platoIds.filter((id) => activos.has(id)), plato.id])],
-    };
-    if (await enviar(`/menus/${menu.id}`, 'PUT', datos)) onCerrar();
+    const datos: AgregarPlatoMenu = { platoId: plato.id };
+    if (await enviar(`/menus/${menuId}/platos`, 'POST', datos)) {
+      onRecargarMenus();
+      onCerrar();
+    } else {
+      // El menú pudo cambiar o borrarse mientras tanto: la lista se actualiza.
+      onRecargarMenus();
+    }
   }
-
-  // Mientras cargan (o si no hay menús) no se muestra nada; un error sí se muestra.
-  const fallo = menus.error ?? platos.error;
-  if (!fallo && !actuales?.length) return null;
 
   return (
     <Modal titulo="¿Querés cargar el nuevo plato a algún menú?" onCerrar={onCerrar}>
       <form onSubmit={onSubmit} className="space-y-4">
-        <Aviso>{fallo}</Aviso>
-        {actuales && actuales.length > 0 && (
-          <fieldset className="grid gap-1">
-            <legend className="mb-1 text-sm text-meta">
-              Elegí el menú para {plato.nombre}. Si cancelás, el plato queda creado sin menú.
-            </legend>
-            {actuales.map((m) => (
-              <label key={m.id} className="flex min-h-12 items-center gap-3 text-sm text-text">
-                <input
-                  type="radio"
-                  name="menu"
-                  checked={menuId === m.id}
-                  onChange={() => setMenuId(m.id)}
-                  className="size-5 shrink-0 accent-accent"
-                />
-                <span>
-                  <span className="font-medium text-ink">{m.nombre}</span>
-                  <span className="block text-meta">
-                    {estaVigente(m, hoy) ? 'Vigente' : `Desde el ${formatoFecha(m.vigenciaDesde)}`}
-                    {m.vigenciaHasta && ` · hasta el ${formatoFecha(m.vigenciaHasta)}`}
-                    {m.sucursalesActivas.length > 0 &&
-                      ` · activo en ${formatoLista(m.sucursalesActivas.map((s) => s.nombre))}`}
-                  </span>
+        <fieldset className="grid gap-1">
+          <legend className="mb-1 text-sm text-meta">
+            Elegí el menú para {plato.nombre}. Si cancelás, el plato queda creado sin menú.
+          </legend>
+          {menus.map((m) => (
+            <label key={m.id} className="flex min-h-12 items-center gap-3 text-sm text-text">
+              <input
+                type="radio"
+                name="menu"
+                checked={menuId === m.id}
+                onChange={() => setMenuId(m.id)}
+                className="size-5 shrink-0 accent-accent"
+              />
+              <span>
+                <span className="font-medium text-ink">{m.nombre}</span>
+                <span className="block text-meta">
+                  {estaVigente(m, hoy) ? 'Vigente' : `Desde el ${formatoFecha(m.vigenciaDesde)}`}
+                  {m.vigenciaHasta && ` · hasta el ${formatoFecha(m.vigenciaHasta)}`}
+                  {m.sucursalesActivas.length > 0 &&
+                    ` · activo en ${formatoLista(m.sucursalesActivas.map((s) => s.nombre))}`}
                 </span>
-              </label>
-            ))}
-          </fieldset>
-        )}
+              </span>
+            </label>
+          ))}
+        </fieldset>
         <Aviso>{error}</Aviso>
         <div className="flex justify-end gap-2">
           <Boton variante="secundario" onClick={onCerrar}>
             Cancelar
           </Boton>
-          <Boton type="submit" disabled={!menuId || !platos.datos || enviando}>
+          <Boton type="submit" disabled={!menus.some((m) => m.id === menuId) || enviando}>
             {enviando ? 'Guardando…' : 'Aceptar'}
           </Boton>
         </div>

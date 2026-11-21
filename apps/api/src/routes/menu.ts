@@ -2,6 +2,7 @@ import express, { Router, type RequestHandler } from 'express';
 import multer from 'multer';
 import {
   LIMITE_FOTO_MB,
+  agregarPlatoMenuSchema,
   VISTAS,
   informeCalidadSchema,
   categoriaInputSchema,
@@ -9,6 +10,7 @@ import {
   menuInputSchema,
   modeloRaInputSchema,
   platoInputSchema,
+  type AgregarPlatoMenu,
   type CategoriaInput,
   type InformeCalidad,
   type MenuInput,
@@ -253,6 +255,23 @@ menusRouter.put(
         req.tenant!.restauranteId,
         req.params.id as string,
         req.body as MenuInput,
+      ),
+    );
+  },
+);
+
+menusRouter.post(
+  '/:id/platos',
+  requierePermiso('menu.editar'),
+  validarParams(idParamSchema),
+  validar(agregarPlatoMenuSchema),
+  async (req, res) => {
+    const { platoId } = req.body as AgregarPlatoMenu;
+    res.json(
+      await menuService.agregarPlatoAMenu(
+        req.tenant!.restauranteId,
+        req.params.id as string,
+        platoId,
       ),
     );
   },

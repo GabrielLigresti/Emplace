@@ -111,6 +111,11 @@ export const menuInputSchema = z
 
 export type MenuInput = z.infer<typeof menuInputSchema>;
 
+// Suma un plato a un menú sin tocar el resto de su lista.
+export const agregarPlatoMenuSchema = z.object({ platoId: z.uuid() });
+
+export type AgregarPlatoMenu = z.infer<typeof agregarPlatoMenuSchema>;
+
 export interface Vigencia {
   vigenciaDesde: string;
   vigenciaHasta: string | null;
