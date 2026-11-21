@@ -27,7 +27,14 @@ export function useSesionRa() {
   }, []);
 
   // Si se sale de la página con la RA abierta, se cierra la sesión.
-  useEffect(() => () => salir.current?.(), []);
+  const montado = useRef(true);
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+      salir.current?.();
+    };
+  }, []);
 
   // Devuelve false si no se pudo abrir (por ejemplo, se negó el permiso de la cámara).
   async function abrir(modelo: { urlModelo: string; escalaReal: number }): Promise<boolean> {
@@ -35,7 +42,7 @@ export function useSesionRa() {
     setSesion('abriendo');
     try {
       const { iniciarRa } = await import('./ra-webxr');
-      salir.current = await iniciarRa({
+      const cerrar = await iniciarRa({
         urlModelo: modelo.urlModelo,
         escalaReal: modelo.escalaReal,
         overlay: capa.current,
@@ -46,6 +53,12 @@ export function useSesionRa() {
           setSesion(null);
         },
       });
+      // Si se desmontó mientras se esperaba, la sesión recién abierta se cierra enseguida.
+      if (!montado.current) {
+        cerrar();
+        return true;
+      }
+      salir.current = cerrar;
       return true;
     } catch {
       setSesion(null);

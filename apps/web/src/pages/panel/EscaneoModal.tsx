@@ -93,6 +93,7 @@ function Vista({
   const alMedir = useRef(onMedidas);
   const { webXR, sesion, diagnostico, capa, abrir, salir } = useSesionRa();
   const [puedeVerRa, setPuedeVerRa] = useState(false);
+  const [falloRa, setFalloRa] = useState(false);
   const conRa = borrador === true;
   useEffect(() => {
     alMedir.current = onMedidas;
@@ -114,11 +115,19 @@ function Vista({
   useEffect(() => {
     const el = visor.current;
     if (!conRa || !el || webXR !== false) return;
-    const leer = () => setPuedeVerRa(el.canActivateAR);
+    let vigente = true;
+    // El atributo `ar` se activa recién cuando se sabe que no hay WebXR: se espera a que
+    // model-viewer lo procese antes de leer canActivateAR.
+    const leer = () => {
+      void el.updateComplete.then(() => {
+        if (vigente) setPuedeVerRa(el.canActivateAR);
+      });
+    };
     leer();
     el.addEventListener('load', leer);
     el.addEventListener('ar-status', leer);
     return () => {
+      vigente = false;
       el.removeEventListener('load', leer);
       el.removeEventListener('ar-status', leer);
     };
@@ -126,14 +135,31 @@ function Vista({
 
   async function verEnMiMesa() {
     if (!ra) return;
+    setFalloRa(false);
     if (webXR) {
-      await abrir({ urlModelo: src, escalaReal: ra.escalaReal });
+      if (!(await abrir({ urlModelo: src, escalaReal: ra.escalaReal }))) setFalloRa(true);
       return;
     }
     const el = visor.current;
     if (!el) return;
+    // Al terminar la RA se restaura la escala, para no dejar la vista previa escalada ni
+    // leer medidas escaladas. En Scene Viewer y en Quick Look con ios-src la escala no se
+    // aplica (limitación conocida, igual que en el comensal).
+    const restaurar = (e: Event) => {
+      const estado = (e as CustomEvent<{ status: string }>).detail?.status;
+      if (estado !== 'not-presenting' && estado !== 'failed') return;
+      el.scale = '1 1 1';
+      el.removeEventListener('ar-status', restaurar);
+    };
+    el.addEventListener('ar-status', restaurar);
     el.scale = `${ra.escalaReal} ${ra.escalaReal} ${ra.escalaReal}`;
-    await el.activateAR();
+    try {
+      await el.activateAR();
+    } catch {
+      el.scale = '1 1 1';
+      el.removeEventListener('ar-status', restaurar);
+      setFalloRa(true);
+    }
   }
 
   const mostrarBoton = conRa && ra && (webXR === true || (webXR === false && puedeVerRa));
@@ -159,7 +185,10 @@ function Vista({
               background: 'var(--color-panel)',
               borderRadius: 10,
             }}
-          />
+          >
+            {/* Oculta el botón por defecto de model-viewer: la única entrada es "Ver en mi mesa". */}
+            <button slot="ar-button" hidden />
+          </model-viewer>
         ) : (
           <div className="h-64 rounded-control bg-panel" />
         )}
@@ -174,6 +203,11 @@ function Vista({
           <Eye aria-hidden className="size-4" />
           {sesion === 'abriendo' ? 'Abriendo…' : 'Ver en mi mesa'}
         </Boton>
+      )}
+      {falloRa && (
+        <Aviso tono="bad">
+          No se pudo abrir la cámara para verlo en la mesa. Revisá el permiso e intentá de nuevo.
+        </Aviso>
       )}
       {conRa && (
         <CapaRa
