@@ -1,6 +1,16 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router';
-import type { Categoria, CategoriaInput, Insumo, Plato, PlatoInput } from '@pgim/shared';
+import {
+  estaVigente,
+  hoyArgentina,
+  type Categoria,
+  type CategoriaInput,
+  type Insumo,
+  type Menu,
+  type AgregarPlatoMenu,
+  type Plato,
+  type PlatoInput,
+} from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { Lista } from '../../components/Lista';
 import {
@@ -17,7 +27,7 @@ import {
   propsDecimal,
 } from '../../components/ui';
 import { ApiError, subirArchivo } from '../../lib/api';
-import { aNumero, formatoPesos } from '../../lib/formato';
+import { aNumero, formatoFecha, formatoLista, formatoPesos } from '../../lib/formato';
 import { useGuardar } from '../../lib/useGuardar';
 import { useRecurso } from '../../lib/useRecurso';
 import { EscaneoModal } from './EscaneoModal';
@@ -34,6 +44,12 @@ export function PlatosPage() {
   const [plato, setPlato] = useState<Plato | 'nuevo' | null>(null);
   const [categoria, setCategoria] = useState<Categoria | 'nueva' | null>(null);
   const [modelo, setModelo] = useState<Plato | null>(null);
+  // Plato recién creado al que se le ofrece sumarse a un menú. Los menús se
+  // cargan con la pantalla para que la consulta aparezca enseguida.
+  const [platoParaMenu, setPlatoParaMenu] = useState<Plato | null>(null);
+  const menus = useRecurso<Menu[]>(tienePermiso('menu.editar') ? '/menus' : null);
+  const hoy = hoyArgentina();
+  const actuales = menusActuales(menus.datos, hoy);
   const baja = useGuardar();
 
   function recargarTodo() {
@@ -222,10 +238,20 @@ export function PlatosPage() {
           plato={plato === 'nuevo' ? null : plato}
           categorias={categorias.datos}
           onCerrar={() => setPlato(null)}
-          onGuardado={() => {
+          onGuardado={(guardado, esNuevo) => {
             setPlato(null);
             recargarTodo();
+            if (esNuevo && actuales.length > 0) setPlatoParaMenu(guardado);
           }}
+        />
+      )}
+      {platoParaMenu && actuales.length > 0 && (
+        <AgregarAMenu
+          plato={platoParaMenu}
+          menus={actuales}
+          hoy={hoy}
+          onRecargarMenus={menus.recargar}
+          onCerrar={() => setPlatoParaMenu(null)}
         />
       )}
       {modelo && (
@@ -275,7 +301,7 @@ function FormularioPlato({
   plato: Plato | null;
   categorias: Categoria[];
   onCerrar(): void;
-  onGuardado(): void;
+  onGuardado(guardado: Plato, esNuevo: boolean): void;
 }) {
   const [categoriaId, setCategoriaId] = useState(plato?.categoria.id ?? '');
   const [nombre, setNombre] = useState(plato?.nombre ?? '');
@@ -333,9 +359,9 @@ function FormularioPlato({
       ...(plato && { activo }),
     };
     const respuesta = plato
-      ? await enviar(`/platos/${plato.id}`, 'PUT', datos)
-      : await enviar('/platos', 'POST', datos);
-    if (respuesta) onGuardado();
+      ? await enviar<Plato>(`/platos/${plato.id}`, 'PUT', datos)
+      : await enviar<Plato>('/platos', 'POST', datos);
+    if (respuesta) onGuardado(respuesta.datos, !plato);
   }
 
   return (
@@ -470,6 +496,84 @@ function FormularioPlato({
 
         <Aviso>{error}</Aviso>
         <Acciones onCerrar={onCerrar} enviando={enviando} />
+      </form>
+    </Modal>
+  );
+}
+
+// Menús a los que todavía tiene sentido sumar un plato: vigentes o por empezar.
+function menusActuales(menus: Menu[] | null, hoy: string) {
+  return menus?.filter((m) => estaVigente(m, hoy) || m.vigenciaDesde > hoy) ?? [];
+}
+
+// Después de crear un plato se ofrece sumarlo a uno de los menús actuales.
+// Cancelar lo deja creado, sin menú. El alta solo agrega el plato, así que no
+// pisa cambios que otro haya hecho en la lista del menú.
+function AgregarAMenu({
+  plato,
+  menus,
+  hoy,
+  onRecargarMenus,
+  onCerrar,
+}: {
+  plato: Plato;
+  menus: Menu[];
+  hoy: string;
+  onRecargarMenus(): void;
+  onCerrar(): void;
+}) {
+  const [menuId, setMenuId] = useState('');
+  const { enviar, enviando, error } = useGuardar();
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const datos: AgregarPlatoMenu = { platoId: plato.id };
+    if (await enviar(`/menus/${menuId}/platos`, 'POST', datos)) {
+      onRecargarMenus();
+      onCerrar();
+    } else {
+      // El menú pudo cambiar o borrarse mientras tanto: la lista se actualiza.
+      onRecargarMenus();
+    }
+  }
+
+  return (
+    <Modal titulo="¿Querés cargar el nuevo plato a algún menú?" onCerrar={onCerrar}>
+      <form onSubmit={onSubmit} className="space-y-4">
+        <fieldset className="grid gap-1">
+          <legend className="mb-1 text-sm text-meta">
+            Elegí el menú para {plato.nombre}. Si cancelás, el plato queda creado sin menú.
+          </legend>
+          {menus.map((m) => (
+            <label key={m.id} className="flex min-h-12 items-center gap-3 text-sm text-text">
+              <input
+                type="radio"
+                name="menu"
+                checked={menuId === m.id}
+                onChange={() => setMenuId(m.id)}
+                className="size-5 shrink-0 accent-accent"
+              />
+              <span>
+                <span className="font-medium text-ink">{m.nombre}</span>
+                <span className="block text-meta">
+                  {estaVigente(m, hoy) ? 'Vigente' : `Desde el ${formatoFecha(m.vigenciaDesde)}`}
+                  {m.vigenciaHasta && ` · hasta el ${formatoFecha(m.vigenciaHasta)}`}
+                  {m.sucursalesActivas.length > 0 &&
+                    ` · activo en ${formatoLista(m.sucursalesActivas.map((s) => s.nombre))}`}
+                </span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <Aviso>{error}</Aviso>
+        <div className="flex justify-end gap-2">
+          <Boton variante="secundario" onClick={onCerrar}>
+            Cancelar
+          </Boton>
+          <Boton type="submit" disabled={!menus.some((m) => m.id === menuId) || enviando}>
+            {enviando ? 'Guardando…' : 'Aceptar'}
+          </Boton>
+        </div>
       </form>
     </Modal>
   );

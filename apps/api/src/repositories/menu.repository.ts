@@ -47,6 +47,7 @@ export interface MenuRepository {
   contarPromociones(restauranteId: string, menuId: string): Promise<number>;
   crearMenu(restauranteId: string, datos: MenuInput): Promise<Menu>;
   actualizarMenu(restauranteId: string, id: string, datos: MenuInput): Promise<Menu>;
+  agregarPlatoAMenu(restauranteId: string, id: string, platoId: string): Promise<Menu>;
   borrarMenu(restauranteId: string, id: string): Promise<void>;
 }
 
@@ -334,6 +335,17 @@ export const menuRepository: MenuRepository = {
         ...columnasMenu(datos),
         items: { deleteMany: {}, create: itemsMenu(datos.platoIds) },
       },
+      select: seleccionMenu,
+    });
+    return aMenu(fila);
+  },
+
+  // Inserta solo el vínculo: el resto de la lista queda como está aunque otro
+  // usuario la haya cambiado. Si el plato ya estaba, no hace nada.
+  async agregarPlatoAMenu(restauranteId, id, platoId) {
+    const fila = await prisma.menu.update({
+      where: { id, restauranteId },
+      data: { items: { createMany: { data: [{ itemMenuId: platoId }], skipDuplicates: true } } },
       select: seleccionMenu,
     });
     return aMenu(fila);

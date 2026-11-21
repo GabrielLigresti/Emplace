@@ -168,6 +168,14 @@ export function createMenuService(
       return repo.actualizarMenu(restauranteId, id, await normalizarMenu(restauranteId, datos, id));
     },
 
+    async agregarPlatoAMenu(restauranteId: string, id: string, platoId: string) {
+      await obtenerMenu(restauranteId, id);
+      if ((await repo.contarPlatosActivos(restauranteId, [platoId])) !== 1) {
+        throw new AppError(400, 'Solo se pueden sumar al menú platos activos del restaurante');
+      }
+      return repo.agregarPlatoAMenu(restauranteId, id, platoId);
+    },
+
     // La tabla no tiene baja lógica: se borra solo si nada lo usa.
     async borrarMenu(restauranteId: string, id: string) {
       const menu = await obtenerMenu(restauranteId, id);
