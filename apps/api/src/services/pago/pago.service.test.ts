@@ -94,8 +94,22 @@ describe('pagoService.pagar', () => {
     expect(servicio.urlDePago('p1')).toBe('https://mp/pagar');
   });
 
+  it('al quedar pendiente publica PAGO_REGISTRADO', async () => {
+    const { servicio, eventos } = armar();
+    await servicio.pagar('c', 'cm', INPUT);
+    expect(eventos).toEqual([
+      {
+        tipo: 'PAGO_REGISTRADO',
+        pagoId: 'p1',
+        cuentaMesaId: 'cm',
+        sucursalId: 's',
+        comensalId: 'c',
+      },
+    ]);
+  });
+
   it('un pago de $0 se aprueba sin pasar por la pasarela', async () => {
-    const { servicio, repo, pasarela } = armar();
+    const { servicio, repo, pasarela, eventos } = armar();
     repo.crearPendiente.mockResolvedValue({
       resultado: 'CREADO',
       pagoId: 'p1',
@@ -111,6 +125,7 @@ describe('pagoService.pagar', () => {
       estado: 'APROBADO',
       referenciaExterna: 'SIN-COBRO-p1',
     });
+    expect(eventos.map((e) => e.tipo)).not.toContain('PAGO_REGISTRADO');
   });
 
   it('con la pasarela simulada se aprueba al instante', async () => {

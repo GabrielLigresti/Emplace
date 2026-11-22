@@ -47,6 +47,14 @@ export type EventoDominio =
       // Nombres de las recompensas que este pago dejó listas para usar.
       desbloqueados: string[];
     }
+  // Pago creado que quedó PENDIENTE en Mercado Pago: solo avisa a Pagos del día.
+  | {
+      tipo: 'PAGO_REGISTRADO';
+      pagoId: string;
+      cuentaMesaId: string;
+      sucursalId: string;
+      comensalId: string;
+    }
   | {
       tipo: 'PAGO_RECHAZADO';
       pagoId: string;

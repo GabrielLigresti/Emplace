@@ -193,12 +193,17 @@ export function Estado({
   entidad,
   valor,
   publico,
+  etiqueta: otraEtiqueta,
 }: {
   entidad: EntidadConEstado;
   valor: string;
   publico?: Publico;
+  // Reemplaza el texto del estado sin cambiar su tono ni su ícono.
+  etiqueta?: string;
 }) {
-  const { etiqueta, tono, icono: Icono, gira } = infoEstado(entidad, valor, publico);
+  const info = infoEstado(entidad, valor, publico);
+  const { tono, icono: Icono, gira } = info;
+  const etiqueta = otraEtiqueta ?? info.etiqueta;
   return (
     <span className={`${claseEtiqueta} ${CLASES_TONO[tono]}`}>
       <Icono

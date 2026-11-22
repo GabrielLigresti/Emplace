@@ -234,9 +234,16 @@ describe('notificadores', () => {
       sucursalId: 'S',
       comensalId: 'C',
     };
+    const pagoRegistrado = {
+      tipo: 'PAGO_REGISTRADO' as const,
+      pagoId: 'P',
+      cuentaMesaId: 'M',
+      sucursalId: 'S',
+      comensalId: 'C',
+    };
     const publicar = async (
       sockets: ReturnType<typeof socketDe>[],
-      pago: typeof pagoAprobado | typeof pagoRechazado = pagoAprobado,
+      pago: typeof pagoAprobado | typeof pagoRechazado | typeof pagoRegistrado = pagoAprobado,
     ) => {
       const { io } = ioFalso();
       io.in.mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue(sockets) });
@@ -265,6 +272,12 @@ describe('notificadores', () => {
     it('un pago rechazado también se avisa', async () => {
       const conPago = socketDe(sesionDe('EMPLEADO', ['pago.ver']));
       await publicar([conPago], pagoRechazado);
+      expect(conPago.emit).toHaveBeenCalledWith('pagos:cambio');
+    });
+
+    it('un pago nuevo pendiente también se avisa', async () => {
+      const conPago = socketDe(sesionDe('EMPLEADO', ['pago.ver']));
+      await publicar([conPago], pagoRegistrado);
       expect(conPago.emit).toHaveBeenCalledWith('pagos:cambio');
     });
   });

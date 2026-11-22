@@ -21,6 +21,7 @@ describe('resumirPagosDelDia', () => {
       cobrado: 0,
       aprobados: 0,
       rechazados: 0,
+      enCurso: 0,
       porMetodo: { TARJETA: 0, BILLETERA_VIRTUAL: 0, SIN_METODO: 0 },
     });
   });
@@ -36,7 +37,22 @@ describe('resumirPagosDelDia', () => {
       cobrado: 3500.5,
       aprobados: 3,
       rechazados: 1,
+      enCurso: 0,
       porMetodo: { TARJETA: 1500, BILLETERA_VIRTUAL: 2000.5, SIN_METODO: 0 },
+    });
+  });
+
+  it('cuenta los pendientes como en curso, sin sumarlos al cobrado', () => {
+    const r = resumirPagosDelDia([
+      pago({ monto: 1500, metodo: 'TARJETA' }),
+      pago({ monto: 4000, metodo: null, estado: 'PENDIENTE' }),
+    ]);
+    expect(r).toEqual({
+      cobrado: 1500,
+      aprobados: 1,
+      rechazados: 0,
+      enCurso: 1,
+      porMetodo: { TARJETA: 1500, BILLETERA_VIRTUAL: 0, SIN_METODO: 0 },
     });
   });
 
