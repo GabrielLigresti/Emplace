@@ -5,7 +5,8 @@ import { prisma } from '../lib/prisma';
 
 // Consulta de solo lectura de CU-23. `fecha` es AAAA-MM-DD de Argentina.
 export interface PagosDelDiaRepository {
-  // Pagos APROBADO y RECHAZADO de la sucursal en ese día, el más nuevo primero.
+  // Pagos de la sucursal en ese día, en cualquier estado, el más nuevo primero.
+  // Un pendiente dura poco: la tarea de vencimiento lo resuelve a los 15 + 3 min.
   delDia(restauranteId: string, sucursalId: string, fecha: string): Promise<PagoDelDia[]>;
 }
 
@@ -13,7 +14,6 @@ export const pagosDelDiaRepository: PagosDelDiaRepository = {
   async delDia(restauranteId, sucursalId, fecha) {
     const filas = await prisma.pago.findMany({
       where: {
-        estado: { in: ['APROBADO', 'RECHAZADO'] },
         fecha: { gte: inicioDeDiaArgentina(fecha), lt: inicioDeDiaArgentina(sumarDias(fecha, 1)) },
         cuentaMesa: { reserva: { sucursalId, sucursal: { restauranteId } } },
       },
@@ -36,7 +36,7 @@ export const pagosDelDiaRepository: PagosDelDiaRepository = {
       comensalNombre: f.comensal.nombre,
       monto: Number(f.monto),
       metodo: f.metodo,
-      estado: f.estado as 'APROBADO' | 'RECHAZADO',
+      estado: f.estado,
       comprobanteNumero: f.comprobante?.numero ?? null,
     }));
   },

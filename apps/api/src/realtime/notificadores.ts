@@ -101,6 +101,7 @@ export function registrarNotificadores(io: Pick<Server, 'to' | 'in'>, bus: BusEv
       }
       // "Pagos del día" es solo para quien tiene pago.ver: el aviso no lleva datos
       // y va únicamente a los sockets de la sucursal cuya sesión lo tiene.
+      case 'PAGO_REGISTRADO':
       case 'PAGO_APROBADO':
       case 'PAGO_RECHAZADO': {
         const { sucursalId } = evento;

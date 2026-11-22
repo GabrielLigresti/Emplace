@@ -176,6 +176,13 @@ export function createPagoService(
         return { pagoId: r.pagoId, urlPago: null };
       }
       urls.set(r.pagoId, inicio.urlPago);
+      bus.publicar({
+        tipo: 'PAGO_REGISTRADO',
+        pagoId: r.pagoId,
+        cuentaMesaId,
+        sucursalId: r.sucursalId,
+        comensalId,
+      });
       return { pagoId: r.pagoId, urlPago: inicio.urlPago };
     },
 
