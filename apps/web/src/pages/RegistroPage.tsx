@@ -4,6 +4,7 @@ import { ApiError } from '../lib/api';
 import { destinoTrasLogin, useSesion } from '../auth/SesionProvider';
 import { BotonGoogle } from '../auth/BotonGoogle';
 import { Cargando } from '../components/Cargando';
+import { useTemaStaff } from '../lib/useTemaStaff';
 
 const claseCampo =
   'w-full rounded-control border border-control min-h-11 bg-surface px-3 text-[16px] sm:min-h-9 sm:text-sm focus:border-accent focus:outline-none';
@@ -11,6 +12,7 @@ const claseCampo =
 // Registro simple de comensal. Al terminar vuelve a donde lo mandó el login
 // (por ejemplo, el menú de la sucursal que abrió con el QR).
 export function RegistroPage() {
+  useTemaStaff();
   const { sesion, cargando, registrar, loginConGoogle } = useSesion();
   const navigate = useNavigate();
   const { state } = useLocation();
