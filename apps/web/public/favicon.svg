@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .trazo { fill: none; stroke: #201f1d; stroke-width: 2.6; stroke-linecap: round; }
+    @media (prefers-color-scheme: dark) { .trazo { stroke: #f3f2f2; } }
+  </style>
+  <circle cx="16" cy="8" r="2.6" fill="#b68235" />
+  <path class="trazo" d="M6.5 21 A9.5 9.5 0 0 1 25.5 21" />
+  <path class="trazo" d="M3.5 22.5 H28.5" />
+  <path class="trazo" d="M8 27 H24" />
+</svg>
