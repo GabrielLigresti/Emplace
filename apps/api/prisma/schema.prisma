@@ -287,6 +287,8 @@ model Sucursal {
   nombre              String
   direccion           String
   barrio              Barrio
+  // Foto del buscador; null si no tiene.
+  fotoUrl             String?  @map("foto_url")
   horarioApertura     DateTime @map("horario_apertura") @db.Time(0)
   horarioCierre       DateTime @map("horario_cierre") @db.Time(0)
   toleranciaNoShowMin Int      @map("tolerancia_no_show_min")

@@ -11,7 +11,13 @@ export type BusquedaQuery = z.infer<typeof busquedaQuerySchema>;
 
 export interface ResultadoBusqueda {
   restaurante: { id: string; nombre: string };
-  sucursal: { id: string; nombre: string; direccion: string; barrio: Barrio };
+  sucursal: {
+    id: string;
+    nombre: string;
+    direccion: string;
+    barrio: Barrio;
+    fotoUrl: string | null;
+  };
   // Hasta 3 platos del menú a la vista que coinciden con el texto buscado.
   platosCoincidentes: string[];
 }

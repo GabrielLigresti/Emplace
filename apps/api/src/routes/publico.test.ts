@@ -19,7 +19,13 @@ const ID = '01900000-0000-7000-8000-000000000011';
 
 const RESULTADO = {
   restaurante: { id: ID, nombre: 'Demo' },
-  sucursal: { id: ID, nombre: 'Centro', direccion: 'Calle 1', barrio: 'SAN_NICOLAS' },
+  sucursal: {
+    id: ID,
+    nombre: 'Centro',
+    direccion: 'Calle 1',
+    barrio: 'SAN_NICOLAS',
+    fotoUrl: '/fotos/centro.webp',
+  },
   platosCoincidentes: ['Milanesa'],
 };
 
@@ -71,6 +77,7 @@ describe('/api/publico', () => {
     expect(Object.keys(res.body[0].sucursal).sort()).toEqual([
       'barrio',
       'direccion',
+      'fotoUrl',
       'id',
       'nombre',
     ]);
