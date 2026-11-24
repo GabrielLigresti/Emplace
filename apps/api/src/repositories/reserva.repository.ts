@@ -19,6 +19,8 @@ export interface FilaReserva {
   id: string;
   sucursalId: string;
   sucursalNombre: string;
+  restauranteId: string;
+  restauranteNombre: string;
   comensalId: string;
   mesaId: string;
   mesaNumero: number;
@@ -134,7 +136,13 @@ export const seleccionReserva = {
   cantidadPersonas: true,
   modoAsignacion: true,
   estado: true,
-  sucursal: { select: { nombre: true, toleranciaNoShowMin: true } },
+  sucursal: {
+    select: {
+      nombre: true,
+      toleranciaNoShowMin: true,
+      restaurante: { select: { id: true, nombre: true } },
+    },
+  },
   mesa: { select: { numero: true } },
 } satisfies Prisma.ReservaSelect;
 
@@ -144,6 +152,8 @@ export function aFilaReserva({ sucursal, mesa, ...fila }: Fila): FilaReserva {
   return {
     ...fila,
     sucursalNombre: sucursal.nombre,
+    restauranteId: sucursal.restaurante.id,
+    restauranteNombre: sucursal.restaurante.nombre,
     mesaNumero: mesa.numero,
     toleranciaNoShowMin: sucursal.toleranciaNoShowMin,
   };

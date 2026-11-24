@@ -60,6 +60,7 @@ export type ModoAsignacion = 'MANUAL' | 'AUTOMATICA';
 
 export interface ReservaComensal {
   id: string;
+  restaurante: Referencia;
   sucursal: Referencia;
   mesa: { id: string; numero: number };
   inicio: string;
