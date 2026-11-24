@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 export type EstadoSesion = 'abriendo' | 'buscando' | 'apuntando' | 'colocado';
 
 // Sesión de RA propia (WebXR, ver lib/ra-webxr) compartida por el visor del comensal
-// y la vista previa del borrador en el panel. `capa` es el overlay que se renderiza
+// y la vista previa del modelo en el panel. `capa` es el overlay que se renderiza
 // con <CapaRa>; `webXR` es null hasta saber si el dispositivo la soporta.
 export function useSesionRa() {
   const [webXR, setWebXR] = useState<boolean | null>(null);
