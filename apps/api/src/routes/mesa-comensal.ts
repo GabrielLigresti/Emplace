@@ -8,10 +8,10 @@ import {
   type PedidoInput,
 } from '@pgim/shared';
 import { validar, validarParams } from '../middleware/auth';
-import { beneficiosComensalService } from '../services/beneficios-comensal.service';
-import { cuentaMesaService } from '../services/cuenta-mesa.service';
-import { pagoService } from '../services/pago.service';
-import { pedidoService } from '../services/pedido.service';
+import { beneficiosComensalService } from '../services/beneficios-comensal/beneficios-comensal.service';
+import { cuentaMesaService } from '../services/cuenta-mesa/cuenta-mesa.service';
+import { pagoService } from '../services/pago/pago.service';
+import { pedidoService } from '../services/pedido/pedido.service';
 
 // CU-04 del lado del comensal: pedidos de su mesa, "Mi mesa" y el pago. Se monta con
 // autenticar → soloTipo('COMENSAL').

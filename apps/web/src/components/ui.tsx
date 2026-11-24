@@ -9,7 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { TriangleAlert, CircleCheck, X, type LucideIcon } from 'lucide-react';
+import { TriangleAlert, CircleCheck, Info, X, type LucideIcon } from 'lucide-react';
 import { infoEstado, type EntidadConEstado, type Publico, type Tono } from '../lib/estados';
 
 // Piezas visuales comunes. Los colores salen de los tokens de index.css.
@@ -84,7 +84,9 @@ export function Campo({
   const id = useId();
   const idAyuda = `${id}-ayuda`;
   const idError = `${id}-error`;
-  const descripcion = [ayuda && idAyuda, error && idError].filter(Boolean).join(' ');
+  // Respeta la descripción que ya traiga el control (por ejemplo, un texto fuera del campo).
+  const propia = isValidElement(children) ? children.props['aria-describedby'] : undefined;
+  const descripcion = [propia, ayuda && idAyuda, error && idError].filter(Boolean).join(' ');
   const control = isValidElement(children)
     ? cloneElement(children, {
         id,
@@ -141,9 +143,11 @@ export function Casilla({
 const CLASES_AVISO = {
   ok: { clase: 'border-ok/30 bg-ok-soft text-ok', icono: CircleCheck },
   bad: { clase: 'border-bad/30 bg-bad-soft text-bad', icono: TriangleAlert },
+  // Nota informativa: no es un error ni una confirmación.
+  info: { clase: 'border-line-strong bg-panel text-meta', icono: Info },
 };
 
-// Mensaje dentro de la pantalla. Por defecto, un error. Con `accion` (un botón discreto) se
+// Mensaje dentro de la pantalla. Por defecto, un error; `info` es una nota neutra. Con `accion` (un botón discreto) se
 // ubica a la derecha del texto y, si no entra, baja debajo.
 export function Aviso({
   children,
@@ -151,7 +155,7 @@ export function Aviso({
   accion,
 }: {
   children: ReactNode;
-  tono?: 'ok' | 'bad';
+  tono?: 'ok' | 'bad' | 'info';
   accion?: ReactNode;
 }) {
   if (!children) return null;
@@ -189,12 +193,17 @@ export function Estado({
   entidad,
   valor,
   publico,
+  etiqueta: otraEtiqueta,
 }: {
   entidad: EntidadConEstado;
   valor: string;
   publico?: Publico;
+  // Reemplaza el texto del estado sin cambiar su tono ni su ícono.
+  etiqueta?: string;
 }) {
-  const { etiqueta, tono, icono: Icono, gira } = infoEstado(entidad, valor, publico);
+  const info = infoEstado(entidad, valor, publico);
+  const { tono, icono: Icono, gira } = info;
+  const etiqueta = otraEtiqueta ?? info.etiqueta;
   return (
     <span className={`${claseEtiqueta} ${CLASES_TONO[tono]}`}>
       <Icono
@@ -407,9 +416,43 @@ export function Modal({
   // Escape cierra desde cualquier lugar de la página.
   useEffect(() => {
     const anterior = document.activeElement as HTMLElement | null;
-    dialogo.current?.focus();
+    const d = dialogo.current;
+    // Un campo que ya tomó el foco (autoFocus) se respeta; si no, el primero.
+    if (d && !d.contains(document.activeElement)) {
+      const campo = d.querySelector<HTMLElement>(
+        'input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled])',
+      );
+      (campo ?? d).focus();
+    }
     const alPresionar = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') cerrar.current();
+      if (e.key === 'Escape') {
+        cerrar.current();
+      } else if (e.key === 'Tab' && d) {
+        // El foco no sale del diálogo: Tab y Shift+Tab dan la vuelta.
+        const foco = [
+          ...d.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ];
+        if (foco.length === 0) {
+          e.preventDefault();
+          d.focus();
+          return;
+        }
+        const primero = foco[0];
+        const ultimo = foco[foco.length - 1];
+        const activo = document.activeElement;
+        if (e.shiftKey && (activo === primero || activo === d)) {
+          e.preventDefault();
+          ultimo?.focus();
+        } else if (!e.shiftKey && activo === ultimo) {
+          e.preventDefault();
+          primero?.focus();
+        } else if (!d.contains(activo)) {
+          e.preventDefault();
+          primero?.focus();
+        }
+      }
     };
     document.addEventListener('keydown', alPresionar);
     return () => {
@@ -434,7 +477,7 @@ export function Modal({
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar"
-            className="flex size-10 shrink-0 items-center justify-center rounded-control text-meta hover:bg-panel"
+            className="flex size-11 shrink-0 items-center justify-center rounded-control text-meta hover:bg-panel"
           >
             <X aria-hidden className="size-5" />
           </button>

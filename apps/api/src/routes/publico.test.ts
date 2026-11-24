@@ -6,7 +6,7 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/publico.service', () => ({
+jest.mock('../services/publico/publico.service', () => ({
   publicoService: {
     buscar: jest.fn(),
     barrios: jest.fn(),
@@ -19,13 +19,19 @@ const ID = '01900000-0000-7000-8000-000000000011';
 
 const RESULTADO = {
   restaurante: { id: ID, nombre: 'Demo' },
-  sucursal: { id: ID, nombre: 'Centro', direccion: 'Calle 1', barrio: 'SAN_NICOLAS' },
+  sucursal: {
+    id: ID,
+    nombre: 'Centro',
+    direccion: 'Calle 1',
+    barrio: 'SAN_NICOLAS',
+    fotoUrl: '/fotos/centro.webp',
+  },
   platosCoincidentes: ['Milanesa'],
 };
 
 describe('/api/publico', () => {
   const app = createApp();
-  const { publicoService } = jest.requireMock('../services/publico.service');
+  const { publicoService } = jest.requireMock('../services/publico/publico.service');
 
   beforeEach(() => {
     publicoService.buscar.mockResolvedValue([RESULTADO]);
@@ -71,6 +77,7 @@ describe('/api/publico', () => {
     expect(Object.keys(res.body[0].sucursal).sort()).toEqual([
       'barrio',
       'direccion',
+      'fotoUrl',
       'id',
       'nombre',
     ]);

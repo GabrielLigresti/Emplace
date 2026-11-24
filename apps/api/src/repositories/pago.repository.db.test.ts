@@ -1,6 +1,6 @@
 import type { Prisma } from '../generated/prisma/client';
 import { prisma } from '../lib/prisma';
-import { validarBeneficioElegido } from '../services/pago.service';
+import { validarBeneficioElegido } from '../services/pago/pago.service';
 import { crearEscenario, limpiarBase, type Escenario } from '../test/db-setup';
 import { cuentaMesaRepository } from './cuenta-mesa.repository';
 import { contextoMesa } from './elegibilidad';

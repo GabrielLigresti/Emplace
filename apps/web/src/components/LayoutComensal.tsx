@@ -1,9 +1,19 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import type { MiMesa } from '@pgim/shared';
-import { CalendarDays, ChevronLeft, House, LogOut, Receipt, Star, UserRound } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronLeft,
+  House,
+  LogOut,
+  Receipt,
+  ShoppingBasket,
+  Star,
+  UserRound,
+} from 'lucide-react';
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
 import { useSalir } from '../auth/useSalir';
+import { useCarrito } from '../lib/carrito';
 import { useMiMesa } from '../lib/miMesa';
 import { useTemaStaff } from '../lib/useTemaStaff';
 
@@ -60,6 +70,13 @@ export function LayoutComensal({
     ...(mesa ? [{ a: '/mesa', texto: 'Mi mesa', icono: Receipt }] : []),
     CUENTA,
   ];
+  // Con platos en el carrito, el acceso al pedido flota en todas las pantallas
+  // del comensal, salvo en la del pedido.
+  const carrito = useCarrito(mesa?.cuentaMesaId ?? null);
+  const rutaPedido = mesa ? `/s/${mesa.sucursal.id}/pedido` : null;
+  const conCarrito = Boolean(
+    esComensal && rutaPedido && carrito.unidades > 0 && pathname !== rutaPedido,
+  );
 
   return (
     <div className={`min-h-screen ${clasico ? 'bg-papel' : 'bg-bg'}`}>
@@ -73,10 +90,18 @@ export function LayoutComensal({
               <ChevronLeft aria-hidden className="size-5 shrink-0" />
               <span className="truncate">{volver.texto}</span>
             </Link>
-          ) : (
+          ) : sesion ? (
             <span className="truncate text-sm font-medium text-text">
-              {sesion ? `Hola, ${sesion.usuario.nombre}` : 'PGIM'}
+              Hola, {sesion.usuario.nombre}
             </span>
+          ) : (
+            <img
+              src="/marca/emplace-logo.png"
+              alt="Emplace"
+              width={320}
+              height={256}
+              className="h-11 w-auto"
+            />
           )}
           {!sesion ? (
             <Link
@@ -114,9 +139,25 @@ export function LayoutComensal({
         }
       >
         {children}
+        {/* Espacio para que el carrito flotante no tape el final de la pantalla. */}
+        {conCarrito && <div aria-hidden className="h-[68px]" />}
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-10">
+        {conCarrito && rutaPedido && (
+          <div className="pointer-events-none mx-auto flex max-w-[480px] justify-end px-4 pb-3">
+            <Link
+              to={rutaPedido}
+              aria-label={`Ver pedido, ${carrito.unidades} ${carrito.unidades === 1 ? 'plato' : 'platos'}`}
+              className="pointer-events-auto relative flex size-14 items-center justify-center rounded-[12px] border border-dorado bg-bg text-dorado-700 shadow-flotante hover:bg-papel-hondo"
+            >
+              <ShoppingBasket aria-hidden className="size-6" strokeWidth={1.5} />
+              <span className="absolute -top-[7px] -right-[7px] box-border h-5 min-w-5 rounded-[10px] bg-dorado-700 px-[5px] text-center text-xs leading-5 font-semibold text-white">
+                {carrito.unidades}
+              </span>
+            </Link>
+          </div>
+        )}
         {accionFija && (
           <div className="border-t border-line bg-bg">
             <div

@@ -1,7 +1,7 @@
 import type { ConfiguracionApertura, Franja, PronosticoFranja } from '@pgim/shared';
-import type { HistorialVentas, ItemPronostico } from '../domain/pronostico';
+import type { HistorialVentas, ItemPronostico } from '../domain/pronostico/pronostico';
 import type { Prisma } from '../generated/prisma/client';
-import { sumarDias } from '../domain/franjas';
+import { sumarDias } from '../domain/franjas/franjas';
 import { aHora } from '../lib/hora';
 import { prisma } from '../lib/prisma';
 

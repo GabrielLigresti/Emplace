@@ -25,10 +25,10 @@ import {
   costoUnitario,
   insumosNecesarios,
   type Componente,
-} from '../src/domain/receta';
-import { iniciosDelDia, sumarDias } from '../src/domain/franjas';
-import { semanaSiguiente } from '../src/domain/pronostico';
-import { produccionService } from '../src/services/produccion.service';
+} from '../src/domain/receta/receta';
+import { iniciosDelDia, sumarDias } from '../src/domain/franjas/franjas';
+import { semanaSiguiente } from '../src/domain/pronostico/pronostico';
+import { produccionService } from '../src/services/produccion/produccion.service';
 import { recetaRepository } from '../src/repositories/receta.repository';
 import { stockRepository } from '../src/repositories/stock.repository';
 
@@ -71,6 +71,8 @@ export interface ModeloRaSeed {
   plato: string;
   archivo: string;
   porcionGramos: number;
+  // 1 por defecto.
+  escalaReal?: number;
 }
 
 export interface RecetaSeed {
@@ -257,9 +259,10 @@ export async function seedMenus(
     const fila = existente
       ? await tx.menu.update({ where: { id: existente.id }, data: datos })
       : await tx.menu.create({ data: { restauranteId, nombre: menu.nombre, ...datos } });
-    await tx.menuItem.deleteMany({ where: { menuId: fila.id } });
+    // Los platos agregados al menú desde el panel se conservan.
     await tx.menuItem.createMany({
       data: platoIds.map((itemMenuId) => ({ menuId: fila.id, itemMenuId })),
+      skipDuplicates: true,
     });
     ids.push(fila.id);
   }
@@ -354,7 +357,7 @@ export async function seedModelosRa(
     const datos = {
       urlModelo: await guardarModelo(archivo, 'glb'),
       urlModeloIos: null,
-      escalaReal: 1,
+      escalaReal: modelo.escalaReal ?? 1,
       porcionGramos: modelo.porcionGramos,
     };
     await prisma.modeloRA.upsert({
@@ -509,6 +512,8 @@ export async function insertarPorLotes<T>(filas: T[], insertar: (lote: T[]) => P
 
 export async function seedHistorialVentas(
   restauranteId: string,
+  // Solo los platos de la seed: los agregados desde el panel no tienen ventas ficticias.
+  platoIds: string[],
   sucursalIds: Map<NombreSucursal, string>,
   passwordHash: string,
   semanasHistorial: Record<NombreSucursal, number>,
@@ -564,6 +569,7 @@ export async function seedHistorialVentas(
       await prisma.itemMenu.findMany({
         where: {
           restauranteId,
+          id: { in: platoIds },
           activo: true,
           menus: {
             some: { menu: { sucursalesActivas: { some: { id: sucursalId, restauranteId } } } },
@@ -781,7 +787,8 @@ export async function seedFaltantesSimulador(
       estado: 'PENDIENTE' as const,
     })),
   );
-  await prisma.reserva.createMany({ data: reservas });
+  // Una mesa ya reservada por otro comensal a esa hora se saltea.
+  await prisma.reserva.createMany({ data: reservas, skipDuplicates: true });
 
   // Semana próxima: se descarta el borrador (nunca uno confirmado). Las alertas
   // y los turnos se van con la planificación.

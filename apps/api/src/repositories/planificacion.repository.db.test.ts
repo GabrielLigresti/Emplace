@@ -1,6 +1,6 @@
 import type { Prisma } from '../generated/prisma/client';
-import type { FilaPronostico } from '../domain/pronostico';
-import { crearVerificadorStock, type AlertaNueva } from '../domain/verificadores';
+import type { FilaPronostico } from '../domain/pronostico/pronostico';
+import { crearVerificadorStock, type AlertaNueva } from '../domain/verificadores/verificadores';
 import { prisma } from '../lib/prisma';
 import { crearEscenario, limpiarBase, type Escenario } from '../test/db-setup';
 import { aperturaRepository } from './apertura.repository';
@@ -9,7 +9,7 @@ import {
   type FasesPlanificacion,
   type ResultadoPlanificacion,
 } from './planificacion.repository';
-import { createAperturaService } from '../services/apertura.service';
+import { createAperturaService } from '../services/apertura/apertura.service';
 
 afterAll(() => prisma.$disconnect());
 

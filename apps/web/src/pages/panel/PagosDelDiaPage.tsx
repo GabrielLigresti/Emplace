@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Wallet } from 'lucide-react';
-import { EVENTOS_SOCKET, hoyArgentina, type MetodoPago, type PagosDelDia } from '@pgim/shared';
+import {
+  EVENTOS_SOCKET,
+  hoyArgentina,
+  type EstadoPago,
+  type MetodoPago,
+  type PagosDelDia,
+} from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useAvisos } from '../../components/AvisoEmergente';
 import { IndicadorConexion } from '../../components/IndicadorConexion';
@@ -10,9 +16,11 @@ import { useConexionSocket, useEventoSocket } from '../../lib/socket';
 import { useAhora } from '../../lib/useAhora';
 import { useRecurso } from '../../lib/useRecurso';
 
-// CU-23: pagos aprobados y rechazados de hoy en la sucursal de trabajo. La
-// pregunta que responde es "¿llegó el pago de la mesa 4?", de un vistazo. El día
-// es el calendario de Argentina: a medianoche la lista empieza de cero.
+// CU-23: pagos de hoy en la sucursal de trabajo, con su estado real: un pago
+// pendiente figura desde que el comensal abre Mercado Pago hasta que se aprueba
+// o vence. La pregunta que responde es "¿llegó el pago de la mesa 4?", de un
+// vistazo. El día es el calendario de Argentina: a medianoche la lista empieza
+// de cero.
 
 const RESALTADO_MS = 6000;
 
@@ -26,8 +34,9 @@ export function PagosDelDiaPage() {
   const { avisar } = useAvisos();
   const recurso = useRecurso<PagosDelDia>('/pagos/hoy');
   const [resaltados, setResaltados] = useState<Set<string>>(new Set());
-  // IDs de la carga anterior: null hasta la primera, que no resalta nada.
-  const anteriores = useRef<Set<string> | null>(null);
+  // Estado de cada pago en la carga anterior: null hasta la primera, que no
+  // resalta nada.
+  const anteriores = useRef<Map<string, EstadoPago> | null>(null);
   const temporizadores = useRef(new Set<ReturnType<typeof setTimeout>>());
   const ahora = useAhora(60_000);
   const reloj = hoyArgentina(new Date(ahora));
@@ -39,9 +48,10 @@ export function PagosDelDiaPage() {
     const pagos = recurso.datos?.pagos;
     if (!pagos) return;
     const previos = anteriores.current;
-    anteriores.current = new Set(pagos.map((p) => p.id));
+    anteriores.current = new Map(pagos.map((p) => [p.id, p.estado]));
     if (!previos) return;
-    const nuevos = pagos.filter((p) => !previos.has(p.id));
+    // Un pago nuevo o que cambió de estado (el pendiente que se aprobó o venció).
+    const nuevos = pagos.filter((p) => previos.get(p.id) !== p.estado);
     if (nuevos.length === 0) return;
     setResaltados((s) => new Set([...s, ...nuevos.map((p) => p.id)]));
     const timer = setTimeout(() => {
@@ -53,9 +63,11 @@ export function PagosDelDiaPage() {
       });
     }, RESALTADO_MS);
     temporizadores.current.add(timer);
-    // Al volver de un corte pueden llegar varios juntos: un solo aviso.
-    const [primero] = nuevos;
-    if (nuevos.length > 1) avisar(`${nuevos.length} pagos nuevos`);
+    // Solo se avisa lo resuelto: un pendiente se resalta sin aviso. Al volver de
+    // un corte pueden llegar varios juntos: un solo aviso.
+    const resueltos = nuevos.filter((p) => p.estado !== 'PENDIENTE');
+    const [primero] = resueltos;
+    if (resueltos.length > 1) avisar(`${resueltos.length} pagos resueltos`);
     else if (primero?.estado === 'APROBADO')
       avisar(`Pago recibido: mesa ${primero.mesaNumero}, ${formatoPesos(primero.monto)}`);
     else if (primero) avisar(`Pago no aprobado: mesa ${primero.mesaNumero}`);
@@ -92,8 +104,8 @@ export function PagosDelDiaPage() {
       />
       <EstadoCarga cargando={recurso.cargando && !datos} error={recurso.error} />
       {datos && (
-        <div className="grid max-w-3xl gap-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid max-w-4xl gap-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5 [&>:first-child]:col-span-2 lg:[&>:first-child]:col-span-1">
             <Kpi
               etiqueta="Cobrado hoy"
               valor={formatoPesos(datos.totales.cobrado)}
@@ -112,6 +124,11 @@ export function PagosDelDiaPage() {
               detalle="Dinero en cuenta"
             />
             <Kpi
+              etiqueta="En curso"
+              valor={datos.totales.enCurso}
+              detalle="Pagando en Mercado Pago"
+            />
+            <Kpi
               etiqueta="No aprobados"
               valor={datos.totales.rechazados}
               detalle="No se completaron"
@@ -122,7 +139,7 @@ export function PagosDelDiaPage() {
             <Vacio
               icono={Wallet}
               titulo="Todavía no hay pagos hoy"
-              texto="Cuando Mercado Pago apruebe o rechace un pago de esta sucursal, aparece acá al instante."
+              texto="Cuando un comensal empiece a pagar en esta sucursal, el pago aparece acá al instante."
             />
           ) : (
             <Panel>
@@ -151,9 +168,17 @@ export function PagosDelDiaPage() {
                       >
                         {formatoPesos(pago.monto)}
                       </p>
-                      <Estado entidad="pago" valor={pago.estado} />
+                      <Estado
+                        entidad="pago"
+                        valor={pago.estado}
+                        etiqueta={pago.estado === 'PENDIENTE' ? 'Pendiente' : undefined}
+                      />
                       <p className="text-sm text-meta">
-                        {pago.metodo ? NOMBRE_METODO[pago.metodo] : 'Sin cobro'}
+                        {pago.estado === 'PENDIENTE'
+                          ? 'En Mercado Pago'
+                          : pago.metodo
+                            ? NOMBRE_METODO[pago.metodo]
+                            : 'Sin cobro'}
                       </p>
                     </div>
                   </li>

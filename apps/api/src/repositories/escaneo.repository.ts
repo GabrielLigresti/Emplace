@@ -10,7 +10,7 @@ export interface FilaEscaneo {
   estado: EstadoEscaneo;
   proveedor: string;
   tareaProveedorId: string | null;
-  rutaVideo: string | null;
+  rutaFotos: string | null;
   urlModelo: string | null;
   urlModeloIos: string | null;
   calidad: InformeCalidad;
@@ -22,7 +22,7 @@ export interface FilaEscaneo {
 export interface CambioEscaneo {
   estado: EstadoEscaneo;
   tareaProveedorId?: string;
-  rutaVideo?: null;
+  rutaFotos?: null;
   urlModelo?: string;
   urlModeloIos?: string | null;
   error?: string;
@@ -32,7 +32,7 @@ export interface EscaneoRepository {
   crear(
     datos: Pick<
       FilaEscaneo,
-      'restauranteId' | 'itemMenuId' | 'empleadoId' | 'proveedor' | 'rutaVideo' | 'calidad'
+      'restauranteId' | 'itemMenuId' | 'empleadoId' | 'proveedor' | 'rutaFotos' | 'calidad'
     >,
   ): Promise<FilaEscaneo>;
   ultimoDelPlato(restauranteId: string, itemMenuId: string): Promise<FilaEscaneo | null>;

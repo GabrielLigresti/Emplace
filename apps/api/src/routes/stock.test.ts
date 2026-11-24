@@ -5,10 +5,10 @@ import { cookieConPermisos } from '../test/sesion-falsa';
 jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
-jest.mock('../services/stock.service', () => ({
+jest.mock('../services/stock/stock.service', () => ({
   stockService: { listar: jest.fn(), registrar: jest.fn(), movimientos: jest.fn() },
 }));
-jest.mock('../services/produccion.service', () => ({
+jest.mock('../services/produccion/produccion.service', () => ({
   produccionService: {
     plan: jest.fn(),
     registrar: jest.fn(),
@@ -35,8 +35,8 @@ const tandaValida = {
 
 describe('rutas de stock', () => {
   const app = createApp();
-  const { stockService } = jest.requireMock('../services/stock.service');
-  const { produccionService } = jest.requireMock('../services/produccion.service');
+  const { stockService } = jest.requireMock('../services/stock/stock.service');
+  const { produccionService } = jest.requireMock('../services/produccion/produccion.service');
 
   beforeEach(() => {
     stockService.listar.mockResolvedValue([]);

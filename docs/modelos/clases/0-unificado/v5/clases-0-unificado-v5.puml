@@ -2,6 +2,8 @@
 ' Diagrama de clases unificado — PGIM
 ' v5 (12/11): se quita CredencialBiometrica y el comensal puede entrar con Google:
 ' Usuario.passwordHash opcional, Usuario.googleId y vincularGoogle().
+' Menor (20/11): escaneo en RA con fotos: ItemMenu.diametroCm, EscaneoPlato.rutaFotos, Proveedor3D.iniciar(FotosEscaneo),
+' InformeCalidad con FotoInforme por vista y criterios RESOLUCION, NITIDEZ, EXPOSICION, BRILLOS y ANGULO.
 ' v4 (05/11): escaneo de platos para el modelo RA: EscaneoPlato con patrón State (6 estados), Proveedor3D (Adapter) con
 ' ProveedorSimulado, ResultadoEscaneo, verificación de calidad del video (CriterioCalidad, Strategy, con 5 criterios),
 ' InformeCalidad, ResultadoCriterio, NivelCalidad y TareaProcesarEscaneos.
@@ -17,6 +19,7 @@
 ' Menor (28/10): Pago.metodo opcional; lo informa Mercado Pago al aprobarse (el comensal elige el medio en Mercado Pago).
 ' Menor (04/11): Verificador.verificar recibe los pronósticos de la semana; TipoAlerta suma INASISTENCIA (CU-21).
 ' Menor (04/11, Hito 8): Sucursal.barrio con el enum Barrio (48 barrios de CABA) para el filtro del buscador.
+' Menor (24/11): Sucursal.fotoUrl opcional, para la foto de los resultados del buscador.
 ' PNG a 88 dpi (antes 96, 103, 104, 105, 110 y 125) para no superar 25 MP (límite de imágenes de Google Docs). Para imprimir o hacer zoom, usar el PDF/SVG vectorial.
 top to bottom direction
 skinparam dpi 88
@@ -74,6 +77,7 @@ package "1. Organización, acceso y personal" as P1 {
     -nombre : String
     -direccion : String
     -barrio : Barrio
+    -fotoUrl : String [0..1]
     -horarioApertura : Time
     -horarioCierre : Time
     -toleranciaNoShowMin : Integer
@@ -296,6 +300,7 @@ package "3. Menú, recetas e inventario" as P3 {
     -descripcion : String
     -precio : Decimal
     -fotoUrl : String
+    -diametroCm : Decimal [0..1]
     -disponible : Boolean
     -activo : Boolean
     +estaHuerfano() : Boolean
@@ -394,7 +399,7 @@ package "3b. Escaneo de platos (State, Adapter y Strategy)" as P3B {
     -estado : EstadoEscaneo
     -proveedor : String
     -tareaProveedorId : String [0..1]
-    -rutaVideo : String [0..1]
+    -rutaFotos : String [0..1]
     -urlModelo : String [0..1]
     -urlModeloIOS : String [0..1]
     -error : String [0..1]
@@ -433,7 +438,7 @@ package "3b. Escaneo de platos (State, Adapter y Strategy)" as P3B {
   interface Proveedor3D <<interface>> {
     +nombre() : String
     +requisitos() : UmbralesCalidad
-    +iniciar(video : Binary) : String
+    +iniciar(fotos : FotosEscaneo) : String
     +consultar(tareaId : String) : ResultadoEscaneo
   }
   class ProveedorSimulado {
@@ -451,12 +456,21 @@ package "3b. Escaneo de platos (State, Adapter y Strategy)" as P3B {
     -timeoutMin : Integer
     +procesarEnCurso() : void
   }
+  class FotosEscaneo <<value object>> {
+    -front : Binary
+    -left : Binary
+    -back : Binary
+    -right : Binary
+  }
   class InformeCalidad <<value object>> {
     -version : Integer
     -nivelGlobal : NivelCalidad
+  }
+  class FotoInforme <<value object>> {
+    -vista : String
     -ancho : Integer
     -alto : Integer
-    -duracionS : Decimal
+    -anguloGrados : Decimal
   }
   class ResultadoCriterio <<value object>> {
     -criterio : String
@@ -466,23 +480,22 @@ package "3b. Escaneo de platos (State, Adapter y Strategy)" as P3B {
   }
   class UmbralesCalidad <<value object>> {
     -ladoMenorMinPx : Integer
-    -ladoMenorMaxPx : Integer
-    -duracionMinS : Integer
-    -duracionMaxS : Integer
     -nitidezMin : Decimal
     -luminanciaMin : Integer
     -luminanciaMax : Integer
+    -recortadosAdvertenciaPct : Decimal
+    -recortadosRechazoPct : Decimal
     -brillosAdvertenciaPct : Decimal
-    -diferenciaMin : Decimal
+    -toleranciaAnguloGrados : Integer
   }
   interface CriterioCalidad <<interface>> {
-    +evaluar(muestras, metadatos, umbrales : UmbralesCalidad) : ResultadoCriterio
+    +evaluar(foto, umbrales : UmbralesCalidad) : ResultadoCriterio
   }
-  class CriterioFormato
+  class CriterioResolucion
   class CriterioNitidez
   class CriterioExposicion
   class CriterioBrillos
-  class CriterioRecorrido
+  class CriterioAngulo
 }
 
 ' =====================================================================
@@ -964,7 +977,7 @@ ItemMenu "0..1" <-- "*" Alerta
 ' Relaciones — 3b. Escaneo de platos
 ItemMenu "1" -- "*" EscaneoPlato : se escanea con
 Restaurante "1" *-- "*" EscaneoPlato
-EscaneoPlato "*" --> "1" Empleado : subió el video
+EscaneoPlato "*" --> "1" Empleado : escaneó
 EscaneoPlato "*" --> "1" EstadoEscaneo : estado
 EstadoEscaneo <|-- EscaneoPendiente
 EstadoEscaneo <|-- EscaneoProcesando
@@ -974,23 +987,25 @@ EstadoEscaneo <|-- EscaneoDescartado
 EstadoEscaneo <|-- EscaneoFallido
 EscaneoPlato ..> ModeloRA : publicar() crea o reemplaza
 EscaneoPlato "1" *-- "1" InformeCalidad : calidad
-InformeCalidad "1" *-- "5" ResultadoCriterio
+InformeCalidad "1" *-- "4" FotoInforme
+FotoInforme "1" *-- "*" ResultadoCriterio
+Proveedor3D ..> FotosEscaneo
 Proveedor3D <|.. ProveedorSimulado
 Proveedor3D ..> ResultadoEscaneo : <<create>>
 Proveedor3D ..> UmbralesCalidad
 TareaProcesarEscaneos ..> EscaneoPlato : enviar() / completar() / fallar()
 TareaProcesarEscaneos --> Proveedor3D
-CriterioCalidad <|.. CriterioFormato
+CriterioCalidad <|.. CriterioResolucion
 CriterioCalidad <|.. CriterioNitidez
 CriterioCalidad <|.. CriterioExposicion
 CriterioCalidad <|.. CriterioBrillos
-CriterioCalidad <|.. CriterioRecorrido
+CriterioCalidad <|.. CriterioAngulo
 CriterioCalidad ..> ResultadoCriterio : <<create>>
 CriterioCalidad ..> UmbralesCalidad
 note bottom of CriterioCalidad
-  Corre en el navegador antes de subir el video;
-  el servidor revalida duración y resolución del MP4
-  y rechaza un informe con nivel RECHAZO.
+  Corre en el navegador al sacar cada foto;
+  el servidor revalida las 4 vistas y la resolución
+  de cada JPEG y rechaza un informe con nivel RECHAZO.
 end note
 note bottom of EscaneoPlato
   Un solo escaneo activo por plato

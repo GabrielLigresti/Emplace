@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma';
 export interface ExclusionGestores {
   rolId?: string;
   usuarioId?: string;
+  usuarioIds?: string[];
 }
 
 export type ContarGestoresDeRoles = (
@@ -17,7 +18,11 @@ export const contarGestoresDeRoles: ContarGestoresDeRoles = (restauranteId, excl
   prisma.usuario.count({
     where: {
       activo: true,
-      ...(excluir.usuarioId && { id: { not: excluir.usuarioId } }),
+      ...((excluir.usuarioId || excluir.usuarioIds) && {
+        id: {
+          notIn: [...(excluir.usuarioIds ?? []), ...(excluir.usuarioId ? [excluir.usuarioId] : [])],
+        },
+      }),
       empleado: {
         is: {
           restauranteId,

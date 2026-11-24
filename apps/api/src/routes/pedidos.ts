@@ -6,7 +6,7 @@ import {
   type EstadoPedido,
 } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { pedidoService } from '../services/pedido.service';
+import { pedidoService } from '../services/pedido/pedido.service';
 import { sucursalDeTrabajo } from './reservas';
 
 // CU-05 Gestionar cola de pedidos, en la sucursal de trabajo. El permiso de

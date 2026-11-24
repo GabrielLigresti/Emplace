@@ -1,7 +1,7 @@
 import type { MotivoMerma, Referencia } from '@pgim/shared';
-import { costoTotal, costoUnitario } from '../domain/receta';
-import type { HorarioServicioDatos } from '../domain/pronostico';
-import { sumarDias } from '../domain/franjas';
+import { costoTotal, costoUnitario } from '../domain/receta/receta';
+import type { HorarioServicioDatos } from '../domain/pronostico/pronostico';
+import { sumarDias } from '../domain/franjas/franjas';
 import { inicioDeDiaArgentina } from '../lib/dia-argentina';
 import { aHora } from '../lib/hora';
 import { prisma } from '../lib/prisma';

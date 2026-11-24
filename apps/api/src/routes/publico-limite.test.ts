@@ -5,7 +5,7 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/publico.service', () => ({
+jest.mock('../services/publico/publico.service', () => ({
   publicoService: {
     buscar: jest.fn().mockResolvedValue([]),
     obtenerMenu: jest.fn().mockResolvedValue({ sucursal: {}, menu: null }),

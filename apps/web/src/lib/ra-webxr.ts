@@ -79,7 +79,7 @@ async function cargarPlato(url: string, escala: number): Promise<Group> {
 // vea sobre un plato blanco y sobre la mesa. Los aros no se superponen: dos
 // planos en el mismo lugar titilan (z-fighting). El contenido va en un grupo
 // interno para poder animarlo, porque el exterior sigue la pose de WebXR.
-function crearAnillo(): { anillo: Group; dibujo: Group; materiales: MeshBasicMaterial[] } {
+export function crearAnillo(): { anillo: Group; dibujo: Group; materiales: MeshBasicMaterial[] } {
   const materiales: MeshBasicMaterial[] = [];
   const plano = (geometria: RingGeometry | CircleGeometry, color: number, opacidad: number) => {
     const material = new MeshBasicMaterial({
@@ -110,13 +110,13 @@ function crearAnillo(): { anillo: Group; dibujo: Group; materiales: MeshBasicMat
 
 // Con superficies lisas (un plato blanco) la detección va y viene: el anillo
 // se mantiene en el último punto un rato para que se pueda tocar.
-const MS_SIN_SUPERFICIE = 700;
+export const MS_SIN_SUPERFICIE = 700;
 
 // three usa WebXR Layers (XRProjectionLayer) si el navegador los trae, pero en
 // la RA de Chrome para Android esa capa no se mezcla con la cámara: se dibuja y
 // no se ve. Mientras three arma la sesión se oculta esa API para que use la
 // capa clásica (XRWebGLLayer), la que funciona en todos los navegadores.
-async function conCapaClasica<T>(armar: () => Promise<T>): Promise<T> {
+export async function conCapaClasica<T>(armar: () => Promise<T>): Promise<T> {
   const prototipo = typeof XRWebGLBinding === 'undefined' ? null : XRWebGLBinding.prototype;
   const original = prototipo && Object.getOwnPropertyDescriptor(prototipo, 'createProjectionLayer');
   if (original) delete (prototipo as Partial<XRWebGLBinding>).createProjectionLayer;
@@ -125,6 +125,12 @@ async function conCapaClasica<T>(armar: () => Promise<T>): Promise<T> {
   } finally {
     if (original) Object.defineProperty(prototipo, 'createProjectionLayer', original);
   }
+}
+
+// Fuente de hit-test desde el centro de la pantalla (hacia donde mira el celular).
+export async function abrirFuenteImpacto(sesion: XRSession): Promise<XRHitTestSource | null> {
+  const espacioVisor = await sesion.requestReferenceSpace('viewer');
+  return (await sesion.requestHitTestSource!({ space: espacioVisor })) ?? null;
 }
 
 // Abre la sesión. Si el navegador la rechaza (por ejemplo, sin permiso de
@@ -205,8 +211,7 @@ export async function iniciarRa(opciones: OpcionesRa): Promise<() => void> {
   }
   try {
     await conCapaClasica(() => renderer.xr.setSession(sesion));
-    const espacioVisor = await sesion.requestReferenceSpace('viewer');
-    fuenteImpacto = (await sesion.requestHitTestSource!({ space: espacioVisor })) ?? null;
+    fuenteImpacto = await abrirFuenteImpacto(sesion);
   } catch (e) {
     renderer.setAnimationLoop(null);
     renderer.dispose();

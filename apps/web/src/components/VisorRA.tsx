@@ -3,25 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import type { ModeloRa } from '@pgim/shared';
 import { formatoCantidad } from '../lib/formato';
 import { useModelViewer } from '../lib/useModelViewer';
+import { useSesionRa } from '../lib/useSesionRa';
+import { CapaRa } from './CapaRa';
 
 type Estado = 'cargando' | 'listo' | 'sin-ra' | 'fallo-ra' | 'error';
-type EstadoSesion = 'abriendo' | 'buscando' | 'apuntando' | 'colocado';
 
 const MENSAJES: Partial<Record<Estado, string>> = {
   'sin-ra': 'Este dispositivo no permite ver el plato en realidad aumentada.',
   'fallo-ra': 'No se pudo abrir la realidad aumentada (¿se negó el permiso de la cámara?).',
   error: 'No se pudo cargar el modelo 3D del plato.',
 };
-
-const INSTRUCCIONES: Record<EstadoSesion, string> = {
-  abriendo: 'Abriendo la cámara…',
-  buscando: 'Mové el celular despacio, apuntando a la mesa cerca del plato.',
-  apuntando: 'Apuntá el anillo al centro del plato y tocá la pantalla.',
-  colocado: 'Tocá otro punto para moverlo.',
-};
-
-// Los botones de la capa sobre la cámara no cuentan como toques para ubicar el plato.
-const frenarSeleccion = (e: Event) => e.preventDefault();
 
 // Visor de CU-10: el plato en 3D y el botón "Ver en RA" a escala real. En
 // Android con WebXR, la RA es propia (ver lib/ra-webxr): el comensal apunta al
@@ -44,17 +35,8 @@ export function VisorRA({
 }) {
   const listo = useModelViewer();
   const visor = useRef<ModelViewerElement>(null);
-  const capa = useRef<HTMLDivElement>(null);
   const [estado, setEstado] = useState<Estado>('cargando');
-  const [webXR, setWebXR] = useState<boolean | null>(null);
-  const [sesion, setSesion] = useState<EstadoSesion | null>(null);
-  const salir = useRef<(() => void) | null>(null);
-  const [diagnostico, setDiagnostico] = useState<string | null>(null);
-  const conDiagnostico = new URLSearchParams(window.location.search).has('diag');
-
-  useEffect(() => {
-    void import('../lib/ra-webxr').then(({ soportaRaWebXR }) => soportaRaWebXR().then(setWebXR));
-  }, []);
+  const { webXR, sesion, diagnostico, capa, abrir, salir } = useSesionRa();
 
   useEffect(() => {
     const el = visor.current;
@@ -75,29 +57,8 @@ export function VisorRA({
     };
   }, [listo, webXR]);
 
-  // Si se sale de la página con la RA abierta, se cierra la sesión.
-  useEffect(() => () => salir.current?.(), []);
-
   async function abrirRa() {
-    if (!capa.current) return;
-    setSesion('abriendo');
-    try {
-      const { iniciarRa } = await import('../lib/ra-webxr');
-      salir.current = await iniciarRa({
-        urlModelo: modelo.urlModelo,
-        escalaReal: modelo.escalaReal,
-        overlay: capa.current,
-        onEstado: setSesion,
-        ...(conDiagnostico && { onDiagnostico: setDiagnostico }),
-        onFin: () => {
-          salir.current = null;
-          setSesion(null);
-        },
-      });
-    } catch {
-      setSesion(null);
-      setEstado('fallo-ra');
-    }
+    if (!(await abrir(modelo))) setEstado('fallo-ra');
   }
 
   const escala = `${modelo.escalaReal} ${modelo.escalaReal} ${modelo.escalaReal}`;
@@ -166,41 +127,16 @@ export function VisorRA({
         </div>
       )}
 
-      {/* Capa sobre la cámara durante la RA propia (dom-overlay de WebXR). */}
-      <div ref={capa} className={sesion ? 'fixed inset-0 z-50' : 'hidden'}>
-        <div className="absolute inset-x-4 top-4 rounded-panel bg-black/60 px-4 py-3 text-center text-white">
-          <p className="font-medium">{nombre}</p>
-          <p className="text-sm">{sesion && INSTRUCCIONES[sesion]}</p>
-          <p className="text-xs opacity-80">Porción: {porcion}</p>
-          {diagnostico && <p className="mt-1 font-mono text-xs opacity-90">{diagnostico}</p>}
-        </div>
-        <div className="absolute inset-x-4 bottom-8 flex justify-center gap-3">
-          <button
-            type="button"
-            ref={(b) => {
-              b?.addEventListener('beforexrselect', frenarSeleccion);
-            }}
-            onClick={() => salir.current?.()}
-            className="min-h-12 rounded-full bg-surface px-6 font-semibold text-ink shadow-flotante"
-          >
-            Salir
-          </button>
-          {alAgregar && (
-            <button
-              type="button"
-              ref={(b) => {
-                b?.addEventListener('beforexrselect', frenarSeleccion);
-              }}
-              onClick={alAgregar}
-              className="min-h-12 rounded-full bg-accent px-6 font-semibold text-white shadow-flotante"
-            >
-              {cantidadEnPedido > 0
-                ? `Agregar otro (${cantidadEnPedido} en el pedido)`
-                : 'Agregar al pedido'}
-            </button>
-          )}
-        </div>
-      </div>
+      <CapaRa
+        capa={capa}
+        sesion={sesion}
+        nombre={nombre}
+        porcion={porcion}
+        diagnostico={diagnostico}
+        alSalir={salir}
+        alAgregar={alAgregar}
+        cantidadEnPedido={cantidadEnPedido}
+      />
     </div>
   );
 }

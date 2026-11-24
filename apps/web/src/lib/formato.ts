@@ -14,6 +14,17 @@ export const formatoLista = (elementos: string[]) => lista.format(elementos);
 
 export const formatoPesos = (valor: number) => pesos.format(valor);
 
+const pesosFinos = new Intl.NumberFormat('es-AR', {
+  style: 'currency',
+  currency: 'ARS',
+  maximumFractionDigits: 4,
+});
+
+// Para costos por gramo o mililitro, que suelen ser fracciones de peso: con 2
+// decimales $0,015 se leería $0,02.
+export const formatoPesosUnitario = (valor: number) =>
+  Math.abs(valor) < 1 ? pesosFinos.format(valor) : pesos.format(valor);
+
 const pesosEnteros = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',
@@ -50,6 +61,15 @@ export const NOMBRE_UNIDAD: Record<UnidadMedida, string> = {
   MILILITRO: 'Mililitros (ml)',
   LITRO: 'Litros (l)',
   UNIDAD: 'Unidades',
+};
+
+// Nombre completo en singular, para "Costo por litro": "l" se confunde con un 1.
+export const UNIDAD_SINGULAR: Record<UnidadMedida, string> = {
+  GRAMO: 'gramo',
+  KILOGRAMO: 'kilogramo',
+  MILILITRO: 'mililitro',
+  LITRO: 'litro',
+  UNIDAD: 'unidad',
 };
 
 // "AAAA-MM-DD" → "21/09/2026", sin pasar por Date para que la zona horaria no corra el día.

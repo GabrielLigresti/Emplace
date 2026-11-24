@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { crearEscenario, limpiarBase, type Escenario } from '../test/db-setup';
-import { createMetricaService, type ContextoMetricas } from '../services/metrica.service';
+import { createMetricaService, type ContextoMetricas } from '../services/metrica/metrica.service';
 import { aperturaRepository } from './apertura.repository';
 import { metricaRepository } from './metrica.repository';
 

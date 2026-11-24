@@ -47,15 +47,15 @@ describe('pagos del día (CU-23)', () => {
   const delDia = (escenario: Escenario = e, fecha = FECHA) =>
     pagosDelDiaRepository.delDia(escenario.restauranteId, escenario.sucursalId, fecha);
 
-  it('devuelve solo los resueltos, más nuevos primero', async () => {
+  it('devuelve también los pendientes, más nuevos primero', async () => {
     await pago(e, '2026-11-05T15:00:00Z', 'APROBADO', { comprobante: '0001' });
     await pago(e, '2026-11-05T16:00:00Z', 'RECHAZADO');
     await pago(e, '2026-11-05T17:00:00Z', 'PENDIENTE');
 
     const filas = await delDia();
 
-    expect(filas.map((f) => f.estado)).toEqual(['RECHAZADO', 'APROBADO']);
-    expect(filas[1]!).toMatchObject({
+    expect(filas.map((f) => f.estado)).toEqual(['PENDIENTE', 'RECHAZADO', 'APROBADO']);
+    expect(filas[2]!).toMatchObject({
       mesaNumero: 4,
       comensalNombre: 'Comensal de prueba',
       monto: 1500,
@@ -63,8 +63,8 @@ describe('pagos del día (CU-23)', () => {
       comprobanteNumero: '0001',
       fecha: '2026-11-05T15:00:00.000Z',
     });
-    expect(typeof filas[1]!.monto).toBe('number');
-    expect(filas[0]!.comprobanteNumero).toBeNull();
+    expect(typeof filas[2]!.monto).toBe('number');
+    expect(filas[1]!.comprobanteNumero).toBeNull();
   });
 
   it('respeta el borde del día de Argentina (03:00 UTC)', async () => {

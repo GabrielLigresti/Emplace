@@ -10,7 +10,7 @@ import {
 } from '@pgim/shared';
 import { AppError } from '../lib/errors';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { reservaService } from '../services/reserva.service';
+import { reservaService } from '../services/reserva/reserva.service';
 
 // CU-03 del lado del comensal. Se monta con autenticar → soloTipo('COMENSAL').
 export const reservasComensalRouter = Router();

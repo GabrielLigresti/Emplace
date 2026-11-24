@@ -1,8 +1,8 @@
 # Fotos de la seed de deploy
 
-Las usa `apps/api/prisma/seed-deploy.ts` como `fotoUrl` de los platos de los cinco restaurantes (Vite las sirve en `/fotos-deploy/<carpeta>/<archivo>`). Casi todas vienen de Unsplash, bajo la [licencia de Unsplash](https://unsplash.com/license): uso libre, incluso comercial, sin atribución obligatoria; ninguna es de Unsplash+. Los autores se listan por cortesía. La sopa miso viene de Wikimedia Commons, con licencia CC0.
+Las usa `apps/api/prisma/seed-deploy.ts` como `fotoUrl` de los platos y las sucursales de los seis restaurantes (Vite las sirve en `/fotos-deploy/<carpeta>/<archivo>`). Casi todas vienen de Unsplash, bajo la [licencia de Unsplash](https://unsplash.com/license): uso libre, incluso comercial, sin atribución obligatoria; ninguna es de Unsplash+. Los autores se listan por cortesía. La sopa miso viene de Wikimedia Commons, con licencia CC0.
 
-Todas están adaptadas a un lienzo cuadrado de 1000 × 1000 en WebP, con el plato centrado, para que la web no las recorte con `object-cover`. La mayoría lleva un recorte del plato con máscara de bordes suaves sobre fondo transparente; el resto conserva su fondo liso original. La columna "Modificaciones" lo detalla en cada caso.
+Salvo las fachadas, la carta del bodegón y la hamburguesa pan negro (732 × 732), todas están adaptadas a un lienzo cuadrado de 1000 × 1000 en WebP, con el plato centrado, para que la web no las recorte con `object-cover`. La mayoría lleva un recorte del plato con máscara de bordes suaves sobre fondo transparente; el resto conserva su fondo liso original. La columna "Modificaciones" lo detalla en cada caso.
 
 | Archivo | Plato | Autor | Fuente | Licencia | Modificaciones |
 |---|---|---|---|---|---|
@@ -54,4 +54,44 @@ Todas están adaptadas a un lienzo cuadrado de 1000 × 1000 en WebP, con el plat
 | `sushi/poke-de-salmon.webp` | Poke bowl de salmón con pepino, edamame y choclo, cenital | Miu Sua | [https://unsplash.com/photos/_aQZnmZTuvo](https://unsplash.com/photos/_aQZnmZTuvo) | Licencia de Unsplash | Recorte con máscara elíptica sobre el bowl (fondo quitado, transparente), centrado, 1000x1000, WebP |
 | `sushi/gyozas.webp` | Gyozas fritas con salsa agridulce y orquídea, cenital | Zoshua Colah | [https://unsplash.com/photos/tS8Mf38fH9w](https://unsplash.com/photos/tS8Mf38fH9w) | Licencia de Unsplash | Recorte con máscara elíptica sobre el plato (mesa azul quitada, transparente), centrado, 1000x1000, WebP |
 | `bebidas/agua-mineral.webp` | Agua mineral | charlesdeluvio | [https://unsplash.com/photos/edBR3b2JAuA](https://unsplash.com/photos/edBR3b2JAuA) | Licencia de Unsplash | Recorte del fondo con máscara (transparencia), centrado y escalado en lienzo 1000x1000, WebP |
-| `bebidas/gaseosa-cola.webp` | Gaseosa cola | Alimentos Fotogénicos | [https://unsplash.com/photos/8jVW81XI-3A](https://unsplash.com/photos/8jVW81XI-3A) | Licencia de Unsplash | Recorte del fondo con máscara (transparencia), centrado y escalado en lienzo 1000x1000, WebP |
+| `bebidas/gaseosa-cola-vaso.webp` | Gaseosa cola | Autor en la página | [https://unsplash.com/photos/IHKR_A_THW0](https://unsplash.com/photos/IHKR_A_THW0) | Licencia de Unsplash | Recorte cuadrado, fondo original, lienzo 1000x1000, WebP |
+
+## Fachadas de las sucursales
+
+Las usa la seed de deploy como `fotoUrl` de cada sucursal. Vienen de Unsplash, bajo la misma licencia; los locales fotografiados no tienen relación con los restaurantes ficticios. Todas están recortadas a 16:9 y reducidas a 1200 × 675 en WebP.
+
+| Archivo | Sucursal | Autor | Fuente |
+|---|---|---|---|
+| `sucursales/fuego-de-quebracho-palermo.webp` | Fuego de Quebracho, Palermo | Sang Kwak | [https://unsplash.com/photos/W3SF_qjw9GE](https://unsplash.com/photos/W3SF_qjw9GE) |
+| `sucursales/fuego-de-quebracho-san-telmo.webp` | Fuego de Quebracho, San Telmo | Haberdoedas | [https://unsplash.com/photos/asXwcet1cpM](https://unsplash.com/photos/asXwcet1cpM) |
+| `sucursales/nonna-ermelinda-caballito.webp` | Nonna Ermelinda, Caballito | Laszlo Oveges | [https://unsplash.com/photos/aeG-iqoph5M](https://unsplash.com/photos/aeG-iqoph5M) |
+| `sucursales/nonna-ermelinda-villa-urquiza.webp` | Nonna Ermelinda, Villa Urquiza | Pavel Smirnov | [https://unsplash.com/photos/7pIbsT1j1Zo](https://unsplash.com/photos/7pIbsT1j1Zo) |
+| `sucursales/hoshi-sushi-bar-belgrano.webp` | Hoshi Sushi Bar, Belgrano | Margo Evardson | [https://unsplash.com/photos/5XtyOgisDOk](https://unsplash.com/photos/5XtyOgisDOk) |
+| `sucursales/hoshi-sushi-bar-puerto-madero.webp` | Hoshi Sushi Bar, Puerto Madero | Stefan Szankowski | [https://unsplash.com/photos/Sl_-jJga2_w](https://unsplash.com/photos/Sl_-jJga2_w) |
+| `sucursales/doble-medallon-colegiales.webp` | Doble Medallón, Colegiales | Austin | [https://unsplash.com/photos/BTjOcbCEq0k](https://unsplash.com/photos/BTjOcbCEq0k) |
+| `sucursales/doble-medallon-almagro.webp` | Doble Medallón, Almagro | Ricky Singh | [https://unsplash.com/photos/YBfbVXvUsog](https://unsplash.com/photos/YBfbVXvUsog) |
+| `sucursales/horno-de-barrio-villa-crespo.webp` | Horno de Barrio, Villa Crespo | atelierbyvineeth | [https://unsplash.com/photos/oRJyxIlvZbo](https://unsplash.com/photos/oRJyxIlvZbo) |
+| `sucursales/horno-de-barrio-boedo.webp` | Horno de Barrio, Boedo | Jay Alexander | [https://unsplash.com/photos/cjtqrcEJLmM](https://unsplash.com/photos/cjtqrcEJLmM) |
+| `sucursales/el-bodegon-de-don-anselmo-barracas.webp` | El Bodegón de Don Anselmo, Barracas | Natalia Bazyl | [https://unsplash.com/photos/hot3MenxwTI](https://unsplash.com/photos/hot3MenxwTI) |
+| `sucursales/el-bodegon-de-don-anselmo-flores.webp` | El Bodegón de Don Anselmo, Flores | Alex Lion | [https://unsplash.com/photos/t1-x9i8c10Y](https://unsplash.com/photos/t1-x9i8c10Y) |
+
+## Carta de El Bodegón de Don Anselmo
+
+Vienen de Unsplash, bajo la misma licencia. Todas están recortadas a un cuadrado de 1000 × 1000 en WebP y conservan su fondo original.
+
+| Archivo | Plato | Autor | Fuente |
+|---|---|---|---|
+| `bodegon/empanadas-de-carne.webp` | Empanadas de carne | Anton | [https://unsplash.com/photos/kJ6myhO23PI](https://unsplash.com/photos/kJ6myhO23PI) |
+| `bodegon/omelette-de-queso.webp` | Omelette de queso en sartén | Eaters Collective | [https://unsplash.com/photos/6rtm6a_aVyE](https://unsplash.com/photos/6rtm6a_aVyE) |
+| `bodegon/tortilla-de-papas.webp` | Tortilla de papas | blackieshoot | [https://unsplash.com/photos/z4CQtd07u5k](https://unsplash.com/photos/z4CQtd07u5k) |
+| `bodegon/milanesa-con-papas-fritas.webp` | Milanesa con papas fritas | tommao wang | [https://unsplash.com/photos/q4D17QbFH28](https://unsplash.com/photos/q4D17QbFH28) |
+| `bodegon/pollo-a-la-crema-con-pure.webp` | Pollo a la crema con hongos y puré | gabbiistudios | [https://unsplash.com/photos/UdO-JP67I-4](https://unsplash.com/photos/UdO-JP67I-4) |
+| `bodegon/ravioles-con-estofado.webp` | Ravioles con estofado | Rafael Idrovo Espinoza | [https://unsplash.com/photos/Yjz1204A13E](https://unsplash.com/photos/Yjz1204A13E) |
+| `bodegon/guiso-de-porotos.webp` | Guiso de porotos | Artur Kornakov | [https://unsplash.com/photos/kwJhh14nUcs](https://unsplash.com/photos/kwJhh14nUcs) |
+| `bodegon/flan-casero.webp` | Flan casero | Felippe Lopes | [https://unsplash.com/photos/TqPdzQ00I0U](https://unsplash.com/photos/TqPdzQ00I0U) |
+| `bodegon/panqueques-con-dulce-de-leche.webp` | Panqueques con dulce de leche | Hanxiao Xu | [https://unsplash.com/photos/OSZjPknGwSs](https://unsplash.com/photos/OSZjPknGwSs) |
+| `bodegon/queso-y-dulce.webp` | Queso y dulce (postre vigilante) | Harrison Chang | [https://unsplash.com/photos/orYd0SqwioA](https://unsplash.com/photos/orYd0SqwioA) |
+
+## Hamburguesa pan negro
+
+`hamburgueseria/hamburguesa-pan-negro.webp` es una foto propia del proyecto, recortada a un cuadrado.

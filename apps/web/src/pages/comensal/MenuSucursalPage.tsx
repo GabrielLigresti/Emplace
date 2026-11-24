@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Clock, Search, ShoppingBasket, Utensils } from 'lucide-react';
+import { Clock, Search, Utensils } from 'lucide-react';
 import type { MenuSucursal } from '@pgim/shared';
 import { LayoutComensal, claseAccionClasica } from '../../components/LayoutComensal';
 import { useSesion } from '../../auth/SesionProvider';
 import { EstadoCarga } from '../../components/ui';
-import { useCarrito } from '../../lib/carrito';
 import { formatoMinutos, formatoPrecioCarta } from '../../lib/formato';
 import { useMiMesa } from '../../lib/miMesa';
 import { useRecurso } from '../../lib/useRecurso';
@@ -23,9 +22,8 @@ export function MenuSucursalPage() {
   // Con la mesa activa en esta sucursal, el comensal pide desde la ficha del plato.
   const { sesion } = useSesion();
   const mesa = useMiMesa(sucursalId ?? null, sesion?.usuario.tipo === 'COMENSAL').datos;
-  const carrito = useCarrito(mesa?.cuentaMesaId ?? null);
 
-  // Sin mesa, la acción es reservar; con mesa, el pedido está en el botón de la cabecera.
+  // Sin mesa, la acción es reservar; con mesa, el pedido está en el carrito flotante.
   const accion =
     datos && !mesa ? (
       <Link to={`/s/${datos.sucursal.id}/reservar`} className={claseAccionClasica}>
@@ -64,24 +62,6 @@ export function MenuSucursalPage() {
                   {datos.sucursal.restaurante.nombre} · {datos.sucursal.nombre}
                 </p>
               </div>
-              {mesa && (
-                <Link
-                  to={`/s/${datos.sucursal.id}/pedido`}
-                  aria-label={
-                    carrito.unidades > 0
-                      ? `Ver pedido, ${carrito.unidades} ${carrito.unidades === 1 ? 'plato' : 'platos'}`
-                      : 'Ver pedido'
-                  }
-                  className="relative flex size-11 items-center justify-center rounded-[12px] border border-dorado text-dorado-700 hover:bg-dorado/12"
-                >
-                  <ShoppingBasket aria-hidden className="size-5" strokeWidth={1.5} />
-                  {carrito.unidades > 0 && (
-                    <span className="absolute -top-[7px] -right-[7px] box-border h-5 min-w-5 rounded-[10px] bg-dorado-700 px-[5px] text-center text-xs leading-5 font-semibold text-white">
-                      {carrito.unidades}
-                    </span>
-                  )}
-                </Link>
-              )}
             </div>
             {datos.menu && (
               <label className="flex items-center gap-2.5 border-b border-linea-clasica focus-within:border-dorado-700 pt-1.5 pb-2.5 text-tinta-clasica/60">

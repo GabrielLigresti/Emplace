@@ -2,7 +2,7 @@ import type { BloqueoCierre, EstadoReserva, Mesa, ModoAsignacion, Pagina } from 
 import type { Prisma } from '../generated/prisma/client';
 import { aHora } from '../lib/hora';
 import { prisma } from '../lib/prisma';
-import { MARGEN_VENCIMIENTO_MIN, PAGO_VENCE_MIN } from '../domain/pago';
+import { MARGEN_VENCIMIENTO_MIN, PAGO_VENCE_MIN } from '../domain/pago/pago';
 import { totalesDeCuenta } from './cuenta-mesa.repository';
 import { aMesa } from './mesa.repository';
 

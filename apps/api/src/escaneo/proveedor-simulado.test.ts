@@ -2,7 +2,8 @@ import { UMBRALES_POR_DEFECTO } from '@pgim/shared';
 import { validarGlb } from '../lib/archivos-modelo';
 import { ProveedorSimulado } from './proveedor-simulado';
 
-const VIDEO = Buffer.from('video');
+const f = Buffer.from('foto');
+const FOTOS = { front: f, left: f, back: f, right: f };
 
 describe('ProveedorSimulado', () => {
   it('se llama simulado y pide los umbrales por defecto', () => {
@@ -13,13 +14,13 @@ describe('ProveedorSimulado', () => {
 
   it('iniciar devuelve sim-<ahora>', async () => {
     const p = new ProveedorSimulado({ ahora: () => 1000 });
-    expect(await p.iniciar(VIDEO, 'mp4')).toBe('sim-1000');
+    expect(await p.iniciar(FOTOS)).toBe('sim-1000');
   });
 
   it('sigue en proceso antes de la demora', async () => {
     let t = 1000;
     const p = new ProveedorSimulado({ demoraMs: 500, ahora: () => t });
-    const id = await p.iniciar(VIDEO, 'mp4');
+    const id = await p.iniciar(FOTOS);
     t = 1499;
     expect(await p.consultar(id)).toEqual({ estado: 'EN_PROCESO' });
   });
@@ -27,7 +28,7 @@ describe('ProveedorSimulado', () => {
   it('queda listo después de la demora, con un .glb válido y sin .usdz', async () => {
     let t = 1000;
     const p = new ProveedorSimulado({ demoraMs: 500, ahora: () => t });
-    const id = await p.iniciar(VIDEO, 'mp4');
+    const id = await p.iniciar(FOTOS);
     t = 1500;
     const r = await p.consultar(id);
     expect(r.estado).toBe('LISTO');
@@ -47,11 +48,11 @@ describe('ProveedorSimulado', () => {
   it('falla con el motivo cuando se fuerza la falla', async () => {
     let t = 1000;
     const p = new ProveedorSimulado({ demoraMs: 0, fallar: true, ahora: () => t });
-    const id = await p.iniciar(VIDEO, 'mov');
+    const id = await p.iniciar(FOTOS);
     t = 2000;
     expect(await p.consultar(id)).toEqual({
       estado: 'FALLIDO',
-      motivo: 'No pudimos armar el modelo con este video',
+      motivo: 'No pudimos armar el modelo con estas fotos',
     });
   });
 

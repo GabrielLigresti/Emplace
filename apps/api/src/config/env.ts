@@ -32,6 +32,8 @@ const envSchema = z.object({
   PROVEEDOR_3D: z.string().min(1).default('simulado'),
   SIMULADO_DEMORA_MS: z.coerce.number().int().min(0).default(20000),
   SIMULADO_FALLA: z.stringbool().default(false),
+  // Vacía (como en .env.example) equivale a sin clave.
+  TRIPO_API_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
   ESCANEO_INTERVALO_MS: z.coerce.number().int().positive().default(10000),
   // Pasado este tiempo un escaneo sin resultado se da por fallido.
   ESCANEO_TIMEOUT_MIN: z.coerce.number().int().positive().default(30),
