@@ -3,7 +3,7 @@ import type { EstadoSesion } from '../lib/useSesionRa';
 
 const INSTRUCCIONES: Record<EstadoSesion, string> = {
   abriendo: 'Abriendo la cámara…',
-  buscando: 'Mové el celular despacio, apuntando a la mesa cerca del plato.',
+  buscando: 'Mové el celular despacio, apuntando a la mesa.',
   apuntando: 'Apuntá el anillo al centro del plato y tocá la pantalla.',
   colocado: 'Tocá otro punto para moverlo.',
 };
