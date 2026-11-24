@@ -54,7 +54,7 @@ Salvo las fachadas y la carta del bodegón, todas están adaptadas a un lienzo c
 | `sushi/poke-de-salmon.webp` | Poke bowl de salmón con pepino, edamame y choclo, cenital | Miu Sua | [https://unsplash.com/photos/_aQZnmZTuvo](https://unsplash.com/photos/_aQZnmZTuvo) | Licencia de Unsplash | Recorte con máscara elíptica sobre el bowl (fondo quitado, transparente), centrado, 1000x1000, WebP |
 | `sushi/gyozas.webp` | Gyozas fritas con salsa agridulce y orquídea, cenital | Zoshua Colah | [https://unsplash.com/photos/tS8Mf38fH9w](https://unsplash.com/photos/tS8Mf38fH9w) | Licencia de Unsplash | Recorte con máscara elíptica sobre el plato (mesa azul quitada, transparente), centrado, 1000x1000, WebP |
 | `bebidas/agua-mineral.webp` | Agua mineral | charlesdeluvio | [https://unsplash.com/photos/edBR3b2JAuA](https://unsplash.com/photos/edBR3b2JAuA) | Licencia de Unsplash | Recorte del fondo con máscara (transparencia), centrado y escalado en lienzo 1000x1000, WebP |
-| `bebidas/gaseosa-cola.webp` | Gaseosa cola | Alimentos Fotogénicos | [https://unsplash.com/photos/8jVW81XI-3A](https://unsplash.com/photos/8jVW81XI-3A) | Licencia de Unsplash | Recorte del fondo con máscara (transparencia), centrado y escalado en lienzo 1000x1000, WebP |
+| `bebidas/gaseosa-cola-vaso.webp` | Gaseosa cola | Sin registrar | Unsplash | Licencia de Unsplash | Recorte cuadrado, fondo original, lienzo 1000x1000, WebP |
 
 ## Fachadas de las sucursales
 

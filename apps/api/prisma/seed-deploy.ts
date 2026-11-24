@@ -203,7 +203,7 @@ const BEBIDA_GASEOSA: PlatoSeed = {
   categoria: 'Bebidas',
   precio: 2500,
   descripcion: 'Botella de 500 ml, bien fría.',
-  foto: 'bebidas/gaseosa-cola.webp',
+  foto: 'bebidas/gaseosa-cola-vaso.webp',
   reventa: 'Gaseosa cola 500 ml',
 };
 const BEBIDA_MALBEC: PlatoSeed = {
