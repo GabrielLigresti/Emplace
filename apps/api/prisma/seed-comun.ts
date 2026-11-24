@@ -71,6 +71,8 @@ export interface ModeloRaSeed {
   plato: string;
   archivo: string;
   porcionGramos: number;
+  // 1 por defecto.
+  escalaReal?: number;
 }
 
 export interface RecetaSeed {
@@ -257,9 +259,10 @@ export async function seedMenus(
     const fila = existente
       ? await tx.menu.update({ where: { id: existente.id }, data: datos })
       : await tx.menu.create({ data: { restauranteId, nombre: menu.nombre, ...datos } });
-    await tx.menuItem.deleteMany({ where: { menuId: fila.id } });
+    // Los platos agregados al menú desde el panel se conservan.
     await tx.menuItem.createMany({
       data: platoIds.map((itemMenuId) => ({ menuId: fila.id, itemMenuId })),
+      skipDuplicates: true,
     });
     ids.push(fila.id);
   }
@@ -354,7 +357,7 @@ export async function seedModelosRa(
     const datos = {
       urlModelo: await guardarModelo(archivo, 'glb'),
       urlModeloIos: null,
-      escalaReal: 1,
+      escalaReal: modelo.escalaReal ?? 1,
       porcionGramos: modelo.porcionGramos,
     };
     await prisma.modeloRA.upsert({

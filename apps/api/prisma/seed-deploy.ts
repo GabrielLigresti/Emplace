@@ -119,6 +119,7 @@ const CATALOGO: Record<string, [UnidadBase, number]> = {
   'Pan rallado': ['GRAMO', 2],
   'Penne secos': ['GRAMO', 3],
   'Pan de hamburguesa': ['UNIDAD', 380],
+  'Pan de hamburguesa negro': ['UNIDAD', 380],
   'Tubo de cannoli': ['UNIDAD', 180],
   // Despensa, aceites y salsas
   'Aceite de oliva': ['MILILITRO', 12],
@@ -247,9 +248,8 @@ interface EmpleadoSeed {
   sucursales: number[];
 }
 
-// Extras de la parrilla: producción, historial, simulador y modelos RA.
+// Extras de la parrilla: producción, historial y simulador.
 interface DemoSeed {
-  modelosRa: readonly ModeloRaSeed[];
   // Empleado de cocina de cada sucursal (por nombre).
   cocinaDe: Record<string, string>;
   semanasHistorial: Record<string, number>;
@@ -267,6 +267,7 @@ interface RestauranteSeed {
   intermedios: IntermedioSeed[];
   platos: PlatoSeed[];
   empleados: EmpleadoSeed[];
+  modelosRa?: readonly ModeloRaSeed[];
   demo?: DemoSeed;
 }
 
@@ -778,11 +779,11 @@ const RESTAURANTES: RestauranteSeed[] = [
       { usuario: 'mozo7', nombreCompleto: 'Joaquín Villalba', rol: 'Mozo', sucursales: [1] },
       { usuario: 'cocinero3', nombreCompleto: 'Ivana Sosa', rol: 'Cocinero', sucursales: [1] },
     ],
+    modelosRa: [
+      { plato: 'Flan casero', archivo: 'flan.glb', porcionGramos: 120 },
+      { plato: 'Bife de chorizo con papas', archivo: 'bife.glb', porcionGramos: 400 },
+    ],
     demo: {
-      modelosRa: [
-        { plato: 'Flan casero', archivo: 'flan.glb', porcionGramos: 120 },
-        { plato: 'Bife de chorizo con papas', archivo: 'bife.glb', porcionGramos: 400 },
-      ],
       cocinaDe: {
         Palermo: 'cocina@parrilla.pgim.test',
         'San Telmo': 'cocinero3@parrilla.pgim.test',
@@ -1073,6 +1074,26 @@ const RESTAURANTES: RestauranteSeed[] = [
         ]),
       },
       {
+        nombre: 'Hamburguesa pan negro',
+        categoria: 'Hamburguesas',
+        precio: 18000,
+        descripcion: 'Con pan negro, bacon, cheddar, lechuga, tomate y nuestra salsa especial.',
+        foto: 'hamburgueseria/hamburguesa-pan-negro.webp',
+        diametroCm: 26,
+        receta: receta(
+          1,
+          'Dorar el medallón y la panceta, fundir el cheddar y armar en el pan negro.',
+          [
+            ['Pan de hamburguesa negro', 1, 'UNIDAD'],
+            ['Carne molida', 120, 'GRAMO', 5],
+            ['Queso cheddar', 80, 'GRAMO', 10],
+            ['Lechuga', 100, 'GRAMO', 5],
+            ['Tomate', 40, 'GRAMO'],
+            ['Panceta', 50, 'GRAMO', 5],
+          ],
+        ),
+      },
+      {
         nombre: 'Pollo crispy',
         categoria: 'Hamburguesas',
         precio: 12800,
@@ -1167,6 +1188,14 @@ const RESTAURANTES: RestauranteSeed[] = [
       },
       BEBIDA_GASEOSA,
       BEBIDA_CERVEZA,
+    ],
+    modelosRa: [
+      {
+        plato: 'Hamburguesa pan negro',
+        archivo: 'hamburguesa-pan-negro.glb',
+        porcionGramos: 400,
+        escalaReal: 0.26,
+      },
     ],
     empleados: plantelBasico([
       'Leandro Rojas',
@@ -1775,11 +1804,11 @@ async function seedMenuEInventario(
 
   const platoIds: string[] = [];
   for (const plato of r.platos) {
+    const fotoUrl = `/fotos-deploy/${plato.foto}`;
     const datos = {
       categoriaId: categoriaIds.get(plato.categoria)!,
       precio: plato.precio,
       descripcion: plato.descripcion,
-      fotoUrl: `/fotos-deploy/${plato.foto}`,
       disponible: true,
       activo: true,
       insumoId: plato.reventa ? componentes.get(plato.reventa)! : null,
@@ -1790,11 +1819,21 @@ async function seedMenuEInventario(
     const item = existente
       ? await tx.itemMenu.update({
           where: { id: existente.id },
-          // Un diámetro ya cargado no se pisa: es el que usa el escaneo.
-          data: { ...datos, diametroCm: existente.diametroCm ?? plato.diametroCm },
+          // No se pisan el diámetro ya cargado (lo usa el escaneo) ni la foto subida desde el panel.
+          data: {
+            ...datos,
+            diametroCm: existente.diametroCm ?? plato.diametroCm,
+            fotoUrl: existente.fotoUrl?.startsWith('/api/uploads/') ? existente.fotoUrl : fotoUrl,
+          },
         })
       : await tx.itemMenu.create({
-          data: { restauranteId, nombre: plato.nombre, ...datos, diametroCm: plato.diametroCm },
+          data: {
+            restauranteId,
+            nombre: plato.nombre,
+            ...datos,
+            diametroCm: plato.diametroCm,
+            fotoUrl,
+          },
         });
 
     if (plato.receta) await seedReceta(tx, { itemMenuId: item.id }, plato.receta, componentes);
@@ -1868,9 +1907,9 @@ async function main(): Promise<void> {
   // Los extras van al final: si fallan, los restaurantes y los comensales ya están.
   let reservasHistorial = 0;
   for (const { r, restauranteId, sucursalIds } of cargados) {
+    if (r.modelosRa) await seedModelosRa(restauranteId, r.modelosRa);
     if (!r.demo) continue;
-    const { modelosRa, cocinaDe, semanasHistorial, prefijoEmailHistorial, emailReservas } = r.demo;
-    await seedModelosRa(restauranteId, modelosRa);
+    const { cocinaDe, semanasHistorial, prefijoEmailHistorial, emailReservas } = r.demo;
     await seedProduccionDemo(restauranteId, sucursalIds, cocinaDe);
     reservasHistorial = await seedHistorialVentas(
       restauranteId,
