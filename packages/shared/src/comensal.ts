@@ -12,7 +12,7 @@ export interface SucursalComensal {
 }
 
 export interface RestauranteComensal extends Referencia {
-  sucursales: SucursalComensal[];
+  sucursales: (SucursalComensal & { fotoUrl: string | null })[];
 }
 
 export interface PlatoMenu {

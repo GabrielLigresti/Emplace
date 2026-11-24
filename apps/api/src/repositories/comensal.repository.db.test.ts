@@ -25,7 +25,7 @@ describe('comensalRepository.listarSucursales', () => {
     });
     await prisma.sucursal.update({
       where: { id: b.sucursalId },
-      data: { barrio: 'VILLA_CRESPO' },
+      data: { barrio: 'VILLA_CRESPO', fotoUrl: '/fotos/b.webp' },
     });
 
     const restaurantes = await comensalRepository.listarSucursales();
@@ -35,9 +35,12 @@ describe('comensalRepository.listarSucursales', () => {
     expect(sucursales).toHaveLength(2);
     expect(sucursales.map((s) => s.nombre)).not.toContain('Cerrada');
     for (const s of sucursales) {
-      expect(Object.keys(s).sort()).toEqual(['barrio', 'direccion', 'id', 'nombre']);
+      expect(Object.keys(s).sort()).toEqual(['barrio', 'direccion', 'fotoUrl', 'id', 'nombre']);
     }
     const deB = restaurantes.find((r) => r.id === b.restauranteId)!;
     expect(deB.sucursales[0]!.barrio).toBe('VILLA_CRESPO');
+    expect(deB.sucursales[0]!.fotoUrl).toBe('/fotos/b.webp');
+    const deA = restaurantes.find((r) => r.id === a.restauranteId)!;
+    expect(deA.sucursales[0]!.fotoUrl).toBeNull();
   });
 });

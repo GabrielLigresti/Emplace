@@ -189,24 +189,33 @@ describe('publicoService: menú y plato', () => {
 });
 
 // Búsqueda: un repositorio y un menú visible falsos, con dos restaurantes.
-type Suc = { id: string; nombre: string; direccion: string; barrio: Barrio };
+type Suc = {
+  id: string;
+  nombre: string;
+  direccion: string;
+  barrio: Barrio;
+  fotoUrl: string | null;
+};
 const CENTRO: Suc = {
   id: 'centro',
   nombre: 'Centro',
   direccion: 'Siempre Viva 742',
   barrio: 'SAN_NICOLAS',
+  fotoUrl: '/fotos/centro.webp',
 };
 const PALERMO: Suc = {
   id: 'palermo',
   nombre: 'Palermo',
   direccion: 'Honduras 5000',
   barrio: 'PALERMO',
+  fotoUrl: null,
 };
 const VILLA: Suc = {
   id: 'villa',
   nombre: 'Villa Crespo',
   direccion: 'Corrientes 5500',
   barrio: 'VILLA_CRESPO',
+  fotoUrl: null,
 };
 
 function buscador(platosPorSucursal: Record<string, string[] | null>) {
@@ -347,6 +356,7 @@ describe('publicoService: buscar', () => {
     expect(Object.keys(r[0]?.sucursal ?? {}).sort()).toEqual([
       'barrio',
       'direccion',
+      'fotoUrl',
       'id',
       'nombre',
     ]);
@@ -371,6 +381,7 @@ describe('publicoService: buscar, campos públicos', () => {
       nombre: 'Centro',
       direccion: 'Siempre Viva 742',
       barrio: 'SAN_NICOLAS',
+      fotoUrl: '/fotos/centro.webp',
     });
     expect(r?.restaurante).toEqual({ id: 'r', nombre: 'R' });
   });

@@ -86,7 +86,7 @@ export const comensalRepository: ComensalRepository = {
         nombre: true,
         sucursales: {
           where: { activa: true },
-          select: { id: true, nombre: true, direccion: true, barrio: true },
+          select: { id: true, nombre: true, direccion: true, barrio: true, fotoUrl: true },
           orderBy: { nombre: 'asc' },
         },
       },

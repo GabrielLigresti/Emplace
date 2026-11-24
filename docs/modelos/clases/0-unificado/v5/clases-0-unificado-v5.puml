@@ -19,6 +19,7 @@
 ' Menor (28/10): Pago.metodo opcional; lo informa Mercado Pago al aprobarse (el comensal elige el medio en Mercado Pago).
 ' Menor (04/11): Verificador.verificar recibe los pronósticos de la semana; TipoAlerta suma INASISTENCIA (CU-21).
 ' Menor (04/11, Hito 8): Sucursal.barrio con el enum Barrio (48 barrios de CABA) para el filtro del buscador.
+' Menor (24/11): Sucursal.fotoUrl opcional, para la foto de los resultados del buscador.
 ' PNG a 88 dpi (antes 96, 103, 104, 105, 110 y 125) para no superar 25 MP (límite de imágenes de Google Docs). Para imprimir o hacer zoom, usar el PDF/SVG vectorial.
 top to bottom direction
 skinparam dpi 88
@@ -76,6 +77,7 @@ package "1. Organización, acceso y personal" as P1 {
     -nombre : String
     -direccion : String
     -barrio : Barrio
+    -fotoUrl : String [0..1]
     -horarioApertura : Time
     -horarioCierre : Time
     -toleranciaNoShowMin : Integer
