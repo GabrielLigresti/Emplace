@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { prisma } from '../lib/prisma';
 import { limpiarBase } from './db-setup';
@@ -19,19 +20,63 @@ function correrSeed() {
 }
 
 describe('seed de deploy', () => {
-  it('deja los cinco restaurantes y se puede correr dos veces', async () => {
+  it('deja los seis restaurantes y se puede correr dos veces', async () => {
     await limpiarBase();
 
     const primera = correrSeed();
     expect(primera.status).toBe(0);
-    expect(await prisma.restaurante.count()).toBe(5);
+    expect(await prisma.restaurante.count()).toBe(6);
     const sucursales = await prisma.sucursal.count();
     const platos = await prisma.itemMenu.count();
+    const fotos = (await prisma.sucursal.findMany({ select: { fotoUrl: true } })).map(
+      (s) => s.fotoUrl,
+    );
+    expect(new Set(fotos).size).toBe(sucursales);
+    const fotosPlatos = (await prisma.itemMenu.findMany({ select: { fotoUrl: true } })).map(
+      (p) => p.fotoUrl,
+    );
+    for (const foto of [...fotos, ...fotosPlatos]) {
+      expect(existsSync(path.resolve(__dirname, '../../../web/public', `.${foto}`))).toBe(true);
+    }
+    const sinDiametro = await prisma.itemMenu.findMany({
+      where: { diametroCm: null },
+      select: { categoria: { select: { nombre: true } } },
+    });
+    expect(new Set(sinDiametro.map((p) => p.categoria.nombre))).toEqual(new Set(['Bebidas']));
+
+    // Como una base sembrada con una versión anterior: sin fotos ni diámetros, salvo
+    // uno cargado a mano, y con una mesa del simulador reservada por otro comensal.
+    await prisma.sucursal.updateMany({ data: { fotoUrl: null } });
+    await prisma.itemMenu.updateMany({ data: { diametroCm: null } });
+    const bife = await prisma.itemMenu.findFirstOrThrow({
+      where: { nombre: 'Bife de chorizo con papas' },
+    });
+    await prisma.itemMenu.update({ where: { id: bife.id }, data: { diametroCm: 27.5 } });
+    const comensal = await prisma.usuario.findUniqueOrThrow({
+      where: { email: 'comensal@demo.pgim.test' },
+    });
+    const reservada = await prisma.reserva.findFirstOrThrow({
+      where: { comensal: { usuario: { email: 'reservas-deploy@demo.test' } }, estado: 'PENDIENTE' },
+    });
+    await prisma.reserva.update({
+      where: { id: reservada.id },
+      data: { comensalId: comensal.id },
+    });
 
     const segunda = correrSeed();
     expect(segunda.status).toBe(0);
-    expect(await prisma.restaurante.count()).toBe(5);
+    expect(await prisma.restaurante.count()).toBe(6);
     expect(await prisma.sucursal.count()).toBe(sucursales);
     expect(await prisma.itemMenu.count()).toBe(platos);
+    expect(await prisma.sucursal.count({ where: { fotoUrl: null } })).toBe(0);
+    const bifeDespues = await prisma.itemMenu.findUniqueOrThrow({ where: { id: bife.id } });
+    expect(Number(bifeDespues.diametroCm)).toBe(27.5);
+    expect(
+      await prisma.itemMenu.count({
+        where: { diametroCm: null, categoria: { nombre: { not: 'Bebidas' } } },
+      }),
+    ).toBe(0);
+    const ajena = await prisma.reserva.findUniqueOrThrow({ where: { id: reservada.id } });
+    expect(ajena.comensalId).toBe(comensal.id);
   }, 60_000);
 });

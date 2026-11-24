@@ -140,7 +140,7 @@ export function BuscadorSucursales({ compacto = false }: { compacto?: boolean })
               </div>
             )}
             {datos && datos.length > 0 && (
-              <ul className={`grid gap-5 ${compacto ? '' : 'md:grid-cols-3'}`}>
+              <ul className={`grid gap-x-5 gap-y-9 ${compacto ? '' : 'md:grid-cols-3'}`}>
                 {datos.map((r) => (
                   <TarjetaResultado key={r.sucursal.id} r={r} />
                 ))}
@@ -159,8 +159,20 @@ const mismoTexto = (a: string, b: string) =>
 
 function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
   const { sucursal, restaurante, platosCoincidentes } = r;
+  // La foto que no carga se trata como si no hubiera: queda solo el texto.
+  const [fotoRota, setFotoRota] = useState<string | null>(null);
+  const foto = sucursal.fotoUrl !== fotoRota ? sucursal.fotoUrl : null;
   return (
     <li className="flex flex-col gap-3.5">
+      {foto && (
+        <img
+          src={foto}
+          alt=""
+          loading="lazy"
+          onError={() => setFotoRota(foto)}
+          className="block aspect-video w-full rounded-clasico bg-papel-hondo object-cover"
+        />
+      )}
       <div className="flex flex-col gap-1">
         <p className="m-0 font-titulo text-2xl leading-[1.1] font-semibold">{restaurante.nombre}</p>
         <p className="m-0 text-[13px] leading-5 text-tinta-clasica/70">

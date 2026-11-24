@@ -68,7 +68,13 @@ export function createPublicoService(
             .filter((s) => !barrio || s.barrio === barrio)
             .map((s) => ({
               restaurante: { id: r.id, nombre: r.nombre },
-              sucursal: { id: s.id, nombre: s.nombre, direccion: s.direccion, barrio: s.barrio },
+              sucursal: {
+                id: s.id,
+                nombre: s.nombre,
+                direccion: s.direccion,
+                barrio: s.barrio,
+                fotoUrl: s.fotoUrl,
+              },
             })),
         )
         .sort(
