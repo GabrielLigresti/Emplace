@@ -1,7 +1,9 @@
 // Datos ficticios para el deploy: seis restaurantes operativos de dos sucursales cada
 // uno, con carta y fotos. Es idempotente (npm run db:seed:deploy -w @pgim/api) y no
 // choca con seed.ts: CUIT y emails propios, salvo las dos cuentas de comensal de la
-// demo, que se comparten (el nombre que queda es el de la última seed que corrió). Solo la parrilla lleva historial, producción, simulador y RA.
+// demo, que se comparten (el nombre que queda es el de la última seed que
+// corrió). Solo la parrilla lleva historial, producción y simulador; los modelos RA son de
+// la parrilla y la hamburguesería.
 import { CONFIGURACION_APERTURA_POR_DEFECTO, type Barrio, type UnidadBase } from '@pgim/shared';
 import { prisma } from '../src/lib/prisma';
 import { hashPassword } from '../src/lib/password';
@@ -1874,7 +1876,7 @@ async function seedRestaurante(
         where: { id: { in: [...sucursalIds.values()] } },
         data: { menuActivoId: cartaId },
       });
-      return { restauranteId: restaurante.id, sucursalIds };
+      return { restauranteId: restaurante.id, sucursalIds, platoIds };
     },
     { timeout: 120_000 },
   );
@@ -1906,13 +1908,14 @@ async function main(): Promise<void> {
 
   // Los extras van al final: si fallan, los restaurantes y los comensales ya están.
   let reservasHistorial = 0;
-  for (const { r, restauranteId, sucursalIds } of cargados) {
+  for (const { r, restauranteId, sucursalIds, platoIds } of cargados) {
     if (r.modelosRa) await seedModelosRa(restauranteId, r.modelosRa);
     if (!r.demo) continue;
     const { cocinaDe, semanasHistorial, prefijoEmailHistorial, emailReservas } = r.demo;
     await seedProduccionDemo(restauranteId, sucursalIds, cocinaDe);
     reservasHistorial = await seedHistorialVentas(
       restauranteId,
+      platoIds,
       sucursalIds,
       passwordHash,
       semanasHistorial,

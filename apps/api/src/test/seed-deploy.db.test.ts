@@ -1,10 +1,15 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { prisma } from '../lib/prisma';
 import { limpiarBase } from './db-setup';
 
+// La seed guarda modelos 3D: van a una carpeta temporal.
+const uploads = mkdtempSync(path.join(tmpdir(), 'pgim-seed-'));
+
 afterAll(async () => {
+  rmSync(uploads, { recursive: true, force: true });
   await limpiarBase();
   await prisma.$disconnect();
 });
@@ -14,7 +19,7 @@ afterAll(async () => {
 function correrSeed() {
   return spawnSync('npx', ['tsx', 'prisma/seed-deploy.ts'], {
     cwd: path.resolve(__dirname, '../..'),
-    env: process.env,
+    env: { ...process.env, UPLOADS_DIR: uploads },
     encoding: 'utf8',
   });
 }

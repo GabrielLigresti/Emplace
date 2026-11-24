@@ -512,6 +512,8 @@ export async function insertarPorLotes<T>(filas: T[], insertar: (lote: T[]) => P
 
 export async function seedHistorialVentas(
   restauranteId: string,
+  // Solo los platos de la seed: los agregados desde el panel no tienen ventas ficticias.
+  platoIds: string[],
   sucursalIds: Map<NombreSucursal, string>,
   passwordHash: string,
   semanasHistorial: Record<NombreSucursal, number>,
@@ -567,6 +569,7 @@ export async function seedHistorialVentas(
       await prisma.itemMenu.findMany({
         where: {
           restauranteId,
+          id: { in: platoIds },
           activo: true,
           menus: {
             some: { menu: { sucursalesActivas: { some: { id: sucursalId, restauranteId } } } },

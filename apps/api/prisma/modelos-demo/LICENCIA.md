@@ -1,6 +1,6 @@
 # Modelos de demostración
 
-Los usa el seed para los modelos RA de los platos. Están a escala real (en metros) y con las texturas embebidas, procesados con gltf-transform.
+Los usa el seed para los modelos RA de los platos. `flan.glb` y `bife.glb` están a escala real (en metros) y con las texturas embebidas, procesados con gltf-transform. `hamburguesa-pan-negro.glb` mide 1 m de ancho y la seed lo lleva a su tamaño con `escalaReal`.
 
 | Archivo | Origen | Licencia |
 |---|---|---|
