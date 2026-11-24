@@ -97,3 +97,18 @@ describe('reservaRepository.listarPanel', () => {
     expect(await ids()).toEqual([]);
   });
 });
+
+describe('reservaRepository.listarDelComensal', () => {
+  it('trae el restaurante y la sucursal de cada reserva', async () => {
+    const filas = await reservaRepository.listarDelComensal(e.comensalId);
+
+    expect(filas).toHaveLength(1);
+    expect(filas[0]).toMatchObject({
+      id: e.reservaId,
+      sucursalId: e.sucursalId,
+      sucursalNombre: 'Centro',
+      restauranteId: e.restauranteId,
+      restauranteNombre: 'Restaurante de prueba',
+    });
+  });
+});

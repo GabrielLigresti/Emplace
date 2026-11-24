@@ -36,6 +36,8 @@ function fila(cambios: Partial<FilaReserva> = {}): FilaReserva {
     id: 'R',
     sucursalId: S,
     sucursalNombre: 'Centro',
+    restauranteId: 'rest',
+    restauranteNombre: 'Resto',
     comensalId: C,
     mesaId: 'm2',
     mesaNumero: 2,
@@ -345,7 +347,12 @@ describe('reservaService', () => {
 
     const [primera] = await service.misReservas(C);
 
-    expect(primera).toMatchObject({ id: 'R', cancelable: false });
+    expect(primera).toMatchObject({
+      id: 'R',
+      cancelable: false,
+      restaurante: { id: 'rest', nombre: 'Resto' },
+      sucursal: { id: S, nombre: 'Centro' },
+    });
   });
 });
 

@@ -55,7 +55,7 @@ export function LandingPage() {
             alt="Emplace"
             width={320}
             height={256}
-            className="h-14 w-auto md:h-16"
+            className="h-16 w-auto"
           />
           <nav aria-label="Secciones" className="hidden items-center gap-8 text-sm md:flex">
             <a href="#restaurantes" className="py-3 text-dorado-700 hover:text-dorado-800">

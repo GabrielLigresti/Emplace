@@ -20,6 +20,8 @@ function reserva(cambios: Partial<FilaReservaPanel> = {}): FilaReservaPanel {
     id: 'R',
     sucursalId: 'S',
     sucursalNombre: 'Centro',
+    restauranteId: 'rest',
+    restauranteNombre: 'Resto',
     comensalId: 'C',
     mesaId: 'm1',
     mesaNumero: 1,

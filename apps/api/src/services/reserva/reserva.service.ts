@@ -70,6 +70,7 @@ export function createReservaService(
     const ctx = { inicio: fila.inicio, toleranciaNoShowMin: fila.toleranciaNoShowMin };
     return {
       id: fila.id,
+      restaurante: { id: fila.restauranteId, nombre: fila.restauranteNombre },
       sucursal: { id: fila.sucursalId, nombre: fila.sucursalNombre },
       mesa: { id: fila.mesaId, numero: fila.mesaNumero },
       inicio: fila.inicio.toISOString(),
