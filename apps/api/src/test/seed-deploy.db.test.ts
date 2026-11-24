@@ -1,10 +1,15 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { prisma } from '../lib/prisma';
 import { limpiarBase } from './db-setup';
 
+// La seed guarda modelos 3D: van a una carpeta temporal.
+const uploads = mkdtempSync(path.join(tmpdir(), 'pgim-seed-'));
+
 afterAll(async () => {
+  rmSync(uploads, { recursive: true, force: true });
   await limpiarBase();
   await prisma.$disconnect();
 });
@@ -14,7 +19,7 @@ afterAll(async () => {
 function correrSeed() {
   return spawnSync('npx', ['tsx', 'prisma/seed-deploy.ts'], {
     cwd: path.resolve(__dirname, '../..'),
-    env: process.env,
+    env: { ...process.env, UPLOADS_DIR: uploads },
     encoding: 'utf8',
   });
 }
@@ -52,6 +57,22 @@ describe('seed de deploy', () => {
       where: { nombre: 'Bife de chorizo con papas' },
     });
     await prisma.itemMenu.update({ where: { id: bife.id }, data: { diametroCm: 27.5 } });
+    // Cargas del panel: una foto subida y un plato agregado a la carta.
+    const gaseosa = await prisma.itemMenu.findFirstOrThrow({
+      where: { nombre: 'Gaseosa cola 500 ml' },
+      include: { menus: true },
+    });
+    const subida = '/api/uploads/fotos/subida.jpg';
+    await prisma.itemMenu.update({ where: { id: gaseosa.id }, data: { fotoUrl: subida } });
+    const agregado = await prisma.itemMenu.create({
+      data: {
+        restauranteId: gaseosa.restauranteId,
+        categoriaId: gaseosa.categoriaId,
+        nombre: 'Plato del panel',
+        precio: 1000,
+        menus: { create: { menuId: gaseosa.menus[0]!.menuId } },
+      },
+    });
     const comensal = await prisma.usuario.findUniqueOrThrow({
       where: { email: 'comensal@demo.pgim.test' },
     });
@@ -67,7 +88,7 @@ describe('seed de deploy', () => {
     expect(segunda.status).toBe(0);
     expect(await prisma.restaurante.count()).toBe(6);
     expect(await prisma.sucursal.count()).toBe(sucursales);
-    expect(await prisma.itemMenu.count()).toBe(platos);
+    expect(await prisma.itemMenu.count()).toBe(platos + 1);
     expect(await prisma.sucursal.count({ where: { fotoUrl: null } })).toBe(0);
     const bifeDespues = await prisma.itemMenu.findUniqueOrThrow({ where: { id: bife.id } });
     expect(Number(bifeDespues.diametroCm)).toBe(27.5);
@@ -76,6 +97,14 @@ describe('seed de deploy', () => {
         where: { diametroCm: null, categoria: { nombre: { not: 'Bebidas' } } },
       }),
     ).toBe(0);
+    const gaseosaDespues = await prisma.itemMenu.findUniqueOrThrow({ where: { id: gaseosa.id } });
+    expect(gaseosaDespues.fotoUrl).toBe(subida);
+    expect(await prisma.menuItem.count({ where: { itemMenuId: agregado.id } })).toBe(1);
+    const negra = await prisma.itemMenu.findFirstOrThrow({
+      where: { nombre: 'Hamburguesa pan negro' },
+      include: { modeloRa: true },
+    });
+    expect(negra.modeloRa).not.toBeNull();
     const ajena = await prisma.reserva.findUniqueOrThrow({ where: { id: reservada.id } });
     expect(ajena.comensalId).toBe(comensal.id);
   }, 60_000);

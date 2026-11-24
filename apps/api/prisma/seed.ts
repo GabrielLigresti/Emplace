@@ -618,7 +618,7 @@ async function seedSegundoRestaurante(tx: Prisma.TransactionClient, passwordHash
 async function main(): Promise<void> {
   const passwordHash = await hashPassword(PASSWORD_DEMO);
 
-  const { restauranteId, sucursalIds } = await prisma.$transaction(async (tx) => {
+  const { restauranteId, sucursalIds, platoIds } = await prisma.$transaction(async (tx) => {
     const permisoIds = await seedPermisos(tx);
 
     const restaurante = await tx.restaurante.upsert({
@@ -722,12 +722,13 @@ async function main(): Promise<void> {
         create: { usuarioId: comensal.id, nombre },
       });
     }
-    return { restauranteId: restaurante.id, sucursalIds };
+    return { restauranteId: restaurante.id, sucursalIds, platoIds };
   });
   await seedModelosRa(restauranteId, MODELOS_RA);
   await seedProduccionDemo(restauranteId, sucursalIds, COCINA_DE);
   const reservasHistorial = await seedHistorialVentas(
     restauranteId,
+    platoIds,
     sucursalIds,
     passwordHash,
     SEMANAS_HISTORIAL,

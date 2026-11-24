@@ -2,7 +2,7 @@
 
 Las usa `apps/api/prisma/seed-deploy.ts` como `fotoUrl` de los platos y las sucursales de los seis restaurantes (Vite las sirve en `/fotos-deploy/<carpeta>/<archivo>`). Casi todas vienen de Unsplash, bajo la [licencia de Unsplash](https://unsplash.com/license): uso libre, incluso comercial, sin atribución obligatoria; ninguna es de Unsplash+. Los autores se listan por cortesía. La sopa miso viene de Wikimedia Commons, con licencia CC0.
 
-Salvo las fachadas y la carta del bodegón, todas están adaptadas a un lienzo cuadrado de 1000 × 1000 en WebP, con el plato centrado, para que la web no las recorte con `object-cover`. La mayoría lleva un recorte del plato con máscara de bordes suaves sobre fondo transparente; el resto conserva su fondo liso original. La columna "Modificaciones" lo detalla en cada caso.
+Salvo las fachadas, la carta del bodegón y la hamburguesa pan negro (732 × 732), todas están adaptadas a un lienzo cuadrado de 1000 × 1000 en WebP, con el plato centrado, para que la web no las recorte con `object-cover`. La mayoría lleva un recorte del plato con máscara de bordes suaves sobre fondo transparente; el resto conserva su fondo liso original. La columna "Modificaciones" lo detalla en cada caso.
 
 | Archivo | Plato | Autor | Fuente | Licencia | Modificaciones |
 |---|---|---|---|---|---|
@@ -54,7 +54,7 @@ Salvo las fachadas y la carta del bodegón, todas están adaptadas a un lienzo c
 | `sushi/poke-de-salmon.webp` | Poke bowl de salmón con pepino, edamame y choclo, cenital | Miu Sua | [https://unsplash.com/photos/_aQZnmZTuvo](https://unsplash.com/photos/_aQZnmZTuvo) | Licencia de Unsplash | Recorte con máscara elíptica sobre el bowl (fondo quitado, transparente), centrado, 1000x1000, WebP |
 | `sushi/gyozas.webp` | Gyozas fritas con salsa agridulce y orquídea, cenital | Zoshua Colah | [https://unsplash.com/photos/tS8Mf38fH9w](https://unsplash.com/photos/tS8Mf38fH9w) | Licencia de Unsplash | Recorte con máscara elíptica sobre el plato (mesa azul quitada, transparente), centrado, 1000x1000, WebP |
 | `bebidas/agua-mineral.webp` | Agua mineral | charlesdeluvio | [https://unsplash.com/photos/edBR3b2JAuA](https://unsplash.com/photos/edBR3b2JAuA) | Licencia de Unsplash | Recorte del fondo con máscara (transparencia), centrado y escalado en lienzo 1000x1000, WebP |
-| `bebidas/gaseosa-cola.webp` | Gaseosa cola | Alimentos Fotogénicos | [https://unsplash.com/photos/8jVW81XI-3A](https://unsplash.com/photos/8jVW81XI-3A) | Licencia de Unsplash | Recorte del fondo con máscara (transparencia), centrado y escalado en lienzo 1000x1000, WebP |
+| `bebidas/gaseosa-cola-vaso.webp` | Gaseosa cola | Autor en la página | [https://unsplash.com/photos/IHKR_A_THW0](https://unsplash.com/photos/IHKR_A_THW0) | Licencia de Unsplash | Recorte cuadrado, fondo original, lienzo 1000x1000, WebP |
 
 ## Fachadas de las sucursales
 
@@ -91,3 +91,7 @@ Vienen de Unsplash, bajo la misma licencia. Todas están recortadas a un cuadrad
 | `bodegon/flan-casero.webp` | Flan casero | Felippe Lopes | [https://unsplash.com/photos/TqPdzQ00I0U](https://unsplash.com/photos/TqPdzQ00I0U) |
 | `bodegon/panqueques-con-dulce-de-leche.webp` | Panqueques con dulce de leche | Hanxiao Xu | [https://unsplash.com/photos/OSZjPknGwSs](https://unsplash.com/photos/OSZjPknGwSs) |
 | `bodegon/queso-y-dulce.webp` | Queso y dulce (postre vigilante) | Harrison Chang | [https://unsplash.com/photos/orYd0SqwioA](https://unsplash.com/photos/orYd0SqwioA) |
+
+## Hamburguesa pan negro
+
+`hamburgueseria/hamburguesa-pan-negro.webp` es una foto propia del proyecto, recortada a un cuadrado.
