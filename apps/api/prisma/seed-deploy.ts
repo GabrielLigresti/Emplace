@@ -42,13 +42,8 @@ const HORARIOS_SERVICIO = [
 ] as const;
 
 // Salón grande para la primera sucursal y chico para la segunda.
-const SALON_GRANDE: SalonSeed = {
-  capacidades: [2, 2, 4, 4, 4, 6, 6, 8, 2, 4],
-  columnas: 5,
-  x0: 10,
-  pasoX: 20,
-};
-const SALON_CHICO: SalonSeed = { capacidades: [2, 4, 4, 6, 2, 8], columnas: 3, x0: 20, pasoX: 30 };
+const SALON_GRANDE: SalonSeed = { capacidades: [2, 2, 4, 4, 4, 6, 6, 8, 2, 4] };
+const SALON_CHICO: SalonSeed = { capacidades: [2, 4, 4, 6, 2, 8] };
 
 const MENUS: readonly MenuSeed[] = [
   {

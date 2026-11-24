@@ -1,4 +1,4 @@
-import { crearBusEventos, type EventoReserva } from '../domain/eventos';
+import { crearBusEventos, type EventoReserva } from '../domain/eventos/eventos';
 import { registrarNotificadores } from './notificadores';
 
 const evento: EventoReserva = {
@@ -43,6 +43,19 @@ describe('notificadores', () => {
       mesaId: 'M',
     });
     expect(emit).toHaveBeenCalledWith('reserva:cambio', { id: 'R', estado: 'PENDIENTE' });
+  });
+
+  it('un MAPA_EDITADO avisa solo a la sala de la sucursal', () => {
+    const { io, emit } = ioFalso();
+    const bus = crearBusEventos();
+    registrarNotificadores(io as never, bus);
+
+    bus.publicar({ tipo: 'MAPA_EDITADO', sucursalId: 'S' });
+
+    expect(io.to).toHaveBeenCalledTimes(1);
+    expect(io.to).toHaveBeenCalledWith('sucursal:S');
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith('salon:mapa', { sucursalId: 'S' });
   });
 
   const pedido = {
@@ -221,9 +234,16 @@ describe('notificadores', () => {
       sucursalId: 'S',
       comensalId: 'C',
     };
+    const pagoRegistrado = {
+      tipo: 'PAGO_REGISTRADO' as const,
+      pagoId: 'P',
+      cuentaMesaId: 'M',
+      sucursalId: 'S',
+      comensalId: 'C',
+    };
     const publicar = async (
       sockets: ReturnType<typeof socketDe>[],
-      pago: typeof pagoAprobado | typeof pagoRechazado = pagoAprobado,
+      pago: typeof pagoAprobado | typeof pagoRechazado | typeof pagoRegistrado = pagoAprobado,
     ) => {
       const { io } = ioFalso();
       io.in.mockReturnValue({ fetchSockets: jest.fn().mockResolvedValue(sockets) });
@@ -252,6 +272,12 @@ describe('notificadores', () => {
     it('un pago rechazado también se avisa', async () => {
       const conPago = socketDe(sesionDe('EMPLEADO', ['pago.ver']));
       await publicar([conPago], pagoRechazado);
+      expect(conPago.emit).toHaveBeenCalledWith('pagos:cambio');
+    });
+
+    it('un pago nuevo pendiente también se avisa', async () => {
+      const conPago = socketDe(sesionDe('EMPLEADO', ['pago.ver']));
+      await publicar([conPago], pagoRegistrado);
       expect(conPago.emit).toHaveBeenCalledWith('pagos:cambio');
     });
   });

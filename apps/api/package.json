@@ -17,12 +17,14 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:seed:deploy": "tsx prisma/seed-deploy.ts",
+    "db:reubicar-mesas": "tsx prisma/reubicar-mesas.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
     "@pgim/shared": "^0.1.0",
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
+    "@types/multer": "^2.3.0",
     "compression": "^1.8.2",
     "cookie-parser": "^1.4.7",
     "dotenv": "^18.0.8",
@@ -30,6 +32,7 @@
     "express-rate-limit": "^8.7.1",
     "google-auth-library": "^11.3.4",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
     "socket.io": "^4.8.4",
     "zod": "^4.6.7"
   },

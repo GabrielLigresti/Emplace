@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { nombreSchema } from './comun';
+import { nombreSchema, type Referencia } from './comun';
 import { CODIGOS_PERMISO, type Arquetipo, type CodigoPermiso } from './permisos';
 
 export const ARQUETIPOS = ['MOZO', 'COCINERO', 'OTRO'] as const satisfies readonly Arquetipo[];
@@ -37,4 +37,20 @@ export interface Rol {
 export interface GrupoPermisos {
   modulo: string;
   permisos: { codigo: CodigoPermiso; accion: string }[];
+}
+
+// Pasa empleados al rol indicado en la URL (pestaña Empleados del editor de roles).
+export const asignacionRolSchema = z.object({
+  empleadoIds: z.array(z.uuid()).min(1, 'Elegí al menos un empleado'),
+});
+
+export type AsignacionRol = z.infer<typeof asignacionRolSchema>;
+
+// Empleado activo con su rol actual, para armar la pestaña Empleados y el modal Agregar.
+export interface EmpleadoDeRol {
+  id: string;
+  nombreCompleto: string;
+  email: string;
+  rol: Referencia;
+  sucursales: Referencia[];
 }

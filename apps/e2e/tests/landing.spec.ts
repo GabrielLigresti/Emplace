@@ -23,7 +23,8 @@ test('buscar un plato, filtrar por barrio y ver la carta sin ingresar', async ({
 
   await tarjetas.getByRole('link', { name: 'Ver carta' }).click();
   await expect(page).toHaveURL(/\/s\/[^/]+\/menu$/);
-  await expect(page.getByRole('heading', { name: 'Palermo' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Carta' })).toBeVisible();
+  await expect(page.getByText(/· Palermo$/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Ingresar' })).toBeVisible();
 
   await page

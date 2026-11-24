@@ -7,7 +7,7 @@ import {
   type EmpleadoEdicion,
 } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { personalService } from '../services/personal.service';
+import { personalService } from '../services/personal/personal.service';
 
 export const personalRouter = Router();
 

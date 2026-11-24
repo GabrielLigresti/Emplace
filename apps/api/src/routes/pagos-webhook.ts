@@ -4,7 +4,7 @@ import { obtenerCobro } from '../pagos/mercado-pago';
 import { verificarFirma } from '../pagos/firma';
 import { configMercadoPago } from '../pagos/pasarela';
 import type { ResultadoCobroPago } from '../repositories/pago.repository';
-import { pagoService } from '../services/pago.service';
+import { pagoService } from '../services/pago/pago.service';
 
 // Notificaciones de Mercado Pago (sin sesión ni tenant). Se verifica la firma
 // y el cobro se consulta a Mercado Pago por su id: el cuerpo no es fuente.

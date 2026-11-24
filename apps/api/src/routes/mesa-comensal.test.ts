@@ -7,7 +7,7 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/pago.service', () => ({
+jest.mock('../services/pago/pago.service', () => ({
   pagoService: {
     pagar: jest.fn().mockResolvedValue({ pagoId: 'p1', urlPago: 'https://mp/pagar' }),
     estado: jest.fn().mockResolvedValue({ pagoId: 'p1', estado: 'PENDIENTE' }),
@@ -16,7 +16,7 @@ jest.mock('../services/pago.service', () => ({
   },
 }));
 
-jest.mock('../services/beneficios-comensal.service', () => ({
+jest.mock('../services/beneficios-comensal/beneficios-comensal.service', () => ({
   beneficiosComensalService: { deMesa: jest.fn(), fidelidad: jest.fn().mockResolvedValue([]) },
 }));
 
@@ -77,7 +77,7 @@ describe('/api/comensal/mesa', () => {
   });
 
   it('paga como el comensal de la sesión y devuelve la URL de Mercado Pago', async () => {
-    const { pagoService } = jest.requireMock('../services/pago.service');
+    const { pagoService } = jest.requireMock('../services/pago/pago.service');
     await request(app)
       .post(`/api/comensal/mesa/${CUENTA}/pagos`)
       .set('Cookie', cookieDeComensal())
@@ -87,7 +87,7 @@ describe('/api/comensal/mesa', () => {
   });
 
   it('el estado y el continuar de un pago van siempre como el comensal de la sesión', async () => {
-    const { pagoService } = jest.requireMock('../services/pago.service');
+    const { pagoService } = jest.requireMock('../services/pago/pago.service');
     const PAGO = '01900000-0000-7000-8000-0000000000aa';
     await request(app)
       .get(`/api/comensal/pagos/${PAGO}`)
@@ -104,7 +104,9 @@ describe('/api/comensal/mesa', () => {
 
 describe('/api/comensal/mesa/:id/beneficios', () => {
   const app = createApp();
-  const { beneficiosComensalService } = jest.requireMock('../services/beneficios-comensal.service');
+  const { beneficiosComensalService } = jest.requireMock(
+    '../services/beneficios-comensal/beneficios-comensal.service',
+  );
 
   it('consulta siempre como el comensal de la sesión', async () => {
     beneficiosComensalService.deMesa.mockResolvedValue({

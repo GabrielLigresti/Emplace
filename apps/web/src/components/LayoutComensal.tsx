@@ -1,16 +1,33 @@
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import type { MiMesa } from '@pgim/shared';
-import { CalendarDays, ChevronLeft, House, LogOut, Receipt, Star, UserRound } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronLeft,
+  House,
+  LogOut,
+  Receipt,
+  ShoppingBasket,
+  Star,
+  UserRound,
+} from 'lucide-react';
 import { rutaInicio, useSesion } from '../auth/SesionProvider';
 import { useSalir } from '../auth/useSalir';
+import { useCarrito } from '../lib/carrito';
 import { useMiMesa } from '../lib/miMesa';
+import { useTemaStaff } from '../lib/useTemaStaff';
 
 const PESTANIAS = [
   { a: '/inicio', texto: 'Inicio', icono: House },
   { a: '/reservas', texto: 'Reservas', icono: CalendarDays },
   { a: '/puntos', texto: 'Mis puntos', icono: Star },
 ];
+
+const CUENTA = { a: '/cuenta', texto: 'Mi cuenta', icono: UserRound };
+
+// Acción principal fija de la carta y la ficha (botón de 56 px del diseño).
+export const claseAccionClasica =
+  'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-semibold text-white hover:bg-dorado-800';
 
 // Título de las pantallas del comensal.
 export function TituloComensal({ children }: { children: ReactNode }) {
@@ -27,14 +44,18 @@ export function LayoutComensal({
   volver,
   accionFija,
   mesaActiva,
+  clasico = false,
   children,
 }: {
   volver?: { a: string; texto: string };
   accionFija?: ReactNode;
   // La pantalla que ya consultó la mesa la pasa, para no pedirla dos veces.
   mesaActiva?: MiMesa | null;
+  // Carta y ficha: registro Clásico a sangre, sin márgenes. El tab bar no cambia.
+  clasico?: boolean;
   children: ReactNode;
 }) {
+  useTemaStaff();
   const { sesion } = useSesion();
   const salir = useSalir();
   const { pathname } = useLocation();
@@ -43,12 +64,22 @@ export function LayoutComensal({
   const esComensal = sesion?.usuario.tipo === 'COMENSAL';
   const consultada = useMiMesa(null, mesaActiva === undefined && esComensal).datos;
   const mesa = mesaActiva === undefined ? consultada : mesaActiva;
-  const pestanias = mesa
-    ? [...PESTANIAS, { a: '/mesa', texto: 'Mi mesa', icono: Receipt }]
-    : PESTANIAS;
+  // "Mi cuenta" va siempre última, a la derecha de la barra.
+  const pestanias = [
+    ...PESTANIAS,
+    ...(mesa ? [{ a: '/mesa', texto: 'Mi mesa', icono: Receipt }] : []),
+    CUENTA,
+  ];
+  // Con platos en el carrito, el acceso al pedido flota en todas las pantallas
+  // del comensal, salvo en la del pedido.
+  const carrito = useCarrito(mesa?.cuentaMesaId ?? null);
+  const rutaPedido = mesa ? `/s/${mesa.sucursal.id}/pedido` : null;
+  const conCarrito = Boolean(
+    esComensal && rutaPedido && carrito.unidades > 0 && pathname !== rutaPedido,
+  );
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className={`min-h-screen ${clasico ? 'bg-papel' : 'bg-bg'}`}>
       <header className="sticky top-0 z-10 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-[480px] items-center justify-between gap-2 px-4 py-1">
           {volver ? (
@@ -59,10 +90,18 @@ export function LayoutComensal({
               <ChevronLeft aria-hidden className="size-5 shrink-0" />
               <span className="truncate">{volver.texto}</span>
             </Link>
-          ) : (
+          ) : sesion ? (
             <span className="truncate text-sm font-medium text-text">
-              {sesion ? `Hola, ${sesion.usuario.nombre}` : 'PGIM'}
+              Hola, {sesion.usuario.nombre}
             </span>
+          ) : (
+            <img
+              src="/marca/emplace-logo.png"
+              alt="Emplace"
+              width={320}
+              height={256}
+              className="h-11 w-auto"
+            />
           )}
           {!sesion ? (
             <Link
@@ -73,23 +112,14 @@ export function LayoutComensal({
               Ingresar
             </Link>
           ) : esComensal ? (
-            <div className="flex shrink-0 items-center">
-              <Link
-                to="/cuenta"
-                aria-label="Mi cuenta"
-                className="inline-flex size-11 items-center justify-center rounded-control text-meta hover:bg-panel hover:text-text"
-              >
-                <UserRound aria-hidden className="size-5" />
-              </Link>
-              <button
-                type="button"
-                onClick={salir}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm text-meta hover:bg-panel hover:text-text"
-              >
-                <LogOut aria-hidden className="size-4" />
-                Salir
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={salir}
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-control px-2 text-sm text-meta hover:bg-panel hover:text-text"
+            >
+              <LogOut aria-hidden className="size-4" />
+              Salir
+            </button>
           ) : (
             <Link
               to={rutaInicio(sesion)}
@@ -102,15 +132,39 @@ export function LayoutComensal({
       </header>
 
       <main
-        className={`mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`}
+        className={
+          clasico
+            ? 'mx-auto max-w-[480px] bg-bg font-lora'
+            : `mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`
+        }
       >
         {children}
+        {/* Espacio para que el carrito flotante no tape el final de la pantalla. */}
+        {conCarrito && <div aria-hidden className="h-[68px]" />}
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-10">
+        {conCarrito && rutaPedido && (
+          <div className="pointer-events-none mx-auto flex max-w-[480px] justify-end px-4 pb-3">
+            <Link
+              to={rutaPedido}
+              aria-label={`Ver pedido, ${carrito.unidades} ${carrito.unidades === 1 ? 'plato' : 'platos'}`}
+              className="pointer-events-auto relative flex size-14 items-center justify-center rounded-[12px] border border-dorado bg-bg text-dorado-700 shadow-flotante hover:bg-papel-hondo"
+            >
+              <ShoppingBasket aria-hidden className="size-6" strokeWidth={1.5} />
+              <span className="absolute -top-[7px] -right-[7px] box-border h-5 min-w-5 rounded-[10px] bg-dorado-700 px-[5px] text-center text-xs leading-5 font-semibold text-white">
+                {carrito.unidades}
+              </span>
+            </Link>
+          </div>
+        )}
         {accionFija && (
           <div className="border-t border-line bg-bg">
-            <div className="mx-auto flex max-w-[480px] flex-wrap gap-2 px-4 py-2">{accionFija}</div>
+            <div
+              className={`mx-auto flex max-w-[480px] flex-wrap gap-2 ${clasico ? 'px-5 py-3' : 'px-4 py-2'}`}
+            >
+              {accionFija}
+            </div>
           </div>
         )}
         {esComensal && (
@@ -119,7 +173,7 @@ export function LayoutComensal({
             className="border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]"
           >
             <div
-              className={`mx-auto grid h-14 max-w-[480px] ${mesa ? 'grid-cols-4' : 'grid-cols-3'}`}
+              className={`mx-auto grid h-14 max-w-[480px] ${mesa ? 'grid-cols-5' : 'grid-cols-4'}`}
             >
               {pestanias.map(({ a, texto, icono: Icono }) => (
                 <NavLink
@@ -127,13 +181,23 @@ export function LayoutComensal({
                   to={a}
                   end
                   className={({ isActive }) =>
-                    `grid content-center justify-items-center gap-0.5 text-xs ${
+                    `grid min-w-0 content-center justify-items-center gap-0.5 px-0.5 text-xs ${
                       isActive ? 'font-semibold text-accent-ink' : 'text-meta'
                     }`
                   }
                 >
-                  <Icono aria-hidden className="size-5" />
-                  {texto}
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={`flex h-7 w-12 items-center justify-center rounded-full ${
+                          isActive ? 'bg-accent/20' : ''
+                        }`}
+                      >
+                        <Icono aria-hidden className="size-5" />
+                      </span>
+                      <span className="whitespace-nowrap">{texto}</span>
+                    </>
+                  )}
                 </NavLink>
               ))}
             </div>

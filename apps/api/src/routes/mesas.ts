@@ -1,8 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { mesaInputSchema, type MesaInput } from '@pgim/shared';
+import {
+  distribucionInputSchema,
+  mesaInputSchema,
+  type DistribucionInput,
+  type MesaInput,
+} from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { mesaService } from '../services/mesa.service';
+import { mesaService } from '../services/mesa/mesa.service';
 
 // CU-14: el salón se ve con sucursal.ver y se edita con sucursal.editar.
 export const mesasRouter = Router({ mergeParams: true });
@@ -41,6 +46,23 @@ mesasRouter.post(
       req.body as MesaInput,
     );
     res.status(201).json(mesa);
+  },
+);
+
+// Antes de '/:id' para que 'distribucion' no se tome como id.
+mesasRouter.put(
+  '/distribucion',
+  requierePermiso('sucursal.editar'),
+  validarParams(sucursalParamSchema),
+  validar(distribucionInputSchema),
+  async (req, res) => {
+    res.json(
+      await mesaService.distribuir(
+        req.tenant!.restauranteId,
+        req.params.sucursalId as string,
+        (req.body as DistribucionInput).mesas,
+      ),
+    );
   },
 );
 

@@ -27,6 +27,9 @@ export interface PlatoMenu {
   modeloRa: ModeloRa | null;
   // false si a algún insumo no le alcanza para una porción en esta sucursal.
   hayStock: boolean;
+  // Minutos promedio de espera según los pedidos recientes de la sucursal;
+  // null si todavía no hay pedidos suficientes.
+  tiempoPromedioMin: number | null;
 }
 
 export interface CategoriaMenu extends Referencia {

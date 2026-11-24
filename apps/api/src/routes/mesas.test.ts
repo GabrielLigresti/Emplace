@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { createApp } from '../app';
+import { mesaRepository } from '../repositories/mesa.repository';
 import { IDS } from '../test/fake-usuarios';
 import { cookieConPermisos } from '../test/sesion-falsa';
 
@@ -17,11 +18,21 @@ jest.mock('../repositories/mesa.repository', () => ({
     actualizar: jest.fn(),
     desactivar: jest.fn(),
     reservasVigentes: jest.fn().mockResolvedValue([]),
+    actualizarPosiciones: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
 const URL = `/api/sucursales/${IDS.centro}/mesas`;
 const valida = { numero: 1, capacidad: 4, posX: 10, posY: 10 };
+const mesaGuardada = {
+  id: IDS.centro,
+  numero: 1,
+  capacidad: 4,
+  posX: 10,
+  posY: 10,
+  vertical: false,
+  activa: true,
+};
 
 describe('/api/sucursales/:sucursalId/mesas', () => {
   const app = createApp();
@@ -74,5 +85,73 @@ describe('/api/sucursales/:sucursalId/mesas', () => {
       .get('/api/sucursales/no-es-uuid/mesas')
       .set('Cookie', cookieConPermisos(['sucursal.ver']));
     expect(res.status).toBe(400);
+  });
+
+  it('PUT que choca con una vecina responde 409 con el motivo', async () => {
+    const centrada = { ...mesaGuardada, posX: 20 };
+    const vecina = { ...mesaGuardada, id: IDS.palermo, numero: 2, posX: 35 };
+    jest.mocked(mesaRepository.buscar).mockResolvedValueOnce(centrada);
+    jest.mocked(mesaRepository.listar).mockResolvedValueOnce([centrada, vecina]);
+
+    const res = await request(app)
+      .put(`${URL}/${mesaGuardada.id}`)
+      .set('Cookie', cookieConPermisos(['sucursal.editar']))
+      .send({ ...valida, posX: 20, capacidad: 8 });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe('Se superpone con la mesa 2');
+  });
+
+  describe('PUT /distribucion', () => {
+    const DISTRIBUCION = `${URL}/distribucion`;
+    const cuerpo = { mesas: [{ id: IDS.centro, posX: 30, posY: 20 }] };
+
+    it('sin sucursal.editar responde 403', async () => {
+      const res = await request(app)
+        .put(DISTRIBUCION)
+        .set('Cookie', cookieConPermisos(['sucursal.ver']))
+        .send(cuerpo);
+      expect(res.status).toBe(403);
+    });
+
+    it.each([
+      ['sin mesas', { mesas: [] }],
+      ['id que no es uuid', { mesas: [{ id: 'x', posX: 10, posY: 10 }] }],
+      ['posición fuera del lienzo', { mesas: [{ id: IDS.centro, posX: 101, posY: 10 }] }],
+      [
+        'mesas repetidas',
+        {
+          mesas: [
+            { id: IDS.centro, posX: 10, posY: 10 },
+            { id: IDS.centro, posX: 20, posY: 10 },
+          ],
+        },
+      ],
+    ])('rechaza el cuerpo: %s', async (_caso, body) => {
+      const res = await request(app)
+        .put(DISTRIBUCION)
+        .set('Cookie', cookieConPermisos(['sucursal.editar']))
+        .send(body);
+      expect(res.status).toBe(400);
+    });
+
+    it('guarda y responde 200 con las mesas, sin chocar con /:id', async () => {
+      const guardada = { ...mesaGuardada, posX: 30, posY: 20 };
+      jest.mocked(mesaRepository.listar).mockResolvedValueOnce([mesaGuardada]);
+      jest.mocked(mesaRepository.listar).mockResolvedValueOnce([guardada]);
+
+      const res = await request(app)
+        .put(DISTRIBUCION)
+        .set('Cookie', cookieConPermisos(['sucursal.editar']))
+        .send(cuerpo);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([guardada]);
+      expect(mesaRepository.actualizarPosiciones).toHaveBeenCalledWith(
+        expect.any(String),
+        IDS.centro,
+        cuerpo.mesas,
+      );
+    });
   });
 });

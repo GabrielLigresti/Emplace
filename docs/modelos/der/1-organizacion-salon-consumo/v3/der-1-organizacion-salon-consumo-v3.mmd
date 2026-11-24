@@ -106,8 +106,9 @@ erDiagram
         uuid sucursal_id FK
         int numero "UK con sucursal_id"
         int capacidad
-        numeric pos_x
-        numeric pos_y
+        numeric pos_x "centro de la mesa en el plano"
+        numeric pos_y "centro de la mesa en el plano"
+        bool vertical "default false; orientación en el plano"
         bool activa
     }
     RESERVA {

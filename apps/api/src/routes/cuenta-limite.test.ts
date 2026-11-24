@@ -7,11 +7,11 @@ jest.mock('../repositories/usuario.repository', () => ({
   usuarioRepository: { findCredencialesByEmail: jest.fn(), findSesionById: jest.fn() },
 }));
 
-jest.mock('../services/cuenta.service', () => ({
+jest.mock('../services/cuenta/cuenta.service', () => ({
   cuentaService: { cambiarContrasena: jest.fn() },
 }));
 
-const { cuentaService } = jest.requireMock('../services/cuenta.service');
+const { cuentaService } = jest.requireMock('../services/cuenta/cuenta.service');
 
 // En su propio archivo: el contador del límite es del módulo y arranca de cero.
 describe('límite de intentos de cambio de contraseña', () => {

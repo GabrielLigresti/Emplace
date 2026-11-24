@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { autenticar, requierePermiso, tenant } from '../middleware/auth';
-import { salonService } from '../services/salon.service';
+import { salonService } from '../services/salon/salon.service';
 import { sucursalDeTrabajo } from './reservas';
 
 // Salón en vivo del mozo: mesas con su estado actual. Los pedidos solo se

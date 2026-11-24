@@ -1,5 +1,5 @@
 import type { AlertaPanel } from '@pgim/shared';
-import { crearBusEventos, type EventoDominio } from '../domain/eventos';
+import { crearBusEventos, type EventoDominio } from '../domain/eventos/eventos';
 import type { AlertaRepository } from '../repositories/alerta.repository';
 import { registrarGeneradorAlertas } from './generador-alertas';
 import { registrarRegistroVisitas } from './registro-visitas';

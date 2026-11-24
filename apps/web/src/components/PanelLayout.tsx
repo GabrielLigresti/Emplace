@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import {
-  BookOpen,
   BarChart3,
   Boxes,
   CalendarDays,
@@ -10,7 +9,6 @@ import {
   ChefHat,
   Gift,
   LayoutGrid,
-  Star,
   TriangleAlert,
   LogOut,
   MapPin,
@@ -27,6 +25,7 @@ import {
 import type { CodigoPermiso } from '@pgim/shared';
 import { useSesion } from '../auth/SesionProvider';
 import { useSalir } from '../auth/useSalir';
+import { useTemaStaff } from '../lib/useTemaStaff';
 
 export type GrupoPanel = 'Operación' | 'Menú' | 'Stock' | 'Gestión' | 'Análisis';
 
@@ -109,33 +108,17 @@ export const SECCIONES: SeccionPanel[] = [
     icono: ScrollText,
   },
   {
-    ruta: 'recetas',
-    titulo: 'Recetas',
-    descripcion: 'Recetas, preparaciones y costos',
-    permisos: ['receta.ver'],
-    grupo: 'Menú',
-    icono: BookOpen,
-  },
-  {
     ruta: 'stock',
     titulo: 'Stock',
-    descripcion: 'Existencias, producción y movimientos',
-    permisos: ['insumo.ver', 'stock.registrar'],
+    descripcion: 'Existencias, producción, preparaciones y movimientos',
+    permisos: ['insumo.ver', 'stock.registrar', 'receta.ver'],
     grupo: 'Stock',
     icono: Boxes,
   },
   {
-    ruta: 'programa-puntos',
-    titulo: 'Programa de puntos',
-    descripcion: 'Cuántos puntos suma cada compra',
-    permisos: ['beneficio.ver'],
-    grupo: 'Gestión',
-    icono: Star,
-  },
-  {
     ruta: 'beneficios',
     titulo: 'Beneficios',
-    descripcion: 'Recompensas y promociones para los comensales',
+    descripcion: 'Programa de puntos, recompensas y promociones',
     permisos: ['beneficio.ver'],
     grupo: 'Gestión',
     icono: Gift,
@@ -205,6 +188,7 @@ function Marca({ nombre }: { nombre?: string }) {
 }
 
 export function PanelLayout() {
+  useTemaStaff();
   const { sesion, tienePermiso, seleccionarSucursal } = useSesion();
   const salir = useSalir();
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -246,7 +230,7 @@ export function PanelLayout() {
         aria-label="Sucursal de trabajo"
         value={sesion.sucursalActiva?.id ?? ''}
         onChange={(e) => seleccionarSucursal(e.target.value)}
-        className="min-h-11 w-full min-w-0 max-w-44 truncate rounded-control border border-line-strong bg-surface px-2 text-[16px] sm:min-h-9 sm:text-sm"
+        className="min-h-11 w-full min-w-0 max-w-44 truncate rounded-control border border-control bg-surface px-2 text-[16px] sm:min-h-9 sm:text-sm"
       >
         {!sesion.sucursalActiva && (
           <option value="" disabled>

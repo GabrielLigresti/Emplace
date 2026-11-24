@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { idParamSchema, sucursalInputSchema, type SucursalInput } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { sucursalService } from '../services/sucursal.service';
+import { sucursalService } from '../services/sucursal/sucursal.service';
 
 export const sucursalesRouter = Router();
 

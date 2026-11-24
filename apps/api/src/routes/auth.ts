@@ -14,7 +14,7 @@ import {
 } from '@pgim/shared';
 import { COOKIE_SESION, opcionesCookie } from '../lib/jwt';
 import { autenticar, validar } from '../middleware/auth';
-import { authService } from '../services/auth.service';
+import { authService } from '../services/auth/auth.service';
 
 export const authRouter = Router();
 

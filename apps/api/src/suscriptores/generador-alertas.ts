@@ -1,4 +1,4 @@
-import type { BusEventos } from '../domain/eventos';
+import type { BusEventos } from '../domain/eventos/eventos';
 import type { AlertaRepository, DatosAlertaStock } from '../repositories/alerta.repository';
 
 // GeneradorAlertas (Observer): guarda las alertas de la secuencia de CU-04 y

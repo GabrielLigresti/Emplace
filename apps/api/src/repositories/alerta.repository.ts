@@ -1,6 +1,6 @@
 import type { AlertaPanel, TipoAlertaPanel, TipoAlertaStock } from '@pgim/shared';
-import { servicioDeReserva } from '../domain/pronostico';
-import type { ReservaDelEvento } from '../domain/eventos';
+import { servicioDeReserva } from '../domain/pronostico/pronostico';
+import type { ReservaDelEvento } from '../domain/eventos/eventos';
 import type { Prisma } from '../generated/prisma/client';
 import { aHora, horaArgentina } from '../lib/hora';
 import { prisma } from '../lib/prisma';

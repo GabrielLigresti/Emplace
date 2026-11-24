@@ -21,3 +21,17 @@ test('el empleado, al cerrar sesión, llega a la landing', async ({ page }) => {
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { level: 1, name: /Una mesa/ })).toBeVisible();
 });
+
+test('el comensal ve «Mi cuenta» en el tab bar y al tocarla abre su perfil', async ({ page }) => {
+  await ingresarComensal(page, 'comensal@demo.pgim.test');
+  await expect(page).toHaveURL(/\/inicio$/);
+
+  const tabBar = page.getByRole('navigation', { name: 'Secciones' });
+  const cuenta = tabBar.getByRole('link', { name: 'Mi cuenta' });
+  await expect(cuenta).toBeVisible();
+
+  await cuenta.click();
+  await expect(page).toHaveURL(/\/cuenta$/);
+  await expect(page.getByRole('heading', { name: 'Mi cuenta' })).toBeVisible();
+  await expect(page.getByLabel('Teléfono (opcional)')).toBeVisible();
+});

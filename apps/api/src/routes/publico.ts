@@ -3,7 +3,7 @@ import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { busquedaQuerySchema, idParamSchema } from '@pgim/shared';
 import { validarParams } from '../middleware/auth';
-import { publicoService } from '../services/publico.service';
+import { publicoService } from '../services/publico/publico.service';
 
 // Lo que ve cualquier visitante: sin sesión. Solo lectura de datos públicos.
 export const publicoRouter = Router();

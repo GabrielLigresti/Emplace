@@ -20,6 +20,7 @@ import type {
   EstadoEscaneo,
   EstadoMesaSalon,
   EstadoPago,
+  EstadoPagoPedido,
   EstadoPedido,
   EstadoReserva,
   NivelCalidad,
@@ -65,6 +66,11 @@ export const ESTADOS = {
     APROBADO: { etiqueta: 'Pagado', tono: 'ok', icono: Check },
     RECHAZADO: { etiqueta: 'No aprobado', tono: 'bad', icono: X },
   } satisfies Record<EstadoPago, InfoEstado>,
+  // Lo que ve el comensal de cada pedido en "Mi mesa": si ya lo pagó.
+  pagoPedido: {
+    PENDIENTE: { etiqueta: 'Pendiente de pago', tono: 'warn', icono: Clock },
+    PAGADO: { etiqueta: 'Pagado', tono: 'ok', icono: Check },
+  } satisfies Record<EstadoPagoPedido, InfoEstado>,
   cuenta: {
     ABIERTA: { etiqueta: 'Abierta', tono: 'acento', icono: Receipt },
     CERRADA: { etiqueta: 'Cerrada', tono: 'neutro', icono: Check },
@@ -106,10 +112,10 @@ export const ESTADOS = {
 
 export type EntidadConEstado = keyof typeof ESTADOS;
 
-// Al comensal, la inasistencia se le muestra sin tono de reproche.
-const NO_ASISTIO: InfoEstado = { etiqueta: 'No asististe', tono: 'neutro', icono: X };
-// Para el comensal, su pedido confirmado ya lo recibió la cocina.
-const RECIBIDO: InfoEstado = { etiqueta: 'Recibido', tono: 'neutro', icono: Circle };
+// Al comensal, la inasistencia se le muestra sin tono de reproche: naranja de aviso, no rojo.
+const NO_ASISTIO: InfoEstado = { etiqueta: 'No asististe', tono: 'warn', icono: X };
+// En el comensal la reserva finalizada va en tono "ok", para distinguirla de la cancelada.
+const RESERVA_FINALIZADA: InfoEstado = { etiqueta: 'Finalizada', tono: 'ok', icono: Check };
 
 export function infoEstado(
   entidad: EntidadConEstado,
@@ -117,7 +123,9 @@ export function infoEstado(
   publico: Publico = 'personal',
 ): InfoEstado {
   if (entidad === 'reserva' && valor === 'VENCIDA' && publico === 'comensal') return NO_ASISTIO;
-  if (entidad === 'pedido' && valor === 'CONFIRMADO' && publico === 'comensal') return RECIBIDO;
+  if (entidad === 'reserva' && valor === 'FINALIZADA' && publico === 'comensal') {
+    return RESERVA_FINALIZADA;
+  }
   const tabla: Record<string, InfoEstado> = ESTADOS[entidad];
   // Un valor nuevo de la API que todavía no está mapeado no rompe la pantalla.
   return tabla[valor] ?? { etiqueta: valor, tono: 'neutro', icono: Circle };

@@ -11,6 +11,7 @@ export const mesaInputSchema = z.object({
   capacidad: z.number().int().min(1).max(20),
   posX: z.number().min(0).max(LIENZO_SALON.ancho),
   posY: z.number().min(0).max(LIENZO_SALON.alto),
+  vertical: z.boolean().optional(),
   activa: z.boolean().optional(),
 });
 
@@ -22,6 +23,7 @@ export interface Mesa {
   capacidad: number;
   posX: number;
   posY: number;
+  vertical: boolean;
   activa: boolean;
 }
 
@@ -42,7 +44,27 @@ export interface MesaSalon {
   capacidad: number;
   posX: number;
   posY: number;
+  vertical: boolean;
   estado: EstadoMesaSalon;
   reserva: ReservaPanel | null;
   pedidos: PedidoSalon[];
 }
+
+// Guardado de la distribución del salón: solo las posiciones, en una operación.
+export const distribucionInputSchema = z.object({
+  mesas: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        posX: z.number().min(0).max(LIENZO_SALON.ancho),
+        posY: z.number().min(0).max(LIENZO_SALON.alto),
+      }),
+    )
+    .min(1)
+    .max(200)
+    .refine((mesas) => new Set(mesas.map((m) => m.id)).size === mesas.length, {
+      message: 'Hay mesas repetidas',
+    }),
+});
+
+export type DistribucionInput = z.infer<typeof distribucionInputSchema>;

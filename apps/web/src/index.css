@@ -8,6 +8,8 @@
   --color-surface: #ffffff;
   --color-line: #e4e6e9;
   --color-line-strong: #d3d7dc;
+  /* Borde de campos y botones de contorno (en el staff sube a 3:1, WCAG 1.4.11). */
+  --color-control: #d3d7dc;
   --color-ink: #15171a;
   --color-text: #23262b;
   --color-meta: #5d636b;
@@ -27,6 +29,11 @@
   --color-warn-soft: #fefce8;
   --color-bad: #b91c1c;
   --color-bad-soft: #fef2f2;
+
+  /* Categoría del rol (punto junto al nombre); no cambian con el tema del staff. */
+  --color-rol-mozo: #2f6f8f;
+  --color-rol-cocinero: #9b3d2b;
+  --color-rol-otro: #6b5b95;
 
   --font-sans: 'Urbanist Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display:
@@ -59,6 +66,7 @@
   --color-tinta-clasica: #201f1d;
   --color-linea-clasica: color-mix(in srgb, #201f1d 16%, transparent);
   --color-dorado: #b68235;
+  --color-dorado-100: #fff3e4;
   --color-dorado-700: #7d5411;
   --color-dorado-800: #5a3b0a;
 
@@ -68,6 +76,37 @@
 
   --font-titulo: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-lora: 'Lora', Georgia, 'Times New Roman', serif;
+}
+
+/* Tema del staff (panel, cocina, salón, selector de sucursal): los mismos nombres
+   de token con la paleta del registro Clásico (papel, tinta, dorado). Se aplica con
+   la clase en <html> (ver lib/useTemaStaff) para que también alcance a lo que
+   se monta fuera del árbol (portales). También lo usa el comensal (LayoutComensal). */
+.tema-staff {
+  --color-bg: var(--color-papel);
+  --color-panel: var(--color-papel-hondo);
+  --color-surface: #ffffff;
+  /* Opacos sobre papel: también se usan como relleno y pista de progreso. */
+  --color-line: #dad9d8;
+  --color-line-strong: #c0bfbe;
+  --color-control: #8c8b89;
+  --color-ink: var(--color-tinta-clasica);
+  --color-text: #2b2a28;
+  --color-meta: #5f5c57;
+
+  /* Dorado Hondo como acento: blanco sobre él pasa AA. */
+  --color-accent: var(--color-dorado-700);
+  --color-accent-hover: var(--color-dorado-800);
+  --color-accent-ink: var(--color-dorado-800);
+  --color-accent-soft: #efe6d5;
+  /* Hoja tintada: en este tema es el papel hondo, no el verde. */
+  --color-hoja: var(--color-papel-hondo);
+
+  /* El aviso se aleja del rojo y del dorado; siempre va con ícono y texto. */
+  --color-warn: #a24f00;
+  --color-warn-soft: #fff1e0;
+
+  --shadow-flotante: 0 10px 28px rgb(32 31 29 / 0.16);
 }
 
 @layer base {
@@ -80,6 +119,13 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+}
+
+/* Inicio del comensal: reusa el buscador de la landing pero con la tipografía de la app. */
+.tipografia-app,
+.tipografia-app .font-titulo,
+.tipografia-app .font-lora {
+  font-family: var(--font-sans);
 }
 
 /* La landing es dorada: el foco no usa el verde de la app. */

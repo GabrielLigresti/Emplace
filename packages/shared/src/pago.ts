@@ -56,15 +56,17 @@ export interface PagoDelDia {
   comensalNombre: string;
   monto: number;
   metodo: MetodoPago | null;
-  estado: 'APROBADO' | 'RECHAZADO';
+  estado: EstadoPago;
   comprobanteNumero: string | null;
 }
 
 // Un aprobado sin método (pago de $0 o pasarela de prueba) va a SIN_METODO.
+// enCurso cuenta los pendientes, que no suman al cobrado.
 export interface TotalesPagosDelDia {
   cobrado: number;
   aprobados: number;
   rechazados: number;
+  enCurso: number;
   porMetodo: { TARJETA: number; BILLETERA_VIRTUAL: number; SIN_METODO: number };
 }
 

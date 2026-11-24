@@ -1,5 +1,6 @@
 import type { EstadoReserva, Mesa, MesaInput } from '@pgim/shared';
 import type { Prisma } from '../generated/prisma/client';
+import { AppError } from '../lib/errors';
 import { prisma } from '../lib/prisma';
 
 // Las mesas no tienen restaurante_id: el aislamiento por tenant se hace a
@@ -22,8 +23,20 @@ export interface MesaRepository {
     datos: MesaInput,
   ): Promise<Mesa>;
   desactivar(restauranteId: string, sucursalId: string, id: string): Promise<void>;
+  // Mueve varias mesas en una sola transacción: si alguna no es de la sucursal, no se mueve ninguna.
+  actualizarPosiciones(
+    restauranteId: string,
+    sucursalId: string,
+    cambios: PosicionMesa[],
+  ): Promise<void>;
   // Reservas PENDIENTE o ACTIVA de la mesa; el servicio decide cuáles la ocupan.
   reservasVigentes(restauranteId: string, sucursalId: string, id: string): Promise<ReservaDeMesa[]>;
+}
+
+export interface PosicionMesa {
+  id: string;
+  posX: number;
+  posY: number;
 }
 
 export interface ReservaDeMesa {
@@ -39,6 +52,7 @@ const seleccion = {
   capacidad: true,
   posX: true,
   posY: true,
+  vertical: true,
   activa: true,
 } satisfies Prisma.MesaSelect;
 
@@ -108,6 +122,19 @@ export const mesaRepository: MesaRepository = {
     await prisma.mesa.update({
       where: { id, ...deLaSucursal(restauranteId, sucursalId) },
       data: { activa: false },
+    });
+  },
+
+  async actualizarPosiciones(restauranteId, sucursalId, cambios) {
+    await prisma.$transaction(async (tx) => {
+      for (const { id, posX, posY } of cambios) {
+        const { count } = await tx.mesa.updateMany({
+          where: { id, ...deLaSucursal(restauranteId, sucursalId) },
+          data: { posX, posY },
+        });
+        // Lanzar revierte la transacción entera.
+        if (count !== 1) throw new AppError(404, 'La mesa no existe');
+      }
     });
   },
 

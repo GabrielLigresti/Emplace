@@ -23,7 +23,6 @@ import { PlatoPage } from './pages/comensal/PlatoPage';
 import { ReservarPage } from './pages/comensal/ReservarPage';
 import { SeleccionarSucursalPage } from './pages/SeleccionarSucursalPage';
 import { BeneficiosPage } from './pages/panel/BeneficiosPage';
-import { ProgramaPuntosPage } from './pages/panel/ProgramaPuntosPage';
 import { MiCuentaPanelPage } from './pages/panel/MiCuentaPanelPage';
 import { MetricasPage } from './pages/panel/MetricasPage';
 import { MisTurnosPage } from './pages/panel/MisTurnosPage';
@@ -35,9 +34,9 @@ import { MenusPage } from './pages/panel/MenusPage';
 import { PersonalPage } from './pages/panel/PersonalPage';
 import { PlatosPage } from './pages/panel/PlatosPage';
 import { RecetaEditorPage } from './pages/panel/RecetaEditorPage';
-import { RecetasPage } from './pages/panel/RecetasPage';
 import { ReservasPage } from './pages/panel/ReservasPage';
-import { RolesPage } from './pages/panel/RolesPage';
+import { EditorRolPage } from './pages/panel/roles/EditorRolPage';
+import { RolesPage } from './pages/panel/roles/RolesPage';
 import { SalonEnVivoPage } from './pages/panel/SalonEnVivoPage';
 import { SalonPage } from './pages/panel/SalonPage';
 import { StockPage } from './pages/panel/StockPage';
@@ -134,20 +133,31 @@ export default function App() {
                   />
                   <Route
                     path="programa-puntos"
-                    element={conPermiso('beneficio.ver', <ProgramaPuntosPage />)}
+                    element={<Navigate to="/panel/beneficios" replace />}
                   />
                   <Route
                     path="beneficios"
                     element={conPermiso('beneficio.ver', <BeneficiosPage />)}
                   />
                   <Route path="roles" element={conPermiso('rol.ver', <RolesPage />)} />
+                  <Route path="roles/nuevo" element={conPermiso('rol.crear', <EditorRolPage />)} />
+                  <Route
+                    path="roles/:id/:pestana"
+                    element={conPermiso('rol.editar', <EditorRolPage />)}
+                  />
                   <Route path="personal" element={conPermiso('personal.ver', <PersonalPage />)} />
                   <Route path="insumos" element={<Navigate to="/panel/stock" replace />} />
                   <Route
                     path="stock"
-                    element={conAlgunPermiso(['insumo.ver', 'stock.registrar'], <StockPage />)}
+                    element={conAlgunPermiso(
+                      ['insumo.ver', 'stock.registrar', 'receta.ver'],
+                      <StockPage />,
+                    )}
                   />
-                  <Route path="recetas" element={conPermiso('receta.ver', <RecetasPage />)} />
+                  <Route
+                    path="recetas"
+                    element={<Navigate to="/panel/stock?pestaña=preparaciones" replace />}
+                  />
                   <Route
                     path="recetas/:tipo/:id"
                     element={conPermiso('receta.ver', <RecetaEditorPage />)}

@@ -7,10 +7,9 @@ import { escaneoRepository as repo } from './escaneo.repository';
 afterAll(() => prisma.$disconnect());
 
 const calidad: InformeCalidad = {
-  version: 1,
+  version: 2,
   nivelGlobal: 'OK',
-  metadatos: { ancho: 1920, alto: 1080, duracionS: 30 },
-  criterios: [],
+  fotos: [],
 };
 
 describe('escaneo de platos', () => {
@@ -23,7 +22,7 @@ describe('escaneo de platos', () => {
       itemMenuId: e.pizzaId,
       empleadoId,
       proveedor: 'simulado',
-      rutaVideo: '/tmp/video.mp4',
+      rutaFotos: '/tmp/escaneos/abc',
       calidad,
       ...parcial,
     });

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { configuracionAperturaSchema, idParamSchema } from '@pgim/shared';
 import { autenticar, requierePermiso, tenant, validar, validarParams } from '../middleware/auth';
-import { aperturaService } from '../services/apertura.service';
+import { aperturaService } from '../services/apertura/apertura.service';
 import { sucursalDeTrabajo } from './reservas';
 
 // Asistente de apertura (CU-09): pronóstico semanal y su configuración.

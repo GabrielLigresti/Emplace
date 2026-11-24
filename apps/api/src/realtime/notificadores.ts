@@ -10,8 +10,9 @@ import {
   type ResultadoPago,
   type CambioReserva,
   type CambioSalon,
+  type MapaEditado,
 } from '@pgim/shared';
-import { esEventoReserva, type BusEventos } from '../domain/eventos';
+import { esEventoReserva, type BusEventos } from '../domain/eventos/eventos';
 
 // Oyentes del bus de eventos que avisan por Socket.IO. Son efectos
 // secundarios: si un aviso no llega, la operación ya quedó guardada igual.
@@ -19,6 +20,11 @@ export function registrarNotificadores(io: Pick<Server, 'to' | 'in'>, bus: BusEv
   // NotificadorSalon: la mesa cambió de estado en esa franja. La sala de la
   // sucursal la sigue cualquier sesión, así que no lleva datos de pedidos.
   const dejarSalon = bus.suscribir((evento) => {
+    if (evento.tipo === 'MAPA_EDITADO') {
+      const aviso: MapaEditado = { sucursalId: evento.sucursalId };
+      io.to(salaSucursal(evento.sucursalId)).emit(EVENTOS_SOCKET.mapaEditado, aviso);
+      return;
+    }
     if (!esEventoReserva(evento)) return;
     const { reserva } = evento;
     const cambio: CambioSalon = {
@@ -95,6 +101,7 @@ export function registrarNotificadores(io: Pick<Server, 'to' | 'in'>, bus: BusEv
       }
       // "Pagos del día" es solo para quien tiene pago.ver: el aviso no lleva datos
       // y va únicamente a los sockets de la sucursal cuya sesión lo tiene.
+      case 'PAGO_REGISTRADO':
       case 'PAGO_APROBADO':
       case 'PAGO_RECHAZADO': {
         const { sucursalId } = evento;

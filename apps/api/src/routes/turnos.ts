@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { autenticar, requierePermiso, tenant } from '../middleware/auth';
-import { turnoService } from '../services/turno.service';
+import { turnoService } from '../services/turno/turno.service';
 
 // Turnos propios del empleado (CU-09): solo los de planificaciones confirmadas.
 export const turnosRouter = Router();

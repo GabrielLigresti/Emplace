@@ -1,7 +1,7 @@
 import type { GrupoPanel, ProgramaPanel, Referencia } from '@pgim/shared';
 import type { Prisma } from '../generated/prisma/client';
 import { prisma } from '../lib/prisma';
-import type { DatosBeneficio } from '../domain/beneficio';
+import type { DatosBeneficio } from '../domain/beneficio/beneficio';
 
 // Programa de puntos, grupos y beneficios de un restaurante (CU-17). Toda
 // consulta va acotada por restaurante.

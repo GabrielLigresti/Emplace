@@ -82,6 +82,37 @@ describe.each(ABM)('$ruta', ({ ruta, modulo }) => {
   });
 });
 
+describe('POST /api/menus/:id/platos', () => {
+  const app = createApp();
+
+  it('sin permiso de edición responde 403 aunque pueda crear', async () => {
+    const res = await request(app)
+      .post(`/api/menus/${ID}/platos`)
+      .set('Cookie', cookieConPermisos(['menu.ver', 'menu.crear']))
+      .send({ platoId: ID });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('sin un platoId válido responde 400', async () => {
+    const res = await request(app)
+      .post(`/api/menus/${ID}/platos`)
+      .set('Cookie', cookieConPermisos(['menu.editar']))
+      .send({ platoId: 'no-es-uuid' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('con un id de menú mal formado responde 400', async () => {
+    const res = await request(app)
+      .post('/api/menus/no-es-uuid/platos')
+      .set('Cookie', cookieConPermisos(['menu.editar']))
+      .send({ platoId: ID });
+
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('/api/sucursales: barrio', () => {
   const app = createApp();
   const repo = () => jest.requireMock('../repositories/sucursal.repository').sucursalRepository;

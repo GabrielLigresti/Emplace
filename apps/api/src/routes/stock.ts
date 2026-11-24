@@ -17,8 +17,8 @@ import {
   validar,
   validarParams,
 } from '../middleware/auth';
-import { produccionService } from '../services/produccion.service';
-import { stockService } from '../services/stock.service';
+import { produccionService } from '../services/produccion/produccion.service';
+import { stockService } from '../services/stock/stock.service';
 import { sucursalDeTrabajo } from './reservas';
 
 export const stockRouter = Router();
