@@ -1,7 +1,7 @@
 // Datos ficticios para el deploy: seis restaurantes operativos de dos sucursales cada
 // uno, con carta y fotos. Es idempotente (npm run db:seed:deploy -w @pgim/api) y no
 // choca con seed.ts: CUIT y emails propios, salvo las dos cuentas de comensal de la
-// demo, que se comparten. Solo la parrilla lleva historial, producción, simulador y RA.
+// demo, que se comparten (el nombre que queda es el de la última seed que corrió). Solo la parrilla lleva historial, producción, simulador y RA.
 import { CONFIGURACION_APERTURA_POR_DEFECTO, type Barrio, type UnidadBase } from '@pgim/shared';
 import { prisma } from '../src/lib/prisma';
 import { hashPassword } from '../src/lib/password';
@@ -1780,7 +1780,6 @@ async function seedMenuEInventario(
       precio: plato.precio,
       descripcion: plato.descripcion,
       fotoUrl: `/fotos-deploy/${plato.foto}`,
-      diametroCm: plato.diametroCm ?? null,
       disponible: true,
       activo: true,
       insumoId: plato.reventa ? componentes.get(plato.reventa)! : null,
@@ -1789,8 +1788,14 @@ async function seedMenuEInventario(
       where: { restauranteId, nombre: plato.nombre },
     });
     const item = existente
-      ? await tx.itemMenu.update({ where: { id: existente.id }, data: datos })
-      : await tx.itemMenu.create({ data: { restauranteId, nombre: plato.nombre, ...datos } });
+      ? await tx.itemMenu.update({
+          where: { id: existente.id },
+          // Un diámetro ya cargado no se pisa: es el que usa el escaneo.
+          data: { ...datos, diametroCm: existente.diametroCm ?? plato.diametroCm },
+        })
+      : await tx.itemMenu.create({
+          data: { restauranteId, nombre: plato.nombre, ...datos, diametroCm: plato.diametroCm },
+        });
 
     if (plato.receta) await seedReceta(tx, { itemMenuId: item.id }, plato.receta, componentes);
     else await tx.receta.deleteMany({ where: { itemMenuId: item.id } });
@@ -1840,9 +1845,29 @@ async function main(): Promise<void> {
   const passwordHash = await hashPassword(PASSWORD_DEMO);
   const permisoIds = await prisma.$transaction((tx) => seedPermisos(tx));
 
-  let reservasHistorial = 0;
+  const cargados = [];
   for (const r of RESTAURANTES) {
-    const { restauranteId, sucursalIds } = await seedRestaurante(r, permisoIds, passwordHash);
+    cargados.push({ r, ...(await seedRestaurante(r, permisoIds, passwordHash)) });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    for (const { email, nombre } of COMENSALES) {
+      const comensal = await tx.usuario.upsert({
+        where: { email },
+        update: { passwordHash, activo: true },
+        create: { email, passwordHash, tipo: 'COMENSAL' },
+      });
+      await tx.comensal.upsert({
+        where: { usuarioId: comensal.id },
+        update: { nombre },
+        create: { usuarioId: comensal.id, nombre },
+      });
+    }
+  });
+
+  // Los extras van al final: si fallan, los restaurantes y los comensales ya están.
+  let reservasHistorial = 0;
+  for (const { r, restauranteId, sucursalIds } of cargados) {
     if (!r.demo) continue;
     const { modelosRa, cocinaDe, semanasHistorial, prefijoEmailHistorial, emailReservas } = r.demo;
     await seedModelosRa(restauranteId, modelosRa);
@@ -1861,21 +1886,6 @@ async function main(): Promise<void> {
       insumoEscaso: r.demo.insumoEscaso,
     });
   }
-
-  await prisma.$transaction(async (tx) => {
-    for (const { email, nombre } of COMENSALES) {
-      const comensal = await tx.usuario.upsert({
-        where: { email },
-        update: { passwordHash, activo: true },
-        create: { email, passwordHash, tipo: 'COMENSAL' },
-      });
-      await tx.comensal.upsert({
-        where: { usuarioId: comensal.id },
-        update: { nombre },
-        create: { usuarioId: comensal.id, nombre },
-      });
-    }
-  });
 
   const [restaurantes, sucursales, usuarios, componentes, platos] = await Promise.all([
     prisma.restaurante.count(),

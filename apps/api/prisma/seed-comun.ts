@@ -781,7 +781,8 @@ export async function seedFaltantesSimulador(
       estado: 'PENDIENTE' as const,
     })),
   );
-  await prisma.reserva.createMany({ data: reservas });
+  // Una mesa ya reservada por otro comensal a esa hora se saltea.
+  await prisma.reserva.createMany({ data: reservas, skipDuplicates: true });
 
   // Semana próxima: se descarta el borrador (nunca uno confirmado). Las alertas
   // y los turnos se van con la planificación.

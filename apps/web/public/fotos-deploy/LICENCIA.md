@@ -1,6 +1,6 @@
 # Fotos de la seed de deploy
 
-Las usa `apps/api/prisma/seed-deploy.ts` como `fotoUrl` de los platos de los seis restaurantes (Vite las sirve en `/fotos-deploy/<carpeta>/<archivo>`). Casi todas vienen de Unsplash, bajo la [licencia de Unsplash](https://unsplash.com/license): uso libre, incluso comercial, sin atribución obligatoria; ninguna es de Unsplash+. Los autores se listan por cortesía. La sopa miso viene de Wikimedia Commons, con licencia CC0.
+Las usa `apps/api/prisma/seed-deploy.ts` como `fotoUrl` de los platos y las sucursales de los seis restaurantes (Vite las sirve en `/fotos-deploy/<carpeta>/<archivo>`). Casi todas vienen de Unsplash, bajo la [licencia de Unsplash](https://unsplash.com/license): uso libre, incluso comercial, sin atribución obligatoria; ninguna es de Unsplash+. Los autores se listan por cortesía. La sopa miso viene de Wikimedia Commons, con licencia CC0.
 
 Salvo las fachadas y la carta del bodegón, todas están adaptadas a un lienzo cuadrado de 1000 × 1000 en WebP, con el plato centrado, para que la web no las recorte con `object-cover`. La mayoría lleva un recorte del plato con máscara de bordes suaves sobre fondo transparente; el resto conserva su fondo liso original. La columna "Modificaciones" lo detalla en cada caso.
 

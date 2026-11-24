@@ -89,4 +89,4 @@ El QR de cada sucursal se arma con la URL desde la que se abre el panel, así qu
 | `npm run db:up` / `db:down` | Levanta o baja PostgreSQL en Docker |
 | `npm run db:migrate -w @pgim/api` | Crea y aplica migraciones de Prisma en desarrollo |
 | `npm run db:seed -w @pgim/api` | Carga los datos ficticios; se puede repetir sin duplicar filas |
-| `npm run db:seed:deploy -w @pgim/api` | Carga los seis restaurantes ficticios del despliegue; se puede repetir sin duplicar filas |
+| `npm run db:seed:deploy -w @pgim/api` | Carga los seis restaurantes ficticios del despliegue; se puede repetir sin duplicar filas (salvo que se haya renombrado algo), pero revierte lo editado a mano en ellos |
