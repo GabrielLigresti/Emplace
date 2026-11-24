@@ -302,7 +302,7 @@ La landing (`/`) es la versión más editorial del sistema: papel, tinta, el dor
 - **Campos y fichas:** borde de 1 px en la Línea Clásica y esquina de 4 px, fondo transparente; el campo enfocado toma borde Dorado.
 - **Héroe:** foto a la derecha con esquinas de 20 px a la izquierda en escritorio; en celular, la foto ocupa todo el fondo con un velo oscuro y el texto va en blanco.
 - **Fichas de modelos 3D:** 300 px de alto, nombre debajo en Cormorant 24 px y botón "Ver en mi mesa" dentro del recuadro. El carrusel se desliza con el dedo en celular; las flechas existen solo en escritorio.
-- **Resultados de búsqueda:** sin tarjeta ni foto (no hay fotos de sucursal): nombre en Cormorant, datos en Lora chico y dos botones.
+- **Resultados de búsqueda:** sin tarjeta. Foto de la sucursal arriba, en 16:9 con esquina de 4 px; después, nombre en Cormorant, datos en Lora chico y dos botones. Sin foto, o si no carga, queda solo el texto.
 
 ### Reglas del registro
 **The Mobile Trim Rule.** En el celular se oculta lo que no funciona con el dedo o repite otro control (flechas del carrusel, menú sin destino, el botón "Reservar mesa" de la barra cuando el héroe ya lo tiene). No se achica ni se apila: se saca.
