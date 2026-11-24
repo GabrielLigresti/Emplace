@@ -71,6 +71,35 @@ export interface ReservaComensal {
   cancelable: boolean;
 }
 
+const esVigente = (r: { estado: EstadoReserva }) =>
+  r.estado === 'PENDIENTE' || r.estado === 'ACTIVA';
+
+// Agrupa las reservas del comensal por restaurante. Las vigentes van de la más
+// próxima a la más lejana y las anteriores, de la más reciente a la más vieja.
+// Los grupos se ordenan por su vigente más próxima; los que solo tienen
+// historial van al final, por su reserva más reciente.
+export function agruparReservasPorRestaurante<
+  T extends Pick<ReservaComensal, 'restaurante' | 'estado' | 'inicio'>,
+>(reservas: T[]) {
+  const porRestaurante = new Map<string, T[]>();
+  for (const r of reservas) {
+    porRestaurante.set(r.restaurante.id, [...(porRestaurante.get(r.restaurante.id) ?? []), r]);
+  }
+  const porInicio = (a: T, b: T) => a.inicio.localeCompare(b.inicio);
+  return [...porRestaurante.values()]
+    .map((filas) => ({
+      restaurante: filas[0]!.restaurante,
+      vigentes: filas.filter(esVigente).sort(porInicio),
+      anteriores: filas.filter((r) => !esVigente(r)).sort((a, b) => porInicio(b, a)),
+    }))
+    .sort((a, b) => {
+      const [va, vb] = [a.vigentes[0], b.vigentes[0]];
+      if (va && vb) return porInicio(va, vb);
+      if (va || vb) return va ? -1 : 1;
+      return porInicio(b.anteriores[0]!, a.anteriores[0]!);
+    });
+}
+
 // Tiempo real (Socket.IO). El comensal recibe los cambios de sus reservas en
 // su sala; la sala de la sucursal recibe los cambios de mesas, sin datos
 // personales.
