@@ -1,4 +1,4 @@
-// Datos ficticios para el deploy: cinco restaurantes operativos de dos sucursales cada
+// Datos ficticios para el deploy: seis restaurantes operativos de dos sucursales cada
 // uno, con carta y fotos. Es idempotente (npm run db:seed:deploy -w @pgim/api) y no
 // choca con seed.ts: CUIT y emails propios, salvo las dos cuentas de comensal de la
 // demo, que se comparten. Solo la parrilla lleva historial, producción, simulador y RA.
@@ -32,8 +32,8 @@ import {
 const PASSWORD_DEMO = 'demo1234';
 
 const COMENSALES = [
-  { email: 'comensal@demo.pgim.test', nombre: 'Carlos Comensal' },
-  { email: 'comensal2@demo.pgim.test', nombre: 'Lucía Comensal' },
+  { email: 'comensal@demo.pgim.test', nombre: 'Carlos Ibáñez' },
+  { email: 'comensal2@demo.pgim.test', nombre: 'Lucía Ferreyra' },
 ];
 
 const HORARIOS_SERVICIO = [
@@ -63,6 +63,8 @@ const CATALOGO: Record<string, [UnidadBase, number]> = {
   Lomo: ['GRAMO', 24],
   Chorizo: ['GRAMO', 9],
   'Pechuga de pollo': ['GRAMO', 7],
+  Nalga: ['GRAMO', 18],
+  'Carne para estofado': ['GRAMO', 13],
   'Carne molida': ['GRAMO', 14],
   Panceta: ['GRAMO', 16],
   'Cerdo molido': ['GRAMO', 10],
@@ -98,12 +100,14 @@ const CATALOGO: Record<string, [UnidadBase, number]> = {
   Aceitunas: ['GRAMO', 9],
   Pepinillos: ['GRAMO', 8],
   'Porotos negros': ['GRAMO', 4],
+  'Porotos alubia': ['GRAMO', 4],
   Edamame: ['GRAMO', 10],
   // Lácteos, huevos y panificados
   'Queso cheddar': ['GRAMO', 13],
   Mozzarella: ['GRAMO', 11],
   'Queso parmesano': ['GRAMO', 20],
   'Queso ricota': ['GRAMO', 8],
+  'Queso fresco': ['GRAMO', 9],
   'Queso crema': ['GRAMO', 12],
   Manteca: ['GRAMO', 14],
   'Crema de leche': ['MILILITRO', 4],
@@ -111,6 +115,7 @@ const CATALOGO: Record<string, [UnidadBase, number]> = {
   Huevo: ['UNIDAD', 250],
   'Harina 000': ['GRAMO', 0.9],
   Levadura: ['GRAMO', 20],
+  'Pan de campo': ['GRAMO', 5],
   'Pan rallado': ['GRAMO', 2],
   'Penne secos': ['GRAMO', 3],
   'Pan de hamburguesa': ['UNIDAD', 380],
@@ -130,6 +135,7 @@ const CATALOGO: Record<string, [UnidadBase, number]> = {
   'Salsa barbacoa': ['GRAMO', 6],
   Azúcar: ['GRAMO', 1.2],
   'Dulce de leche': ['GRAMO', 5],
+  'Dulce de membrillo': ['GRAMO', 4],
   Chocolate: ['GRAMO', 14],
   'Helado de vainilla': ['GRAMO', 7],
   'Helado de chocolate': ['GRAMO', 7],
@@ -176,6 +182,8 @@ interface PlatoSeed {
   descripcion: string;
   // Ruta de la foto dentro de apps/web/public/fotos-deploy.
   foto: string;
+  // Diámetro del plato en que se sirve, para escanearlo; las bebidas no llevan.
+  diametroCm?: number;
   receta?: RecetaSeed;
   // Insumo que se revende como viene (sin receta).
   reventa?: string;
@@ -225,6 +233,8 @@ interface SucursalSeed {
   nombre: string;
   direccion: string;
   barrio: Barrio;
+  // Archivo dentro de apps/web/public/fotos-deploy/sucursales.
+  foto: string;
   salon: SalonSeed;
 }
 
@@ -319,12 +329,14 @@ const RESTAURANTES: RestauranteSeed[] = [
         nombre: 'Caballito',
         direccion: 'Av. Pedro Goyena 1150',
         barrio: 'CABALLITO',
+        foto: 'nonna-ermelinda-caballito.webp',
         salon: SALON_GRANDE,
       },
       {
         nombre: 'Villa Urquiza',
         direccion: 'Av. Monroe 4320',
         barrio: 'VILLA_URQUIZA',
+        foto: 'nonna-ermelinda-villa-urquiza.webp',
         salon: SALON_CHICO,
       },
     ],
@@ -380,6 +392,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 9800,
         descripcion: 'Tomate, mozzarella fresca y pesto de albahaca con piñones.',
         foto: 'pastas/caprese.webp',
+        diametroCm: 24,
         receta: receta(1, 'Alternar el tomate y la mozzarella en rodajas; aderezar con el pesto.', [
           ['Tomate', 150, 'GRAMO'],
           ['Mozzarella', 120, 'GRAMO'],
@@ -395,6 +408,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13500,
         descripcion: 'Spaghetti caseros con salsa bolognesa y parmesano.',
         foto: 'pastas/spaghetti-bolognesa.webp',
+        diametroCm: 26,
         receta: receta(1, 'Cortar y hervir la pasta; servir con la bolognesa caliente.', [
           ['Masa de pasta fresca', 160, 'GRAMO'],
           ['Salsa bolognesa', 200, 'GRAMO'],
@@ -407,6 +421,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 14500,
         descripcion: 'Ravioles rellenos de ricota, manteca dorada y salvia.',
         foto: 'pastas/ravioles-salvia.webp',
+        diametroCm: 26,
         receta: receta(
           1,
           'Rellenar y cerrar los ravioles; hervir y saltear en la manteca con salvia.',
@@ -426,6 +441,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12800,
         descripcion: 'Ñoquis de papa gratinados con salsa de tomate y mozzarella.',
         foto: 'pastas/noquis-mozzarella.webp',
+        diametroCm: 26,
         receta: receta(1, 'Amasar la papa con la harina, cortar y hervir; gratinar con la salsa.', [
           ['Papa', 250, 'GRAMO', 10],
           ['Harina 000', 100, 'GRAMO'],
@@ -441,6 +457,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12500,
         descripcion: 'Penne con salsa rosa de tomate y crema, y parmesano.',
         foto: 'pastas/penne-salsa-rosa.webp',
+        diametroCm: 26,
         receta: receta(1, 'Hervir los penne y saltearlos con la salsa de tomate y la crema.', [
           ['Penne secos', 130, 'GRAMO'],
           ['Salsa de tomate', 120, 'GRAMO'],
@@ -454,6 +471,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12900,
         descripcion: 'Spaghetti con manteca, ralladura de limón, pimienta y parmesano.',
         foto: 'pastas/pasta-limon-pimienta.webp',
+        diametroCm: 26,
         receta: receta(1, 'Hervir la pasta y mantecarla con el limón, la pimienta y el queso.', [
           ['Masa de pasta fresca', 160, 'GRAMO'],
           ['Manteca', 30, 'GRAMO'],
@@ -468,6 +486,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13200,
         descripcion: 'Fettuccine con verduras de estación y albahaca fresca.',
         foto: 'pastas/pasta-vegetales-albahaca.webp',
+        diametroCm: 26,
         receta: receta(
           1,
           'Saltear las verduras en el aceite y mezclar con la pasta recién hervida.',
@@ -488,6 +507,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 18500,
         descripcion: 'Tagliatelle con langostinos salteados al ajo y tomate.',
         foto: 'pastas/pasta-camarones.webp',
+        diametroCm: 27,
         receta: receta(1, 'Saltear los langostinos con ajo, sumar la salsa y la pasta hervida.', [
           ['Masa de pasta fresca', 160, 'GRAMO'],
           ['Langostino', 120, 'GRAMO', 5],
@@ -503,6 +523,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 6500,
         descripcion: 'Dos cannoli crocantes rellenos de ricota dulce y chocolate.',
         foto: 'pastas/cannoli.webp',
+        diametroCm: 20,
         receta: receta(
           1,
           'Rellenar los tubos con la ricota azucarada y espolvorear con chocolate.',
@@ -520,6 +541,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 7200,
         descripcion: 'Semifreddo cremoso con sabor a cannoli y chocolate rallado.',
         foto: 'pastas/semifreddo-cannoli.webp',
+        diametroCm: 20,
         receta: receta(1, 'Batir las yemas con el azúcar, sumar la ricota y la crema; congelar.', [
           ['Crema de leche', 150, 'MILILITRO'],
           ['Huevo', 2, 'UNIDAD'],
@@ -550,8 +572,20 @@ const RESTAURANTES: RestauranteSeed[] = [
     cuit: '30000001038',
     carpeta: 'parrilla',
     sucursales: [
-      { nombre: 'Palermo', direccion: 'Honduras 5320', barrio: 'PALERMO', salon: SALON_GRANDE },
-      { nombre: 'San Telmo', direccion: 'Defensa 980', barrio: 'SAN_TELMO', salon: SALON_CHICO },
+      {
+        nombre: 'Palermo',
+        direccion: 'Honduras 5320',
+        barrio: 'PALERMO',
+        foto: 'fuego-de-quebracho-palermo.webp',
+        salon: SALON_GRANDE,
+      },
+      {
+        nombre: 'San Telmo',
+        direccion: 'Defensa 980',
+        barrio: 'SAN_TELMO',
+        foto: 'fuego-de-quebracho-san-telmo.webp',
+        salon: SALON_CHICO,
+      },
     ],
     categorias: [
       categoria('Entradas'),
@@ -568,6 +602,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 6500,
         descripcion: 'Chorizo de cerdo grillado, con salsa criolla.',
         foto: 'parrilla/chorizo-grillado.webp',
+        diametroCm: 22,
         receta: receta(1, 'Grillar el chorizo mariposa hasta dorar de los dos lados.', [
           ['Chorizo', 180, 'GRAMO', 5],
           ['Aceite de oliva', 5, 'MILILITRO'],
@@ -580,6 +615,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 7800,
         descripcion: 'Hojas verdes, espárragos, tomate y aceto balsámico.',
         foto: 'parrilla/ensalada-fresca.webp',
+        diametroCm: 24,
         receta: receta(
           1,
           'Blanquear los espárragos y mezclar con las hojas y el tomate; aderezar.',
@@ -599,6 +635,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 18000,
         descripcion: 'Bife de 400 g con papas fritas y salsa criolla.',
         foto: 'parrilla/bife-con-papas.webp',
+        diametroCm: 30,
         receta: receta(1, 'Sellar el bife a fuego fuerte; freír las papas en bastones.', [
           ['Bife de chorizo', 400, 'GRAMO', 15],
           ['Papa', 300, 'GRAMO', 20],
@@ -613,6 +650,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 21500,
         descripcion: 'Ojo de bife a la parrilla, feteado, con hongos salteados.',
         foto: 'parrilla/bife-feteado.webp',
+        diametroCm: 28,
         receta: receta(
           1,
           'Grillar el ojo de bife, fetear y servir con los hongos salteados en manteca.',
@@ -631,6 +669,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 17500,
         descripcion: 'Brochette de lomo con morrón, cebolla y zapallito grillados.',
         foto: 'parrilla/bife-con-verduras.webp',
+        diametroCm: 28,
         receta: receta(1, 'Ensartar el lomo y las verduras y grillar hasta que tomen color.', [
           ['Lomo', 300, 'GRAMO', 10],
           ['Morrón', 80, 'GRAMO', 15],
@@ -646,6 +685,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 14500,
         descripcion: 'Pechuga de pollo a la parrilla con kale salteado y limón.',
         foto: 'parrilla/pollo-a-la-parrilla.webp',
+        diametroCm: 28,
         receta: receta(1, 'Grillar la pechuga; saltear el kale en aceite y servir con limón.', [
           ['Pechuga de pollo', 300, 'GRAMO', 8],
           ['Kale', 100, 'GRAMO', 10],
@@ -660,6 +700,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12500,
         descripcion: 'Pollo grillado en tiras con palta, hojas verdes y tomate.',
         foto: 'parrilla/ensalada-con-pollo.webp',
+        diametroCm: 26,
         receta: receta(
           1,
           'Grillar el pollo, cortarlo en tiras y mezclar con la palta y las hojas.',
@@ -680,6 +721,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 5500,
         descripcion: 'Papas en bastones, bien crocantes.',
         foto: 'parrilla/papas-fritas.webp',
+        diametroCm: 22,
         receta: receta(1, 'Cortar en bastones, lavar, secar y freír en dos tiempos.', [
           ['Papa', 350, 'GRAMO', 20],
           ['Aceite de girasol', 60, 'MILILITRO'],
@@ -692,6 +734,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 5500,
         descripcion: 'Con dulce de leche o crema.',
         foto: 'parrilla/flan.webp',
+        diametroCm: 20,
         receta: receta(4, 'Batir, colar y cocinar a baño María en el horno durante 50 minutos.', [
           ['Huevo', 4, 'UNIDAD'],
           ['Leche', 0.5, 'LITRO'],
@@ -763,12 +806,14 @@ const RESTAURANTES: RestauranteSeed[] = [
         nombre: 'Belgrano',
         direccion: 'Av. Cabildo 2240',
         barrio: 'BELGRANO',
+        foto: 'hoshi-sushi-bar-belgrano.webp',
         salon: SALON_GRANDE,
       },
       {
         nombre: 'Puerto Madero',
         direccion: 'Juana Manso 1180',
         barrio: 'PUERTO_MADERO',
+        foto: 'hoshi-sushi-bar-puerto-madero.webp',
         salon: SALON_CHICO,
       },
     ],
@@ -800,6 +845,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 9500,
         descripcion: 'Seis empanaditas japonesas de cerdo y repollo, selladas a la plancha.',
         foto: 'sushi/gyozas.webp',
+        diametroCm: 22,
         receta: receta(1, 'Rellenar las masas, sellar en aceite y cocinar al vapor.', [
           ['Masa de gyoza', 6, 'UNIDAD'],
           ['Cerdo molido', 90, 'GRAMO', 5],
@@ -814,6 +860,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 5200,
         descripcion: 'Caldo de miso con tofu y alga wakame.',
         foto: 'sushi/sopa-miso.webp',
+        diametroCm: 18,
         receta: receta(
           1,
           'Disolver el miso en el caldo caliente sin hervir y sumar el tofu y el alga.',
@@ -830,6 +877,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 32000,
         descripcion: 'Veinte piezas de nigiris y rolls de salmón, langostino y palta.',
         foto: 'sushi/combinado-de-sushi.webp',
+        diametroCm: 32,
         receta: receta(1, 'Armar los nigiris y los rolls y acomodarlos en la tabla.', [
           ['Arroz sazonado', 400, 'GRAMO'],
           ['Salmón', 200, 'GRAMO', 5],
@@ -847,6 +895,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 17500,
         descripcion: 'Diez piezas surtidas de nigiris y rolls de salmón.',
         foto: 'sushi/nigiris-y-rolls-en-pizarra.webp',
+        diametroCm: 30,
         receta: receta(1, 'Armar las piezas y servir sobre la pizarra con soja.', [
           ['Arroz sazonado', 200, 'GRAMO'],
           ['Salmón', 100, 'GRAMO', 5],
@@ -862,6 +911,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 15500,
         descripcion: 'Maki de palta y langostino empanado, con queso crema.',
         foto: 'sushi/maki-rolls.webp',
+        diametroCm: 24,
         receta: receta(
           1,
           'Freír los langostinos empanados y enrollarlos con la palta y el arroz.',
@@ -882,6 +932,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13800,
         descripcion: 'Roll invertido de kanikama, palta y pepino con sésamo.',
         foto: 'sushi/roll-california.webp',
+        diametroCm: 24,
         receta: receta(1, 'Enrollar con el arroz por fuera y pasar por sésamo.', [
           ['Arroz sazonado', 160, 'GRAMO'],
           ['Kanikama', 80, 'GRAMO'],
@@ -897,6 +948,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 16500,
         descripcion: 'Nueve piezas surtidas de nigiris y makis.',
         foto: 'sushi/nigiris-y-makis-surtidos.webp',
+        diametroCm: 26,
         receta: receta(1, 'Armar las piezas y acomodarlas en la tabla.', [
           ['Arroz sazonado', 180, 'GRAMO'],
           ['Salmón', 70, 'GRAMO', 5],
@@ -913,6 +965,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 16800,
         descripcion: 'Bowl de arroz con salmón, palta, pepino, edamame y sésamo.',
         foto: 'sushi/poke-de-salmon.webp',
+        diametroCm: 20,
         receta: receta(1, 'Cubetear el salmón, marinarlo en soja y armar el bowl sobre el arroz.', [
           ['Arroz sazonado', 150, 'GRAMO'],
           ['Salmón', 140, 'GRAMO', 5],
@@ -949,9 +1002,16 @@ const RESTAURANTES: RestauranteSeed[] = [
         nombre: 'Colegiales',
         direccion: 'Av. Federico Lacroze 2850',
         barrio: 'COLEGIALES',
+        foto: 'doble-medallon-colegiales.webp',
         salon: SALON_GRANDE,
       },
-      { nombre: 'Almagro', direccion: 'Av. Medrano 640', barrio: 'ALMAGRO', salon: SALON_CHICO },
+      {
+        nombre: 'Almagro',
+        direccion: 'Av. Medrano 640',
+        barrio: 'ALMAGRO',
+        foto: 'doble-medallon-almagro.webp',
+        salon: SALON_CHICO,
+      },
     ],
     categorias: [
       categoria('Hamburguesas'),
@@ -967,6 +1027,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 11500,
         descripcion: 'Medallón de carne, queso cheddar, lechuga, tomate y mayonesa.',
         foto: 'hamburgueseria/hamburguesa-clasica-con-queso.webp',
+        diametroCm: 24,
         receta: receta(
           1,
           'Sellar el medallón en plancha, fundir el queso y armar con el pan tostado.',
@@ -986,6 +1047,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 14500,
         descripcion: 'Dos medallones, doble cheddar, cebolla y pepinillos.',
         foto: 'hamburgueseria/hamburguesa-doble-cheddar.webp',
+        diametroCm: 24,
         receta: receta(1, 'Sellar los dos medallones, cubrirlos con cheddar y armar.', [
           ['Pan de hamburguesa', 1, 'UNIDAD'],
           ['Carne molida', 300, 'GRAMO', 10],
@@ -1000,6 +1062,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 14000,
         descripcion: 'Medallón, panceta crocante, cheddar y salsa barbacoa.',
         foto: 'hamburgueseria/hamburguesa-con-bacon.webp',
+        diametroCm: 24,
         receta: receta(1, 'Dorar la panceta hasta que quede crocante y armar sobre el medallón.', [
           ['Pan de hamburguesa', 1, 'UNIDAD'],
           ['Carne molida', 150, 'GRAMO', 10],
@@ -1015,6 +1078,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12800,
         descripcion: 'Pechuga de pollo empanada y frita, lechuga y mayonesa.',
         foto: 'hamburgueseria/hamburguesa-pollo-crispy.webp',
+        diametroCm: 24,
         receta: receta(1, 'Empanar la pechuga, freírla y armar con la lechuga y la mayonesa.', [
           ['Pan de hamburguesa', 1, 'UNIDAD'],
           ['Pechuga de pollo', 160, 'GRAMO', 8],
@@ -1032,6 +1096,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12500,
         descripcion: 'Medallón de porotos negros, palta, tomate y lechuga.',
         foto: 'hamburgueseria/hamburguesa-vegetariana.webp',
+        diametroCm: 24,
         receta: receta(1, 'Pisar los porotos con la cebolla y el pan rallado, formar y dorar.', [
           ['Pan de hamburguesa', 1, 'UNIDAD'],
           ['Porotos negros', 120, 'GRAMO'],
@@ -1049,6 +1114,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 5500,
         descripcion: 'Papas en bastones, crocantes y saladas.',
         foto: 'hamburgueseria/papas-fritas.webp',
+        diametroCm: 22,
         receta: receta(1, 'Cortar en bastones, lavar, secar y freír en dos tiempos.', [
           ['Papa', 350, 'GRAMO', 20],
           ['Aceite de girasol', 60, 'MILILITRO'],
@@ -1061,6 +1127,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 6200,
         descripcion: 'Aros de cebolla rebozados y fritos.',
         foto: 'hamburgueseria/aros-de-cebolla.webp',
+        diametroCm: 22,
         receta: receta(1, 'Pasar los aros por harina, huevo y pan rallado; freír.', [
           ['Cebolla', 200, 'GRAMO', 15],
           ['Harina 000', 60, 'GRAMO'],
@@ -1076,6 +1143,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 4800,
         descripcion: 'Cookie recién horneada con chips de chocolate.',
         foto: 'hamburgueseria/cookie.webp',
+        diametroCm: 18,
         receta: receta(1, 'Mezclar la masa con los chips, formar y hornear diez minutos.', [
           ['Harina 000', 80, 'GRAMO'],
           ['Manteca', 50, 'GRAMO'],
@@ -1090,6 +1158,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 6800,
         descripcion: 'Helado de vainilla con salsa de chocolate y crema.',
         foto: 'hamburgueseria/sundae.webp',
+        diametroCm: 18,
         receta: receta(1, 'Servir el helado en copa con la salsa de chocolate tibia y la crema.', [
           ['Helado de vainilla', 150, 'GRAMO'],
           ['Chocolate', 40, 'GRAMO'],
@@ -1122,9 +1191,16 @@ const RESTAURANTES: RestauranteSeed[] = [
         nombre: 'Villa Crespo',
         direccion: 'Thames 1380',
         barrio: 'VILLA_CRESPO',
+        foto: 'horno-de-barrio-villa-crespo.webp',
         salon: SALON_GRANDE,
       },
-      { nombre: 'Boedo', direccion: 'Av. Boedo 820', barrio: 'BOEDO', salon: SALON_CHICO },
+      {
+        nombre: 'Boedo',
+        direccion: 'Av. Boedo 820',
+        barrio: 'BOEDO',
+        foto: 'horno-de-barrio-boedo.webp',
+        salon: SALON_CHICO,
+      },
     ],
     categorias: [categoria('Pizzas'), categoria('Postres'), BEBIDAS],
     intermedios: [
@@ -1159,6 +1235,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 11000,
         descripcion: 'Salsa de tomate, muzzarella y orégano.',
         foto: 'pizzeria/pizza-muzzarella.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 200, 'GRAMO'],
           ['Aceite de oliva', 5, 'MILILITRO'],
@@ -1171,6 +1248,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12800,
         descripcion: 'Muzzarella, rodajas de tomate, ajo y orégano.',
         foto: 'pizzeria/pizza-napolitana.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Tomate', 80, 'GRAMO'],
@@ -1185,6 +1263,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13800,
         descripcion: 'Muzzarella y rodajas de pepperoni.',
         foto: 'pizzeria/pizza-pepperoni.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Pepperoni', 70, 'GRAMO'],
@@ -1196,6 +1275,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 15500,
         descripcion: 'Muzzarella, jamón crudo, rúcula fresca y parmesano.',
         foto: 'pizzeria/pizza-jamon-rucula.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Jamón crudo', 60, 'GRAMO'],
@@ -1209,6 +1289,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13500,
         descripcion: 'Muzzarella, tomate, rúcula, parmesano y aceto balsámico.',
         foto: 'pizzeria/pizza-rucula-balsamico.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Rúcula', 50, 'GRAMO'],
@@ -1223,6 +1304,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 12900,
         descripcion: 'Muzzarella, morrón verde, cebolla y aceitunas.',
         foto: 'pizzeria/pizza-verdeo-aceitunas.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Morrón', 80, 'GRAMO', 15],
@@ -1236,6 +1318,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13500,
         descripcion: 'Muzzarella, jamón cocido y champiñones.',
         foto: 'pizzeria/pizza-jamon-champinones.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Jamón cocido', 70, 'GRAMO'],
@@ -1248,6 +1331,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 13200,
         descripcion: 'Muzzarella, jamón cocido y cebolla morada.',
         foto: 'pizzeria/pizza-jamon-cebolla.webp',
+        diametroCm: 32,
         receta: pizza([
           ['Mozzarella', 180, 'GRAMO'],
           ['Jamón cocido', 70, 'GRAMO'],
@@ -1260,6 +1344,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 5800,
         descripcion: 'Tres bochas de helado de chocolate con virutas.',
         foto: 'pizzeria/helado-chocolate.webp',
+        diametroCm: 18,
         receta: receta(1, 'Servir tres bochas en copa y decorar con virutas de chocolate.', [
           ['Helado de chocolate', 200, 'GRAMO'],
           ['Chocolate', 15, 'GRAMO'],
@@ -1271,6 +1356,7 @@ const RESTAURANTES: RestauranteSeed[] = [
         precio: 5200,
         descripcion: 'Flan casero con caramelo.',
         foto: 'pizzeria/flan-caramelo.webp',
+        diametroCm: 20,
         receta: receta(4, 'Acaramelar la flanera, volcar la mezcla y cocinar a baño María.', [
           ['Huevo', 4, 'UNIDAD'],
           ['Leche', 0.5, 'LITRO'],
@@ -1290,6 +1376,235 @@ const RESTAURANTES: RestauranteSeed[] = [
       'Sabrina Correa',
       'Walter Núñez',
       'Tamara Silva',
+    ]),
+  },
+  // ───────────────────────────── Bodegón ─────────────────────────────
+  {
+    nombre: 'El Bodegón de Don Anselmo',
+    cuit: '30000001070',
+    carpeta: 'bodegon',
+    sucursales: [
+      {
+        nombre: 'Barracas',
+        direccion: 'Av. Montes de Oca 1280',
+        barrio: 'BARRACAS',
+        foto: 'el-bodegon-de-don-anselmo-barracas.webp',
+        salon: SALON_GRANDE,
+      },
+      {
+        nombre: 'Flores',
+        direccion: 'Av. Rivadavia 6950',
+        barrio: 'FLORES',
+        foto: 'el-bodegon-de-don-anselmo-flores.webp',
+        salon: SALON_CHICO,
+      },
+    ],
+    categorias: [categoria('Entradas'), categoria('Principales'), categoria('Postres'), BEBIDAS],
+    intermedios: [
+      {
+        nombre: 'Estofado de carne',
+        receta: receta(
+          1000,
+          'Dorar la carne, sumar la verdura y el tomate, y cocinar dos horas a fuego bajo.',
+          [
+            ['Carne para estofado', 500, 'GRAMO', 10],
+            ['Tomate triturado', 500, 'GRAMO'],
+            ['Cebolla', 150, 'GRAMO', 10],
+            ['Zanahoria', 100, 'GRAMO', 10],
+            ['Aceite de girasol', 30, 'MILILITRO'],
+            ['Sal', 8, 'GRAMO'],
+          ],
+        ),
+      },
+      {
+        nombre: 'Puré de papas',
+        receta: receta(1000, 'Hervir las papas, pisarlas y unir con la manteca y la leche.', [
+          ['Papa', 850, 'GRAMO', 15],
+          ['Manteca', 60, 'GRAMO'],
+          ['Leche', 150, 'MILILITRO'],
+          ['Sal', 8, 'GRAMO'],
+        ]),
+      },
+    ],
+    platos: [
+      {
+        nombre: 'Empanadas de carne, para compartir',
+        categoria: 'Entradas',
+        precio: 16500,
+        descripcion: 'Docena de empanadas de carne al horno.',
+        foto: 'bodegon/empanadas-de-carne.webp',
+        diametroCm: 30,
+        receta: receta(1, 'Rehogar la cebolla y la carne, rellenar las tapas y hornear.', [
+          ['Harina 000', 400, 'GRAMO'],
+          ['Carne molida', 500, 'GRAMO'],
+          ['Cebolla', 300, 'GRAMO', 10],
+          ['Huevo', 2, 'UNIDAD'],
+          ['Aceite de girasol', 40, 'MILILITRO'],
+          ['Sal', 8, 'GRAMO'],
+        ]),
+      },
+      {
+        nombre: 'Omelette de queso en sartén',
+        categoria: 'Entradas',
+        precio: 8900,
+        descripcion: 'Omelette con queso gratinado y tostadas de la casa.',
+        foto: 'bodegon/omelette-de-queso.webp',
+        diametroCm: 22,
+        receta: receta(1, 'Batir los huevos, cuajar en la sartén y gratinar con el queso.', [
+          ['Huevo', 3, 'UNIDAD'],
+          ['Queso cheddar', 60, 'GRAMO'],
+          ['Tomate', 40, 'GRAMO', 5],
+          ['Manteca', 15, 'GRAMO'],
+          ['Pan de campo', 80, 'GRAMO'],
+          ['Sal', 2, 'GRAMO'],
+        ]),
+      },
+      {
+        nombre: 'Tortilla de papas',
+        categoria: 'Entradas',
+        precio: 9800,
+        descripcion: 'Tortilla de papas y cebolla, jugosa.',
+        foto: 'bodegon/tortilla-de-papas.webp',
+        diametroCm: 24,
+        receta: receta(
+          1,
+          'Freír la papa con la cebolla, unir con el huevo y cuajar de los dos lados.',
+          [
+            ['Papa', 350, 'GRAMO', 15],
+            ['Cebolla', 80, 'GRAMO', 10],
+            ['Huevo', 4, 'UNIDAD'],
+            ['Aceite de girasol', 50, 'MILILITRO'],
+            ['Sal', 4, 'GRAMO'],
+          ],
+        ),
+      },
+      {
+        nombre: 'Milanesa con papas fritas',
+        categoria: 'Principales',
+        precio: 15500,
+        descripcion: 'Milanesa de nalga con papas fritas y limón.',
+        foto: 'bodegon/milanesa-con-papas-fritas.webp',
+        diametroCm: 30,
+        receta: receta(1, 'Empanar la milanesa, freírla y servir con las papas y el limón.', [
+          ['Nalga', 250, 'GRAMO', 10],
+          ['Huevo', 1, 'UNIDAD'],
+          ['Pan rallado', 60, 'GRAMO'],
+          ['Papa', 300, 'GRAMO', 20],
+          ['Aceite de girasol', 60, 'MILILITRO'],
+          ['Limón', 30, 'GRAMO'],
+          ['Sal', 4, 'GRAMO'],
+        ]),
+      },
+      {
+        nombre: 'Pollo a la crema con hongos y puré',
+        categoria: 'Principales',
+        precio: 16200,
+        descripcion: 'Pechuga con salsa de crema y hongos, puré y vegetales.',
+        foto: 'bodegon/pollo-a-la-crema-con-pure.webp',
+        diametroCm: 28,
+        receta: receta(
+          1,
+          'Sellar el pollo, terminarlo en la salsa de crema y servir con el puré.',
+          [
+            ['Pechuga de pollo', 220, 'GRAMO', 5],
+            ['Crema de leche', 120, 'MILILITRO'],
+            ['Champiñones', 60, 'GRAMO', 10],
+            ['Puré de papas', 200, 'GRAMO'],
+            ['Zanahoria', 60, 'GRAMO', 10],
+            ['Sal', 4, 'GRAMO'],
+          ],
+        ),
+      },
+      {
+        nombre: 'Ravioles con estofado',
+        categoria: 'Principales',
+        precio: 14800,
+        descripcion: 'Ravioles de ricota con estofado de carne.',
+        foto: 'bodegon/ravioles-con-estofado.webp',
+        diametroCm: 24,
+        receta: receta(1, 'Hervir los ravioles y saltearlos en el estofado caliente.', [
+          ['Harina 000', 110, 'GRAMO'],
+          ['Huevo', 1, 'UNIDAD'],
+          ['Queso ricota', 100, 'GRAMO'],
+          ['Estofado de carne', 200, 'GRAMO'],
+          ['Queso parmesano', 10, 'GRAMO'],
+        ]),
+      },
+      {
+        nombre: 'Guiso de porotos',
+        categoria: 'Principales',
+        precio: 13500,
+        descripcion: 'Guiso de porotos con carne, verduras y tomate.',
+        foto: 'bodegon/guiso-de-porotos.webp',
+        diametroCm: 24,
+        receta: receta(
+          1,
+          'Hervir los porotos remojados y terminar la cocción con la carne y la verdura.',
+          [
+            ['Porotos alubia', 110, 'GRAMO'],
+            ['Carne para estofado', 120, 'GRAMO', 10],
+            ['Tomate triturado', 120, 'GRAMO'],
+            ['Zanahoria', 60, 'GRAMO', 10],
+            ['Morrón', 40, 'GRAMO', 15],
+            ['Cebolla', 50, 'GRAMO', 10],
+            ['Sal', 4, 'GRAMO'],
+          ],
+        ),
+      },
+      {
+        nombre: 'Flan casero',
+        categoria: 'Postres',
+        precio: 5800,
+        descripcion: 'Flan casero con caramelo.',
+        foto: 'bodegon/flan-casero.webp',
+        diametroCm: 20,
+        receta: receta(4, 'Acaramelar la flanera, volcar la mezcla y cocinar a baño María.', [
+          ['Huevo', 4, 'UNIDAD'],
+          ['Leche', 0.5, 'LITRO'],
+          ['Azúcar', 200, 'GRAMO'],
+        ]),
+      },
+      {
+        nombre: 'Panqueques con dulce de leche',
+        categoria: 'Postres',
+        precio: 6200,
+        descripcion: 'Panqueques rellenos de dulce de leche.',
+        foto: 'bodegon/panqueques-con-dulce-de-leche.webp',
+        diametroCm: 24,
+        receta: receta(1, 'Hacer los panqueques en sartén, rellenar y enrollar.', [
+          ['Harina 000', 60, 'GRAMO'],
+          ['Huevo', 1, 'UNIDAD'],
+          ['Leche', 120, 'MILILITRO'],
+          ['Manteca', 10, 'GRAMO'],
+          ['Dulce de leche', 120, 'GRAMO'],
+        ]),
+      },
+      {
+        nombre: 'Queso y dulce',
+        categoria: 'Postres',
+        precio: 5200,
+        descripcion: 'Postre vigilante: queso fresco y dulce de membrillo.',
+        foto: 'bodegon/queso-y-dulce.webp',
+        diametroCm: 18,
+        receta: receta(1, 'Cortar el queso y el dulce en porciones iguales y servir.', [
+          ['Queso fresco', 80, 'GRAMO'],
+          ['Dulce de membrillo', 80, 'GRAMO'],
+        ]),
+      },
+      BEBIDA_AGUA,
+      BEBIDA_GASEOSA,
+      BEBIDA_MALBEC,
+    ],
+    empleados: plantelBasico([
+      'Anselmo Peralta',
+      'Graciela Sosa',
+      'Héctor Villar',
+      'Marina Quiroga',
+      'Esteban Luna',
+      'Noelia Ibarra',
+      'Damián Rojas',
+      'Beatriz Maldonado',
+      'Ramiro Leiva',
     ]),
   },
 ];
@@ -1318,10 +1633,11 @@ function insumosDe(r: RestauranteSeed): InsumoSeed[] {
 
 async function seedSucursales(tx: Tx, restauranteId: string, r: RestauranteSeed) {
   const sucursalIds = new Map<string, string>();
-  for (const { nombre, direccion, barrio, salon } of r.sucursales) {
+  for (const { nombre, direccion, barrio, foto, salon } of r.sucursales) {
     const datos = {
       direccion,
       barrio,
+      fotoUrl: `/fotos-deploy/sucursales/${foto}`,
       horarioApertura: hora('12:00'),
       horarioCierre: hora('00:00'),
       toleranciaNoShowMin: 15,
@@ -1464,6 +1780,7 @@ async function seedMenuEInventario(
       precio: plato.precio,
       descripcion: plato.descripcion,
       fotoUrl: `/fotos-deploy/${plato.foto}`,
+      diametroCm: plato.diametroCm ?? null,
       disponible: true,
       activo: true,
       insumoId: plato.reventa ? componentes.get(plato.reventa)! : null,
