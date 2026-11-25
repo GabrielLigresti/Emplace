@@ -225,12 +225,74 @@ describe('reservaRepository.activar', () => {
     return { sucursalId: sucursal.id, reservaId: reserva.id };
   }
 
-  const activar = (r: { sucursalId: string; reservaId: string }) =>
-    reservaRepository.activar(e.restauranteId, r.sucursalId, r.reservaId, 'PENDIENTE', 'ACTIVA');
+  const activar = (r: { sucursalId: string; reservaId: string }, ahora = new Date()) =>
+    reservaRepository.activar(
+      e.restauranteId,
+      r.sucursalId,
+      r.reservaId,
+      'PENDIENTE',
+      'ACTIVA',
+      ahora,
+    );
+
+  const HORA = 3_600_000;
+  // Inicio en punto (lo exige la base), a `n` horas de la hora actual.
+  const enPunto = (n: number) => {
+    const inicio = new Date();
+    inicio.setUTCMinutes(0, 0, 0);
+    return new Date(inicio.getTime() + n * HORA);
+  };
+
+  async function comensalNuevo() {
+    const usuario = await prisma.usuario.create({
+      data: {
+        email: `comensal-${Math.random().toString(36).slice(2)}@prueba.test`,
+        passwordHash: 'x',
+        tipo: 'COMENSAL',
+        comensal: { create: { nombre: 'Otro comensal' } },
+      },
+    });
+    return usuario.id;
+  }
+
+  async function mesaNueva(numero: number) {
+    return (
+      await prisma.mesa.create({
+        data: { sucursalId: e.sucursalId, numero, capacidad: 4, posX: 20, posY: 20 },
+      })
+    ).id;
+  }
+
+  // Una reserva de la sucursal del escenario, de otro comensal salvo que se indique.
+  async function reservaEn(
+    mesaId: string,
+    inicio: Date,
+    estado: 'PENDIENTE' | 'ACTIVA' | 'CANCELADA' = 'PENDIENTE',
+    comensalId?: string,
+  ) {
+    const reserva = await prisma.reserva.create({
+      data: {
+        sucursalId: e.sucursalId,
+        mesaId,
+        comensalId: comensalId ?? (await comensalNuevo()),
+        inicio,
+        cantidadPersonas: 2,
+        modoAsignacion: 'MANUAL',
+        estado,
+      },
+    });
+    return { sucursalId: e.sucursalId, reservaId: reserva.id };
+  }
+
+  const mesaDelEscenario = async () =>
+    (await prisma.reserva.findUniqueOrThrow({ where: { id: e.reservaId } })).mesaId;
+
+  const estadoDe = async (r: { reservaId: string }) =>
+    (await prisma.reserva.findUniqueOrThrow({ where: { id: r.reservaId } })).estado;
 
   it('con otra mesa abierta del comensal no se activa', async () => {
     const norte = await reservaEnOtraSucursal();
-    expect(await activar(norte)).toBe('OTRA_MESA_ABIERTA');
+    expect(await activar(norte)).toEqual({ resultado: 'OTRA_MESA_ABIERTA' });
     expect(
       (await prisma.reserva.findUniqueOrThrow({ where: { id: norte.reservaId } })).estado,
     ).toBe('PENDIENTE');
@@ -239,7 +301,7 @@ describe('reservaRepository.activar', () => {
   it('sin otra mesa abierta, se activa y abre la cuenta', async () => {
     await prisma.cuentaMesa.update({ where: { id: e.cuentaMesaId }, data: { estado: 'CERRADA' } });
     const norte = await reservaEnOtraSucursal();
-    expect(await activar(norte)).toBe('ACTIVADA');
+    expect(await activar(norte)).toEqual({ resultado: 'ACTIVADA' });
     expect(await prisma.cuentaMesa.count({ where: { estado: 'ABIERTA' } })).toBe(1);
   });
 
@@ -247,7 +309,83 @@ describe('reservaRepository.activar', () => {
     await prisma.cuentaMesa.update({ where: { id: e.cuentaMesaId }, data: { estado: 'CERRADA' } });
     const [a, b] = [await reservaEnOtraSucursal(), await reservaEnOtraSucursal()];
     const resultados = await Promise.all([activar(a), activar(b)]);
-    expect(resultados.sort()).toEqual(['ACTIVADA', 'OTRA_MESA_ABIERTA']);
+    expect(resultados.map((r) => r.resultado).sort()).toEqual(['ACTIVADA', 'OTRA_MESA_ABIERTA']);
     expect(await prisma.cuentaMesa.count({ where: { estado: 'ABIERTA' } })).toBe(1);
+  });
+
+  it('con otra reserva ACTIVA en la misma mesa, de ayer, no se activa', async () => {
+    // El escenario deja la mesa 4 con una ACTIVA; se la lleva a ayer, sin cerrar.
+    const ayer = enPunto(-24);
+    await prisma.reserva.update({ where: { id: e.reservaId }, data: { inicio: ayer } });
+    const mesaId = await mesaDelEscenario();
+    const cuentasAntes = await prisma.cuentaMesa.count();
+    const pendiente = await reservaEn(mesaId, enPunto(1));
+
+    expect(await activar(pendiente)).toEqual({ resultado: 'MESA_OCUPADA' });
+    expect(await estadoDe(pendiente)).toBe('PENDIENTE');
+    expect(await prisma.cuentaMesa.count()).toBe(cuentasAntes);
+  });
+
+  it('una ACTIVA en otra mesa de la sucursal no impide activar', async () => {
+    const pendiente = await reservaEn(await mesaNueva(5), enPunto(1));
+    expect(await activar(pendiente)).toEqual({ resultado: 'ACTIVADA' });
+  });
+
+  it('una PENDIENTE anterior dentro de su tolerancia bloquea; pasada, no', async () => {
+    const mesaId = await mesaNueva(5);
+    const inicioAnterior = enPunto(-2);
+    await reservaEn(mesaId, inicioAnterior);
+    const pendiente = await reservaEn(mesaId, new Date(inicioAnterior.getTime() + HORA));
+    const limite = new Date(inicioAnterior.getTime() + 15 * 60_000);
+
+    expect(await activar(pendiente, limite)).toEqual({
+      resultado: 'RESERVA_ANTERIOR',
+      inicio: inicioAnterior,
+    });
+    expect(await estadoDe(pendiente)).toBe('PENDIENTE');
+    expect(await activar(pendiente, new Date(limite.getTime() + 1))).toEqual({
+      resultado: 'ACTIVADA',
+    });
+  });
+
+  it('una PENDIENTE posterior o una CANCELADA anterior no bloquean', async () => {
+    const mesaId = await mesaNueva(5);
+    const base = enPunto(3);
+    await reservaEn(mesaId, new Date(base.getTime() - HORA), 'CANCELADA');
+    await reservaEn(mesaId, new Date(base.getTime() + HORA));
+    const pendiente = await reservaEn(mesaId, base);
+
+    expect(await activar(pendiente, new Date(base.getTime() - 30 * 60_000))).toEqual({
+      resultado: 'ACTIVADA',
+    });
+  });
+
+  it('dos reservas de la misma mesa activadas a la vez: gana una sola', async () => {
+    const mesaId = await mesaNueva(5);
+    const primera = enPunto(-3);
+    const a = await reservaEn(mesaId, primera);
+    const b = await reservaEn(mesaId, new Date(primera.getTime() + HORA));
+    // Pasado el límite de la primera, ninguna bloquea a la otra por espera.
+    const resultados = await Promise.all([activar(a), activar(b)]);
+
+    expect(resultados.map((r) => r.resultado).sort()).toEqual(['ACTIVADA', 'MESA_OCUPADA']);
+    expect(
+      await prisma.cuentaMesa.count({ where: { estado: 'ABIERTA', reserva: { mesaId } } }),
+    ).toBe(1);
+  });
+
+  it('con otra sucursal responde CAMBIO', async () => {
+    const pendiente = await reservaEn(await mesaNueva(5), enPunto(1));
+    const norte = await reservaEnOtraSucursal();
+    expect(
+      await reservaRepository.activar(
+        e.restauranteId,
+        norte.sucursalId,
+        pendiente.reservaId,
+        'PENDIENTE',
+        'ACTIVA',
+        new Date(),
+      ),
+    ).toEqual({ resultado: 'CAMBIO' });
   });
 });
