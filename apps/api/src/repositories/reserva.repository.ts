@@ -83,10 +83,11 @@ export interface ReservaRepository {
   ): Promise<FilaReservaPanel | null>;
   // Cambio de estado de la activación (lo decide el State) y apertura de la
   // cuenta de mesa, en una transacción. CAMBIO si la reserva ya no estaba en
-  // `desde`; OTRA_MESA_ABIERTA si el comensal ya tiene una mesa abierta en
-  // cualquier sucursal (una sola por comensal); MESA_OCUPADA si hay otra
-  // reserva ACTIVA en la mesa (de cualquier fecha); RESERVA_ANTERIOR si una
-  // PENDIENTE anterior de la mesa todavía está dentro de su tolerancia.
+  // `desde`. Se revisa en este orden: MESA_OCUPADA si hay otra reserva ACTIVA
+  // en la mesa (de cualquier fecha); RESERVA_ANTERIOR si una PENDIENTE anterior
+  // de la mesa todavía está dentro de su tolerancia; OTRA_MESA_ABIERTA si el
+  // comensal ya tiene una mesa abierta en cualquier sucursal (una sola por
+  // comensal). Así, el mismo comensal en su propia mesa recibe MESA_OCUPADA.
   activar(
     restauranteId: string,
     sucursalId: string,
@@ -348,15 +349,11 @@ export const reservaRepository: ReservaRepository = {
       // Dos sucursales pueden activar a la vez reservas del mismo comensal y no
       // hay una fila común que bloquear: el candado es por comensal.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('mesa-comensal:' || ${reserva.comensalId}))`;
-      const abierta = await tx.cuentaMesa.count({
-        where: { estado: 'ABIERTA', reserva: { comensalId: reserva.comensalId } },
-      });
-      if (abierta > 0) return { resultado: 'OTRA_MESA_ABIERTA' };
-
-      // Bloquea la fila de la mesa: dos activaciones de la misma mesa se
+      // Bloquea la fila de la mesa (NO KEY UPDATE: no frena las inserciones que
+      // la referencian): dos activaciones de la misma mesa se
       // serializan y la segunda ve la ACTIVA de la primera. Se une la sucursal
       // para acotar por restaurante.
-      await tx.$queryRaw`SELECT m.id FROM mesa m JOIN sucursal s ON s.id = m.sucursal_id WHERE m.id = ${reserva.mesaId}::uuid AND m.sucursal_id = ${sucursalId}::uuid AND s.restaurante_id = ${restauranteId}::uuid FOR UPDATE OF m`;
+      await tx.$queryRaw`SELECT m.id FROM mesa m JOIN sucursal s ON s.id = m.sucursal_id WHERE m.id = ${reserva.mesaId}::uuid AND m.sucursal_id = ${sucursalId}::uuid AND s.restaurante_id = ${restauranteId}::uuid FOR NO KEY UPDATE OF m`;
       const ocupada = await tx.reserva.count({
         where: {
           mesaId: reserva.mesaId,
@@ -387,6 +384,12 @@ export const reservaRepository: ReservaRepository = {
           }) >= ahora,
       );
       if (enEspera) return { resultado: 'RESERVA_ANTERIOR', inicio: enEspera.inicio };
+
+      // Va al final: el mismo comensal en una mesa ocupada recibe MESA_OCUPADA.
+      const abierta = await tx.cuentaMesa.count({
+        where: { estado: 'ABIERTA', reserva: { comensalId: reserva.comensalId } },
+      });
+      if (abierta > 0) return { resultado: 'OTRA_MESA_ABIERTA' };
 
       const { count } = await tx.reserva.updateMany({
         where: { id, estado: desde, ...deLaSucursal(restauranteId, sucursalId) },

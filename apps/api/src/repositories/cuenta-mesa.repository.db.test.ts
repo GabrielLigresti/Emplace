@@ -374,6 +374,34 @@ describe('reservaRepository.activar', () => {
     ).toBe(1);
   });
 
+  it('el mismo comensal en la misma mesa ocupada recibe MESA_OCUPADA', async () => {
+    // La mesa del escenario tiene una ACTIVA del comensal con la cuenta abierta.
+    const mesaId = await mesaDelEscenario();
+    const pendiente = await reservaEn(mesaId, enPunto(1), 'PENDIENTE', e.comensalId);
+
+    expect(await activar(pendiente)).toEqual({ resultado: 'MESA_OCUPADA' });
+    expect(await estadoDe(pendiente)).toBe('PENDIENTE');
+  });
+
+  it('con un restaurante ajeno y la sucursal correcta responde CAMBIO', async () => {
+    const pendiente = await reservaEn(await mesaNueva(5), enPunto(1));
+    const ajeno = await prisma.restaurante.create({
+      data: { nombre: 'Restaurante ajeno', cuit: `30-${Date.now() + 1}-9` },
+    });
+
+    expect(
+      await reservaRepository.activar(
+        ajeno.id,
+        pendiente.sucursalId,
+        pendiente.reservaId,
+        'PENDIENTE',
+        'ACTIVA',
+        new Date(),
+      ),
+    ).toEqual({ resultado: 'CAMBIO' });
+    expect(await estadoDe(pendiente)).toBe('PENDIENTE');
+  });
+
   it('con otra sucursal responde CAMBIO', async () => {
     const pendiente = await reservaEn(await mesaNueva(5), enPunto(1));
     const norte = await reservaEnOtraSucursal();
