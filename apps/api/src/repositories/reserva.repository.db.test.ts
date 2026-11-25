@@ -99,6 +99,9 @@ describe('reservaRepository.listarPanel', () => {
 });
 
 describe('reservaRepository.listarDelComensal', () => {
+  const mesaDe = async (sucursalId: string) =>
+    (await prisma.mesa.findFirstOrThrow({ where: { sucursalId } })).id;
+
   it('trae el restaurante y la sucursal de cada reserva', async () => {
     const filas = await reservaRepository.listarDelComensal(e.comensalId);
 
@@ -110,5 +113,47 @@ describe('reservaRepository.listarDelComensal', () => {
       restauranteId: e.restauranteId,
       restauranteNombre: 'Restaurante de prueba',
     });
+  });
+
+  it('trae las reservas del comensal en todos los restaurantes y ninguna ajena', async () => {
+    const otro = await crearEscenario();
+    const { id: propia } = await prisma.reserva.create({
+      data: {
+        sucursalId: otro.sucursalId,
+        mesaId: await mesaDe(otro.sucursalId),
+        comensalId: e.comensalId,
+        inicio: new Date('2030-01-02T23:00:00.000Z'),
+        cantidadPersonas: 2,
+        modoAsignacion: 'MANUAL',
+        estado: 'PENDIENTE',
+      },
+    });
+
+    const filas = await reservaRepository.listarDelComensal(e.comensalId);
+
+    expect(filas.map((r) => [r.id, r.restauranteId])).toEqual([
+      [propia, otro.restauranteId],
+      [e.reservaId, e.restauranteId],
+    ]);
+  });
+
+  it('limita el historial a 50 sin dejar afuera una reserva vigente', async () => {
+    const mesaId = await mesaDe(e.sucursalId);
+    await prisma.reserva.createMany({
+      data: Array.from({ length: 51 }, (_, dia) => ({
+        sucursalId: e.sucursalId,
+        mesaId,
+        comensalId: e.comensalId,
+        inicio: new Date(Date.UTC(2030, 0, 1 + dia, 23)),
+        cantidadPersonas: 2,
+        modoAsignacion: 'MANUAL' as const,
+        estado: 'CANCELADA' as const,
+      })),
+    });
+
+    const filas = await reservaRepository.listarDelComensal(e.comensalId);
+
+    expect(filas).toHaveLength(51);
+    expect(filas.at(-1)?.id).toBe(e.reservaId);
   });
 });

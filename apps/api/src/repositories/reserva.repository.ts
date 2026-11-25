@@ -263,13 +263,26 @@ export const reservaRepository: ReservaRepository = {
   },
 
   async listarDelComensal(comensalId) {
-    const filas = await prisma.reserva.findMany({
-      where: { comensalId },
+    // El límite es solo del historial: una reserva vigente nunca queda afuera.
+    const vigentes = await prisma.reserva.findMany({
+      where: { comensalId, estado: { in: VIGENTES } },
+      select: seleccionReserva,
+      orderBy: { inicio: 'desc' },
+    });
+    // Se excluyen por id las que cambiaron de estado entre las dos consultas.
+    const anteriores = await prisma.reserva.findMany({
+      where: {
+        comensalId,
+        estado: { notIn: VIGENTES },
+        id: { notIn: vigentes.map((r) => r.id) },
+      },
       select: seleccionReserva,
       orderBy: { inicio: 'desc' },
       take: 50,
     });
-    return filas.map(aFilaReserva);
+    return [...vigentes, ...anteriores]
+      .sort((a, b) => b.inicio.getTime() - a.inicio.getTime())
+      .map(aFilaReserva);
   },
 
   async cambiarEstado(alcance, id, desde, hacia) {
