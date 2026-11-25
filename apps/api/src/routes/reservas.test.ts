@@ -20,7 +20,7 @@ jest.mock('../repositories/reserva.repository', () => ({
     cambiarEstado: jest.fn(),
     listarPanel: jest.fn().mockResolvedValue({ filas: [], total: 0, pagina: 1, porPagina: 25 }),
     buscarEnSucursal: jest.fn(),
-    activar: jest.fn().mockResolvedValue(true),
+    activar: jest.fn().mockResolvedValue({ resultado: 'ACTIVADA' }),
     cerrar: jest.fn(),
   },
 }));
@@ -190,6 +190,56 @@ describe('/api/reservas (panel)', () => {
       IDS.centro,
       RESERVA,
     );
+  });
+
+  const pendienteEn = (minutos: number) => ({
+    id: RESERVA,
+    sucursalId: IDS.centro,
+    sucursalNombre: 'Centro',
+    restauranteId: 'rest',
+    restauranteNombre: 'Resto',
+    comensalId: IDS.comensal,
+    mesaId: MESA,
+    mesaNumero: 1,
+    inicio: new Date(Date.now() + minutos * 60 * 1000),
+    cantidadPersonas: 2,
+    modoAsignacion: 'MANUAL',
+    estado: 'PENDIENTE',
+    toleranciaNoShowMin: 15,
+    comensalNombre: 'Carlos',
+    comensalTelefono: null,
+  });
+
+  it('a 45 minutos sin cuerpo responde 409 y con antesDeHora activa', async () => {
+    reservaRepository.buscarEnSucursal.mockResolvedValue(pendienteEn(45));
+    const ruta = `/api/reservas/${RESERVA}/activar`;
+    const cookie = cookieConPermisos(['reserva.activar']);
+
+    const sinCuerpo = await request(app).post(ruta).set('Cookie', cookie);
+    expect(sinCuerpo.status).toBe(409);
+
+    const anticipada = await request(app)
+      .post(ruta)
+      .set('Cookie', cookie)
+      .send({ antesDeHora: true });
+    expect(anticipada.status).toBe(200);
+    expect(anticipada.body.estado).toBe('ACTIVA');
+  });
+
+  it('rechaza antesDeHora que no es booleano (400)', async () => {
+    await request(app)
+      .post(`/api/reservas/${RESERVA}/activar`)
+      .set('Cookie', cookieConPermisos(['reserva.activar']))
+      .send({ antesDeHora: 'si' })
+      .expect(400);
+  });
+
+  it('antesDeHora con solo reserva.ver responde 403', async () => {
+    await request(app)
+      .post(`/api/reservas/${RESERVA}/activar`)
+      .set('Cookie', cookieConPermisos(['reserva.ver']))
+      .send({ antesDeHora: true })
+      .expect(403);
   });
 
   const activa = () => ({

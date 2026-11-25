@@ -19,6 +19,9 @@ export const MINUTOS_ANTES_ACTIVACION = 30;
 export const MINUTOS_ANTES_ACTIVACION_ANTICIPADA = 60;
 export const MAX_PERSONAS_RESERVA = 20;
 
+// Sin cuerpo (Express 5 deja req.body indefinido) vale la ventana normal.
+export const activarReservaSchema = z.object({ antesDeHora: z.boolean().optional() }).default({});
+
 const personasSchema = z.coerce.number().int().min(1).max(MAX_PERSONAS_RESERVA);
 
 export const consultaFranjasSchema = z.object({ fecha: fechaSchema, personas: personasSchema });
