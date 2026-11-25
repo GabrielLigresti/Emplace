@@ -45,7 +45,8 @@ export function ReservasPage() {
   const cierre = useCerrarMesa(recargar);
   const avisoRef = useRef<HTMLDivElement>(null);
   const mensajeError = activacion.error ?? cierre.error ?? errorCancelar;
-  // A 390 px el aviso queda fuera de pantalla: al aparecer un error, se trae a la vista.
+  // A 390 px el aviso queda fuera de pantalla: al aparecer un error, se trae a la
+  // vista, debajo de la barra superior fija (scroll-mt-20).
   useEffect(() => {
     if (mensajeError) avisoRef.current?.scrollIntoView({ block: 'nearest' });
   }, [mensajeError]);
@@ -148,7 +149,7 @@ export function ReservasPage() {
         )}
       </div>
       <EstadoCarga cargando={cargando && !datos} error={error} />
-      <div ref={avisoRef} className="mb-3">
+      <div ref={avisoRef} className="mb-3 scroll-mt-20">
         <Aviso>{mensajeError}</Aviso>
       </div>
       {filas?.length === 0 && <p className="text-sm text-meta">No hay reservas para mostrar.</p>}
