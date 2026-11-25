@@ -15,7 +15,7 @@ import {
 } from '../../components/ui';
 import { ApiError, api } from '../../lib/api';
 import { formatoDiaRelativo, formatoFecha, formatoHora } from '../../lib/formato';
-import { agruparPorDia, esActivable } from '../../lib/reservas';
+import { agruparPorDia, esActivable, esActivableAntesDeHora } from '../../lib/reservas';
 import { useEventoSocket } from '../../lib/socket';
 import { useAhora } from '../../lib/useAhora';
 import { useCerrarMesa } from '../../lib/useCerrarMesa';
@@ -57,6 +57,18 @@ export function ReservasPage() {
 
   async function activar(r: ReservaPanel) {
     if (await activacion.enviar(`/reservas/${r.id}/activar`, 'POST')) recargar();
+  }
+
+  async function activarAntesDeHora(r: ReservaPanel) {
+    const ok = await confirmar({
+      mensaje: `¿Activar la mesa ${r.mesa.numero} antes de hora?`,
+      detalle: `La reserva es a las ${formatoHora(r.inicio)}.`,
+      accion: 'Activar mesa',
+    });
+    if (!ok) return;
+    if (await activacion.enviar(`/reservas/${r.id}/activar`, 'POST', { antesDeHora: true })) {
+      recargar();
+    }
   }
 
   async function cancelar(r: ReservaPanel) {
@@ -171,6 +183,15 @@ export function ReservasPage() {
                         onClick={() => activar(r)}
                       >
                         Activar mesa
+                      </Boton>
+                    )}
+                    {esActivableAntesDeHora(r, ahora) && tienePermiso('reserva.activar') && (
+                      <Boton
+                        variante="secundario"
+                        disabled={activacion.enviando}
+                        onClick={() => void activarAntesDeHora(r)}
+                      >
+                        Activar antes de hora
                       </Boton>
                     )}
                     {r.cerrable && r.id !== cierre.cerradaId && tienePermiso('mesa.cerrar') && (
