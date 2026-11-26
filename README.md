@@ -1,4 +1,4 @@
-# TFG-PGIM
+# Emplace
 
 Plataforma web de gestión de restaurantes multi-sucursal: reservas, pedidos, pagos con Mercado Pago, fidelización, stock por recetas, menú con realidad aumentada y simulador de apertura.
 
