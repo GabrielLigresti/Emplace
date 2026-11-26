@@ -15,7 +15,12 @@ export type EstadoReserva = (typeof ESTADOS_RESERVA)[number];
 export const DIAS_ANTICIPACION_RESERVA = 30;
 // La reserva se puede activar desde este margen antes del inicio de la franja.
 export const MINUTOS_ANTES_ACTIVACION = 30;
+// Con el pedido explícito del personal, desde este margen antes del inicio.
+export const MINUTOS_ANTES_ACTIVACION_ANTICIPADA = 60;
 export const MAX_PERSONAS_RESERVA = 20;
+
+// Sin cuerpo (Express 5 deja req.body indefinido) vale la ventana normal.
+export const activarReservaSchema = z.object({ antesDeHora: z.boolean().optional() }).default({});
 
 const personasSchema = z.coerce.number().int().min(1).max(MAX_PERSONAS_RESERVA);
 
@@ -69,6 +74,35 @@ export interface ReservaComensal {
   estado: EstadoReserva;
   limiteLlegada: string;
   cancelable: boolean;
+}
+
+const esVigente = (r: { estado: EstadoReserva }) =>
+  r.estado === 'PENDIENTE' || r.estado === 'ACTIVA';
+
+// Agrupa las reservas del comensal por restaurante. Las vigentes van de la más
+// próxima a la más lejana y las anteriores, de la más reciente a la más vieja.
+// Los grupos se ordenan por su vigente más próxima; los que solo tienen
+// historial van al final, por su reserva más reciente.
+export function agruparReservasPorRestaurante<
+  T extends Pick<ReservaComensal, 'restaurante' | 'estado' | 'inicio'>,
+>(reservas: T[]) {
+  const porRestaurante = new Map<string, T[]>();
+  for (const r of reservas) {
+    porRestaurante.set(r.restaurante.id, [...(porRestaurante.get(r.restaurante.id) ?? []), r]);
+  }
+  const porInicio = (a: T, b: T) => a.inicio.localeCompare(b.inicio);
+  return [...porRestaurante.values()]
+    .map((filas) => ({
+      restaurante: filas[0]!.restaurante,
+      vigentes: filas.filter(esVigente).sort(porInicio),
+      anteriores: filas.filter((r) => !esVigente(r)).sort((a, b) => porInicio(b, a)),
+    }))
+    .sort((a, b) => {
+      const [va, vb] = [a.vigentes[0], b.vigentes[0]];
+      if (va && vb) return porInicio(va, vb);
+      if (va || vb) return va ? -1 : 1;
+      return porInicio(b.anteriores[0]!, a.anteriores[0]!);
+    });
 }
 
 // Tiempo real (Socket.IO). El comensal recibe los cambios de sus reservas en

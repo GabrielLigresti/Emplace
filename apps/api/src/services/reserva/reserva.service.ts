@@ -263,22 +263,50 @@ export function createReservaService(
     },
 
     // CU-12 Activar reserva: el comensal llegó; se abre la cuenta de mesa.
-    async activar(restauranteId: string, sucursalId: string, id: string): Promise<ReservaPanel> {
+    async activar(
+      restauranteId: string,
+      sucursalId: string,
+      id: string,
+      antesDeHora = false,
+    ): Promise<ReservaPanel> {
       const fila = await repo.buscarEnSucursal(restauranteId, sucursalId, id);
       if (!fila) throw new AppError(404, 'La reserva no existe');
-      const hacia = estadoDeReserva(fila.estado).activar({
-        inicio: fila.inicio,
-        toleranciaNoShowMin: fila.toleranciaNoShowMin,
-        ahora: ahora(),
-      });
-      const activacion = await repo.activar(restauranteId, sucursalId, id, fila.estado, hacia);
-      if (activacion === 'OTRA_MESA_ABIERTA') {
+      const momento = ahora();
+      const hacia = estadoDeReserva(fila.estado).activar(
+        {
+          inicio: fila.inicio,
+          toleranciaNoShowMin: fila.toleranciaNoShowMin,
+          ahora: momento,
+        },
+        antesDeHora,
+      );
+      const activacion = await repo.activar(
+        restauranteId,
+        sucursalId,
+        id,
+        fila.estado,
+        hacia,
+        momento,
+      );
+      if (activacion.resultado === 'MESA_OCUPADA') {
+        throw new AppError(
+          409,
+          `La mesa ${fila.mesaNumero} está ocupada. Cerrala antes de activar esta reserva.`,
+        );
+      }
+      if (activacion.resultado === 'RESERVA_ANTERIOR') {
+        throw new AppError(
+          409,
+          `La mesa ${fila.mesaNumero} tiene una reserva de las ${horaArgentina(activacion.inicio)} que todavía puede llegar.`,
+        );
+      }
+      if (activacion.resultado === 'OTRA_MESA_ABIERTA') {
         throw new AppError(
           409,
           'El comensal tiene otra mesa abierta. Cerrala antes de activar esta.',
         );
       }
-      if (activacion === 'CAMBIO') {
+      if (activacion.resultado === 'CAMBIO') {
         throw new AppError(409, 'La reserva cambió de estado; recargá la pantalla');
       }
       publicar('RESERVA_ACTIVADA', fila, hacia);

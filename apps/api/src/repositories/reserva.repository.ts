@@ -3,6 +3,7 @@ import type { Prisma } from '../generated/prisma/client';
 import { aHora } from '../lib/hora';
 import { prisma } from '../lib/prisma';
 import { MARGEN_VENCIMIENTO_MIN, PAGO_VENCE_MIN } from '../domain/pago/pago';
+import { limiteDeLlegada } from '../domain/reserva/reserva';
 import { totalesDeCuenta } from './cuenta-mesa.repository';
 import { aMesa } from './mesa.repository';
 
@@ -82,14 +83,18 @@ export interface ReservaRepository {
   ): Promise<FilaReservaPanel | null>;
   // Cambio de estado de la activación (lo decide el State) y apertura de la
   // cuenta de mesa, en una transacción. CAMBIO si la reserva ya no estaba en
-  // `desde`; OTRA_MESA_ABIERTA si el comensal ya tiene una mesa abierta en
-  // cualquier sucursal (una sola por comensal).
+  // `desde`. Se revisa en este orden: MESA_OCUPADA si hay otra reserva ACTIVA
+  // en la mesa (de cualquier fecha); RESERVA_ANTERIOR si una PENDIENTE anterior
+  // de la mesa todavía está dentro de su tolerancia; OTRA_MESA_ABIERTA si el
+  // comensal ya tiene una mesa abierta en cualquier sucursal (una sola por
+  // comensal). Así, el mismo comensal en su propia mesa recibe MESA_OCUPADA.
   activar(
     restauranteId: string,
     sucursalId: string,
     id: string,
     desde: EstadoReserva,
     hacia: EstadoReserva,
+    ahora: Date,
   ): Promise<ResultadoActivacion>;
   // CU-18: cierra la mesa de una reserva ACTIVA en una transacción. Se
   // bloquea con pedidos sin entregar o un pago en curso; sin confirmarSaldo,
@@ -112,7 +117,9 @@ export interface ReservaRepository {
   pendientesIniciadas(ahora: Date): Promise<FilaReserva[]>;
 }
 
-export type ResultadoActivacion = 'ACTIVADA' | 'CAMBIO' | 'OTRA_MESA_ABIERTA';
+export type ResultadoActivacion =
+  | { resultado: 'ACTIVADA' | 'CAMBIO' | 'OTRA_MESA_ABIERTA' | 'MESA_OCUPADA' }
+  | { resultado: 'RESERVA_ANTERIOR'; inicio: Date };
 
 export type ResultadoCierre =
   | { resultado: 'CERRADA'; cuentaMesaId: string; comensalId: string }
@@ -263,13 +270,26 @@ export const reservaRepository: ReservaRepository = {
   },
 
   async listarDelComensal(comensalId) {
-    const filas = await prisma.reserva.findMany({
-      where: { comensalId },
+    // El límite es solo del historial: una reserva vigente nunca queda afuera.
+    const vigentes = await prisma.reserva.findMany({
+      where: { comensalId, estado: { in: VIGENTES } },
+      select: seleccionReserva,
+      orderBy: { inicio: 'desc' },
+    });
+    // Se excluyen por id las que cambiaron de estado entre las dos consultas.
+    const anteriores = await prisma.reserva.findMany({
+      where: {
+        comensalId,
+        estado: { notIn: VIGENTES },
+        id: { notIn: vigentes.map((r) => r.id) },
+      },
       select: seleccionReserva,
       orderBy: { inicio: 'desc' },
       take: 50,
     });
-    return filas.map(aFilaReserva);
+    return [...vigentes, ...anteriores]
+      .sort((a, b) => b.inicio.getTime() - a.inicio.getTime())
+      .map(aFilaReserva);
   },
 
   async cambiarEstado(alcance, id, desde, hacia) {
@@ -319,28 +339,65 @@ export const reservaRepository: ReservaRepository = {
     return filas.map(aFilaReservaPanel);
   },
 
-  activar(restauranteId, sucursalId, id, desde, hacia) {
+  activar(restauranteId, sucursalId, id, desde, hacia, ahora) {
     return prisma.$transaction(async (tx): Promise<ResultadoActivacion> => {
       const reserva = await tx.reserva.findFirst({
         where: { id, ...deLaSucursal(restauranteId, sucursalId) },
-        select: { comensalId: true },
+        select: { comensalId: true, mesaId: true, inicio: true },
       });
-      if (!reserva) return 'CAMBIO';
+      if (!reserva) return { resultado: 'CAMBIO' };
       // Dos sucursales pueden activar a la vez reservas del mismo comensal y no
       // hay una fila común que bloquear: el candado es por comensal.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('mesa-comensal:' || ${reserva.comensalId}))`;
+      // Bloquea la fila de la mesa (NO KEY UPDATE: no frena las inserciones que
+      // la referencian): dos activaciones de la misma mesa se
+      // serializan y la segunda ve la ACTIVA de la primera. Se une la sucursal
+      // para acotar por restaurante.
+      await tx.$queryRaw`SELECT m.id FROM mesa m JOIN sucursal s ON s.id = m.sucursal_id WHERE m.id = ${reserva.mesaId}::uuid AND m.sucursal_id = ${sucursalId}::uuid AND s.restaurante_id = ${restauranteId}::uuid FOR NO KEY UPDATE OF m`;
+      const ocupada = await tx.reserva.count({
+        where: {
+          mesaId: reserva.mesaId,
+          estado: 'ACTIVA',
+          id: { not: id },
+          ...deLaSucursal(restauranteId, sucursalId),
+        },
+      });
+      if (ocupada > 0) return { resultado: 'MESA_OCUPADA' };
+      // Una PENDIENTE anterior que todavía puede llegar; si ya pasó su
+      // tolerancia no bloquea aunque la tarea programada no la haya vencido.
+      const anteriores = await tx.reserva.findMany({
+        where: {
+          mesaId: reserva.mesaId,
+          estado: 'PENDIENTE',
+          id: { not: id },
+          inicio: { lt: reserva.inicio },
+          ...deLaSucursal(restauranteId, sucursalId),
+        },
+        select: { inicio: true, sucursal: { select: { toleranciaNoShowMin: true } } },
+        orderBy: { inicio: 'desc' },
+      });
+      const enEspera = anteriores.find(
+        (r) =>
+          limiteDeLlegada({
+            inicio: r.inicio,
+            toleranciaNoShowMin: r.sucursal.toleranciaNoShowMin,
+          }) >= ahora,
+      );
+      if (enEspera) return { resultado: 'RESERVA_ANTERIOR', inicio: enEspera.inicio };
+
+      // Va al final: el mismo comensal en una mesa ocupada recibe MESA_OCUPADA.
       const abierta = await tx.cuentaMesa.count({
         where: { estado: 'ABIERTA', reserva: { comensalId: reserva.comensalId } },
       });
-      if (abierta > 0) return 'OTRA_MESA_ABIERTA';
+      if (abierta > 0) return { resultado: 'OTRA_MESA_ABIERTA' };
 
       const { count } = await tx.reserva.updateMany({
         where: { id, estado: desde, ...deLaSucursal(restauranteId, sucursalId) },
         data: { estado: hacia },
       });
-      if (count !== 1) return 'CAMBIO';
+      if (count !== 1) return { resultado: 'CAMBIO' };
       await tx.cuentaMesa.create({ data: { reservaId: id } });
-      return 'ACTIVADA';
+      return { resultado: 'ACTIVADA' };
     });
   },
 

@@ -73,8 +73,9 @@ function Pie({ children }: { children: ReactNode }) {
 // Vista previa del modelo. model-viewer 4.4 tira un error si se cambia el modelo
 // en vivo, así que la clave remonta el visor. Las medidas se leen con escala 1
 // al terminar de cargar: la escala real sale del diámetro que indica el restaurante.
-// Con `ra` (el borrador, ya medido) aparece "Ver en mi mesa" si el dispositivo tiene RA:
-// la propia de lib/ra-webxr en Android, o la de model-viewer (Quick Look o Scene Viewer).
+// Con `ra` (el modelo publicado, o el borrador ya medido) aparece "Ver en mi mesa" si el
+// dispositivo tiene RA, igual que lo ve el comensal: la propia de lib/ra-webxr en Android, o
+// la de model-viewer (Quick Look o Scene Viewer).
 function Vista({
   src,
   nombre,
@@ -92,9 +93,9 @@ function Vista({
   const visor = useRef<HTMLElementTagNameMap['model-viewer']>(null);
   const alMedir = useRef(onMedidas);
   const { webXR, sesion, diagnostico, capa, abrir, salir } = useSesionRa();
-  const [puedeVerRa, setPuedeVerRa] = useState(false);
+  // null hasta que carga el modelo y se sabe si el dispositivo puede.
+  const [puedeVerRa, setPuedeVerRa] = useState<boolean | null>(null);
   const [falloRa, setFalloRa] = useState(false);
-  const conRa = borrador === true;
   useEffect(() => {
     alMedir.current = onMedidas;
   });
@@ -114,7 +115,7 @@ function Vista({
   // Sin WebXR, la RA la abre model-viewer; se muestra el botón solo si el dispositivo puede.
   useEffect(() => {
     const el = visor.current;
-    if (!conRa || !el || webXR !== false) return;
+    if (!el || webXR !== false) return;
     let vigente = true;
     // El atributo `ar` se activa recién cuando se sabe que no hay WebXR: se espera a que
     // model-viewer lo procese antes de leer canActivateAR.
@@ -123,7 +124,7 @@ function Vista({
         if (vigente) setPuedeVerRa(el.canActivateAR);
       });
     };
-    leer();
+    if (el.loaded) leer();
     el.addEventListener('load', leer);
     el.addEventListener('ar-status', leer);
     return () => {
@@ -131,7 +132,7 @@ function Vista({
       el.removeEventListener('load', leer);
       el.removeEventListener('ar-status', leer);
     };
-  }, [conRa, webXR, src, listo]);
+  }, [webXR, src, listo]);
 
   async function verEnMiMesa() {
     if (!ra) return;
@@ -162,7 +163,7 @@ function Vista({
     }
   }
 
-  const mostrarBoton = conRa && ra && (webXR === true || (webXR === false && puedeVerRa));
+  const mostrarBoton = ra && (webXR === true || (webXR === false && puedeVerRa));
 
   return (
     <div className="space-y-3">
@@ -172,9 +173,9 @@ function Vista({
             key={src}
             ref={visor}
             src={src}
-            ios-src={conRa ? (ra?.urlModeloIos ?? undefined) : undefined}
+            ios-src={ra?.urlModeloIos ?? undefined}
             alt={`Vista previa de ${nombre}`}
-            ar={conRa && webXR === false}
+            ar={webXR === false}
             ar-modes="quick-look scene-viewer"
             ar-scale="fixed"
             camera-controls
@@ -204,21 +205,25 @@ function Vista({
           {sesion === 'abriendo' ? 'Abriendo…' : 'Ver en mi mesa'}
         </Boton>
       )}
+      {webXR === false && puedeVerRa === false && (
+        <p className="text-sm text-meta">
+          Para verlo sobre tu mesa, como lo ven los comensales, abrí esta pantalla desde un celular
+          compatible.
+        </p>
+      )}
       {falloRa && (
         <Aviso tono="bad">
           No se pudo abrir la cámara para verlo en la mesa. Revisá el permiso e intentá de nuevo.
         </Aviso>
       )}
-      {conRa && (
-        <CapaRa
-          capa={capa}
-          sesion={sesion}
-          nombre={nombre}
-          porcion={ra?.porcion}
-          diagnostico={diagnostico}
-          alSalir={salir}
-        />
-      )}
+      <CapaRa
+        capa={capa}
+        sesion={sesion}
+        nombre={nombre}
+        porcion={ra?.porcion}
+        diagnostico={diagnostico}
+        alSalir={salir}
+      />
     </div>
   );
 }
@@ -558,6 +563,13 @@ export function EscaneoModal({
         }
       : null;
 
+  // "Ver en mi mesa" del publicado: con la escala y la porción guardadas, las que ve el comensal.
+  const raPublicado = actual && {
+    escalaReal: actual.escalaReal,
+    urlModeloIos: actual.urlModeloIos,
+    porcion: formatoCantidad(actual.porcionGramos, 'GRAMO'),
+  };
+
   const textoTamano =
     plato.diametroCm === null
       ? MENSAJE_SIN_DIAMETRO
@@ -662,7 +674,12 @@ export function EscaneoModal({
         return (
           <form onSubmit={guardar} className="space-y-4">
             {actual ? (
-              <Vista src={actual.urlModelo} nombre={plato.nombre} onMedidas={setMedidas} />
+              <Vista
+                src={actual.urlModelo}
+                nombre={plato.nombre}
+                onMedidas={setMedidas}
+                ra={raPublicado}
+              />
             ) : (
               <Vacio icono={Box} titulo="Este plato todavía no tiene modelo 3D" />
             )}

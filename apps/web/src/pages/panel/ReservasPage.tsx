@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EVENTOS_SOCKET, hoyArgentina, type Pagina, type ReservaPanel } from '@pgim/shared';
 import { useSesion } from '../../auth/SesionProvider';
 import { useAvisos } from '../../components/AvisoEmergente';
@@ -15,7 +15,7 @@ import {
 } from '../../components/ui';
 import { ApiError, api } from '../../lib/api';
 import { formatoDiaRelativo, formatoFecha, formatoHora } from '../../lib/formato';
-import { agruparPorDia, esActivable } from '../../lib/reservas';
+import { agruparPorDia, esActivable, esActivableAntesDeHora } from '../../lib/reservas';
 import { useEventoSocket } from '../../lib/socket';
 import { useAhora } from '../../lib/useAhora';
 import { useCerrarMesa } from '../../lib/useCerrarMesa';
@@ -43,6 +43,13 @@ export function ReservasPage() {
   const [cancelando, setCancelando] = useState(false);
   const [errorCancelar, setErrorCancelar] = useState<string | null>(null);
   const cierre = useCerrarMesa(recargar);
+  const avisoRef = useRef<HTMLDivElement>(null);
+  const mensajeError = activacion.error ?? cierre.error ?? errorCancelar;
+  // A 390 px el aviso queda fuera de pantalla: al aparecer un error, se trae a la
+  // vista, debajo de la barra superior fija (scroll-mt-20).
+  useEffect(() => {
+    if (mensajeError) avisoRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [mensajeError]);
   // El personal ya está en la sala de su sucursal: cualquier alta, baja,
   // activación o vencimiento refresca la lista.
   useEventoSocket(EVENTOS_SOCKET.cambioSalon, recargar);
@@ -55,8 +62,29 @@ export function ReservasPage() {
     setPagina(1);
   }
 
+  function limpiarErroresAjenos() {
+    cierre.limpiarError();
+    setErrorCancelar(null);
+  }
+
   async function activar(r: ReservaPanel) {
+    limpiarErroresAjenos();
     if (await activacion.enviar(`/reservas/${r.id}/activar`, 'POST')) recargar();
+  }
+
+  async function activarAntesDeHora(r: ReservaPanel) {
+    limpiarErroresAjenos();
+    const faltan = Math.ceil((new Date(r.inicio).getTime() - ahora) / 60_000);
+    const ok = await confirmar({
+      mensaje: `¿Activar la mesa ${r.mesa.numero} antes de hora?`,
+      detalle: `La reserva es a las ${formatoHora(r.inicio)} (faltan ${faltan} min).`,
+      accion: 'Activar mesa',
+      principal: true,
+    });
+    if (!ok) return;
+    if (await activacion.enviar(`/reservas/${r.id}/activar`, 'POST', { antesDeHora: true })) {
+      recargar();
+    }
   }
 
   async function cancelar(r: ReservaPanel) {
@@ -66,8 +94,8 @@ export function ReservasPage() {
       accion: 'Cancelar reserva',
     });
     if (!ok) return;
-    cierre.limpiarError();
-    setErrorCancelar(null);
+    limpiarErroresAjenos();
+    activacion.setError(null);
     setCancelando(true);
     try {
       await api(`/reservas/${r.id}/cancelar`, { method: 'POST' });
@@ -121,8 +149,8 @@ export function ReservasPage() {
         )}
       </div>
       <EstadoCarga cargando={cargando && !datos} error={error} />
-      <div className="mb-3">
-        <Aviso>{activacion.error ?? cierre.error ?? errorCancelar}</Aviso>
+      <div ref={avisoRef} className="mb-3 scroll-mt-20">
+        <Aviso>{mensajeError}</Aviso>
       </div>
       {filas?.length === 0 && <p className="text-sm text-meta">No hay reservas para mostrar.</p>}
       {filas && filas.length > 0 && (
@@ -173,12 +201,22 @@ export function ReservasPage() {
                         Activar mesa
                       </Boton>
                     )}
+                    {esActivableAntesDeHora(r, ahora) && tienePermiso('reserva.activar') && (
+                      <Boton
+                        variante="secundario"
+                        disabled={activacion.enviando}
+                        onClick={() => void activarAntesDeHora(r)}
+                      >
+                        Activar antes de hora
+                      </Boton>
+                    )}
                     {r.cerrable && r.id !== cierre.cerradaId && tienePermiso('mesa.cerrar') && (
                       <Boton
                         variante="tonal"
                         disabled={cierre.enviando || cancelando}
                         onClick={() => {
                           setErrorCancelar(null);
+                          activacion.setError(null);
                           void cierre.cerrar(r);
                         }}
                       >
