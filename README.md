@@ -42,10 +42,11 @@ La cámara (realidad aumentada) solo funciona con HTTPS. Con `npm run dev` corri
 
 ## Despliegue en Railway
 
-La app corre como un solo servicio: la API sirve también la web compilada, así que front, API y Socket.IO comparten origen (la cookie de sesión y el tiempo real funcionan igual que en desarrollo). `railway.json` define el build (`npm run build`), las migraciones antes de cada deploy (`prisma migrate deploy`), el arranque (`npm start`) y el health check (`/api/health`).
+La app corre como un solo servicio: la API sirve también la web compilada, así que front, API y Socket.IO comparten origen (la cookie de sesión y el tiempo real funcionan igual que en desarrollo). La configuración del deploy vive en el panel de Railway, no en el repo. Railpack deduce el build (`npm run build`) y el arranque (`npm start`) de `package.json`; el pre-deploy y el health check se cargan a mano en cada entorno (paso 2).
 
 1. Crear un proyecto desde el repo de GitHub, agregar un servicio de **PostgreSQL** y, en el servicio de la app, un **volumen** montado en `/data`. Generar el dominio en *Settings → Networking*.
-2. Cargar las variables del servicio **antes del primer build** (el build corre `prisma generate` y compila la web con `VITE_GOOGLE_CLIENT_ID`):
+2. En el servicio, *Settings → Deploy*: cargar el **Pre-deploy Command** `npm run db:deploy -w @pgim/api` (corre `prisma migrate deploy` antes de cada deploy) y el **Healthcheck Path** `/api/health`. Con el health check, Railway espera a que la ruta responda 200 antes de pasarle el tráfico al deploy nuevo; si no responde, el deploy falla y sigue el anterior. Hacerlo en cada entorno (staging y producción).
+3. Cargar las variables del servicio **antes del primer build** (el build corre `prisma generate` y compila la web con `VITE_GOOGLE_CLIENT_ID`):
 
    | Variable | Valor |
    |---|---|
@@ -62,8 +63,8 @@ La app corre como un solo servicio: la API sirve también la web compilada, así
    **Pagos:** con `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET` y `PUBLIC_URL` cargadas, los pagos van por el checkout de prueba de Mercado Pago (se paga con una cuenta de comprador de prueba) y `PAGO_SIMULADO` se ignora. Para que los pagos se aprueben al instante sin Mercado Pago, no cargar las `MP_*` y poner `PAGO_SIMULADO=true`.
 
    Si el build no toma Node 22, agregar `RAILPACK_NODE_VERSION=22`. Las migraciones y el seed usan dependencias de desarrollo (`prisma`, `tsx`): si el pre-deploy no encuentra `prisma`, agregar `RAILPACK_PRUNE_DEPS=false`. La instalación (`npm ci`) ya compila `@pgim/shared` y corre `prisma generate`: si falla ahí por `DATABASE_URL`, revisar que la variable esté cargada en el servicio antes del build.
-3. Cargar los datos ficticios **dentro del contenedor**, para que los modelos 3D queden en el volumen: `railway ssh` y después `npm run db:seed:deploy -w @pgim/api`. Carga seis restaurantes ficticios de dos sucursales cada uno, con carta y fotos. Cada uno tiene su administrador, con la contraseña `demo1234`: `admin@pastas.pgim.test` (Nonna Ermelinda), `admin@parrilla.pgim.test` (Fuego de Quebracho, con historial de ventas y simulador), `admin@sushi.pgim.test` (Hoshi Sushi Bar), `admin@hamburgueseria.pgim.test` (Doble Medallón), `admin@pizzeria.pgim.test` (Horno de Barrio) y `admin@bodegon.pgim.test` (El Bodegón de Don Anselmo). Las cuentas de comensal de la demo son `comensal@demo.pgim.test` y `comensal2@demo.pgim.test`, con la misma contraseña.
-4. Agregar la URL pública a los orígenes autorizados del client ID de Google y, si el webhook está configurado en el panel de Mercado Pago, actualizarlo.
+4. Cargar los datos ficticios **dentro del contenedor**, para que los modelos 3D queden en el volumen: `railway ssh` y después `npm run db:seed:deploy -w @pgim/api`. Carga seis restaurantes ficticios de dos sucursales cada uno, con carta y fotos. Cada uno tiene su administrador, con la contraseña `demo1234`: `admin@pastas.pgim.test` (Nonna Ermelinda), `admin@parrilla.pgim.test` (Fuego de Quebracho, con historial de ventas y simulador), `admin@sushi.pgim.test` (Hoshi Sushi Bar), `admin@hamburgueseria.pgim.test` (Doble Medallón), `admin@pizzeria.pgim.test` (Horno de Barrio) y `admin@bodegon.pgim.test` (El Bodegón de Don Anselmo). Las cuentas de comensal de la demo son `comensal@demo.pgim.test` y `comensal2@demo.pgim.test`, con la misma contraseña.
+5. Agregar la URL pública a los orígenes autorizados del client ID de Google y, si el webhook está configurado en el panel de Mercado Pago, actualizarlo.
 
 ### Pasar a un dominio propio
 
