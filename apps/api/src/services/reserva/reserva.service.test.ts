@@ -77,7 +77,7 @@ function repoFalso(cambios: Partial<ReservaRepository> = {}): jest.Mocked<Reserv
     cambiarEstado: jest.fn().mockResolvedValue(true),
     listarPanel: jest.fn().mockResolvedValue(paginaDe([filaPanel()])),
     buscarEnSucursal: jest.fn().mockResolvedValue(filaPanel()),
-    activar: jest.fn().mockResolvedValue('ACTIVADA'),
+    activar: jest.fn().mockResolvedValue({ resultado: 'ACTIVADA' }),
     cerrar: jest
       .fn()
       .mockResolvedValue({ resultado: 'CERRADA', cuentaMesaId: 'CM', comensalId: C }),
@@ -367,7 +367,7 @@ describe('activación (CU-12)', () => {
     const activada = await service.activar(R, S, 'R');
 
     expect(repo.buscarEnSucursal).toHaveBeenCalledWith(R, S, 'R');
-    expect(repo.activar).toHaveBeenCalledWith(R, S, 'R', 'PENDIENTE', 'ACTIVA');
+    expect(repo.activar).toHaveBeenCalledWith(R, S, 'R', 'PENDIENTE', 'ACTIVA', DENTRO);
     expect(bus.publicar).toHaveBeenCalledWith({
       tipo: 'RESERVA_ACTIVADA',
       reserva: expect.objectContaining({ id: 'R', estado: 'ACTIVA' }),
@@ -382,6 +382,64 @@ describe('activación (CU-12)', () => {
     expect(repo.activar).not.toHaveBeenCalled();
   });
 
+  describe('antes de hora', () => {
+    // 19:15 en Argentina: 45 minutos antes de las 20:00.
+    const ANTES = new Date('2026-10-30T22:15:00.000Z');
+
+    it('sin el pedido explícito responde 409 y no llega al repositorio', async () => {
+      const { service, repo } = servicio(undefined, undefined, ANTES);
+
+      await expect(service.activar(R, S, 'R')).rejects.toMatchObject({ status: 409 });
+      expect(repo.activar).not.toHaveBeenCalled();
+    });
+
+    it('con el pedido explícito activa y publica RESERVA_ACTIVADA', async () => {
+      const { service, repo, bus } = servicio(undefined, undefined, ANTES);
+
+      const activada = await service.activar(R, S, 'R', true);
+
+      expect(repo.activar).toHaveBeenCalledWith(R, S, 'R', 'PENDIENTE', 'ACTIVA', ANTES);
+      expect(bus.publicar).toHaveBeenCalledWith({
+        tipo: 'RESERVA_ACTIVADA',
+        reserva: expect.objectContaining({ id: 'R', estado: 'ACTIVA' }),
+      });
+      expect(activada).toMatchObject({ estado: 'ACTIVA' });
+    });
+  });
+
+  it('si la mesa está ocupada responde 409 con el número de mesa y no avisa', async () => {
+    const { service, bus } = servicio(
+      repoFalso({ activar: jest.fn().mockResolvedValue({ resultado: 'MESA_OCUPADA' }) }),
+      undefined,
+      DENTRO,
+    );
+
+    await expect(service.activar(R, S, 'R')).rejects.toMatchObject({
+      status: 409,
+      message: 'La mesa 2 está ocupada. Cerrala antes de activar esta reserva.',
+    });
+    expect(bus.publicar).not.toHaveBeenCalled();
+  });
+
+  it('si hay una reserva anterior en espera responde 409 con su hora y no avisa', async () => {
+    const { service, bus } = servicio(
+      repoFalso({
+        activar: jest.fn().mockResolvedValue({
+          resultado: 'RESERVA_ANTERIOR',
+          inicio: new Date('2026-10-30T22:00:00.000Z'),
+        }),
+      }),
+      undefined,
+      DENTRO,
+    );
+
+    await expect(service.activar(R, S, 'R')).rejects.toMatchObject({
+      status: 409,
+      message: 'La mesa 2 tiene una reserva de las 19:00 que todavía puede llegar.',
+    });
+    expect(bus.publicar).not.toHaveBeenCalled();
+  });
+
   it('una reserva de otra sucursal o restaurante responde 404', async () => {
     const { service } = servicio(
       repoFalso({ buscarEnSucursal: jest.fn().mockResolvedValue(null) }),
@@ -394,7 +452,7 @@ describe('activación (CU-12)', () => {
 
   it('si otro la activó antes responde 409', async () => {
     const { service, bus } = servicio(
-      repoFalso({ activar: jest.fn().mockResolvedValue('CAMBIO') }),
+      repoFalso({ activar: jest.fn().mockResolvedValue({ resultado: 'CAMBIO' }) }),
       undefined,
       DENTRO,
     );
@@ -405,7 +463,7 @@ describe('activación (CU-12)', () => {
 
   it('si el comensal tiene otra mesa abierta responde 409 y no avisa', async () => {
     const { service, bus } = servicio(
-      repoFalso({ activar: jest.fn().mockResolvedValue('OTRA_MESA_ABIERTA') }),
+      repoFalso({ activar: jest.fn().mockResolvedValue({ resultado: 'OTRA_MESA_ABIERTA' }) }),
       undefined,
       DENTRO,
     );

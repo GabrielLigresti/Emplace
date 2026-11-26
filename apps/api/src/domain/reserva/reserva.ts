@@ -1,4 +1,8 @@
-import { MINUTOS_ANTES_ACTIVACION, type EstadoReserva } from '@pgim/shared';
+import {
+  MINUTOS_ANTES_ACTIVACION,
+  MINUTOS_ANTES_ACTIVACION_ANTICIPADA,
+  type EstadoReserva,
+} from '@pgim/shared';
 import { AppError } from '../../lib/errors';
 
 // Patrón State de la reserva (diagrama de estados estado/reserva/v1). Cada
@@ -13,7 +17,8 @@ export interface ContextoReserva {
 
 export interface EstadoDeReserva {
   readonly nombre: EstadoReserva;
-  activar(ctx: ContextoReserva): EstadoReserva;
+  // antesDeHora: el personal pide activar hasta 60 minutos antes del inicio.
+  activar(ctx: ContextoReserva, antesDeHora?: boolean): EstadoReserva;
   cancelar(ctx: ContextoReserva): EstadoReserva;
   vencer(ctx: ContextoReserva): EstadoReserva;
   // El staff la cancela desde el panel (por ejemplo, avisaron que no vienen).
@@ -30,8 +35,9 @@ export function limiteDeLlegada(
   return new Date(ctx.inicio.getTime() + ctx.toleranciaNoShowMin * MINUTO);
 }
 
-export function puedeActivarse(ctx: ContextoReserva): boolean {
-  const desde = ctx.inicio.getTime() - MINUTOS_ANTES_ACTIVACION * MINUTO;
+export function puedeActivarse(ctx: ContextoReserva, antesDeHora = false): boolean {
+  const margen = antesDeHora ? MINUTOS_ANTES_ACTIVACION_ANTICIPADA : MINUTOS_ANTES_ACTIVACION;
+  const desde = ctx.inicio.getTime() - margen * MINUTO;
   return ctx.ahora.getTime() >= desde && ctx.ahora <= limiteDeLlegada(ctx);
 }
 
@@ -67,7 +73,7 @@ abstract class EstadoBase implements EstadoDeReserva {
     throw new AppError(409, `La reserva está ${this.nombre.toLowerCase()}`);
   }
 
-  activar(_ctx: ContextoReserva): EstadoReserva {
+  activar(_ctx: ContextoReserva, _antesDeHora?: boolean): EstadoReserva {
     return this.invalida();
   }
 
@@ -93,11 +99,12 @@ class ReservaPendiente extends EstadoBase {
     super('PENDIENTE');
   }
 
-  override activar(ctx: ContextoReserva): EstadoReserva {
-    if (!puedeActivarse(ctx)) {
+  override activar(ctx: ContextoReserva, antesDeHora = false): EstadoReserva {
+    if (!puedeActivarse(ctx, antesDeHora)) {
+      const margen = antesDeHora ? MINUTOS_ANTES_ACTIVACION_ANTICIPADA : MINUTOS_ANTES_ACTIVACION;
       throw new AppError(
         409,
-        `La reserva se puede activar desde ${MINUTOS_ANTES_ACTIVACION} minutos antes del inicio hasta el fin de la tolerancia de llegada`,
+        `La reserva se puede activar desde ${margen} minutos antes del inicio hasta el fin de la tolerancia de llegada`,
       );
     }
     return 'ACTIVA';

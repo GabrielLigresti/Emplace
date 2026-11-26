@@ -15,7 +15,12 @@ export type EstadoReserva = (typeof ESTADOS_RESERVA)[number];
 export const DIAS_ANTICIPACION_RESERVA = 30;
 // La reserva se puede activar desde este margen antes del inicio de la franja.
 export const MINUTOS_ANTES_ACTIVACION = 30;
+// Con el pedido explícito del personal, desde este margen antes del inicio.
+export const MINUTOS_ANTES_ACTIVACION_ANTICIPADA = 60;
 export const MAX_PERSONAS_RESERVA = 20;
+
+// Sin cuerpo (Express 5 deja req.body indefinido) vale la ventana normal.
+export const activarReservaSchema = z.object({ antesDeHora: z.boolean().optional() }).default({});
 
 const personasSchema = z.coerce.number().int().min(1).max(MAX_PERSONAS_RESERVA);
 

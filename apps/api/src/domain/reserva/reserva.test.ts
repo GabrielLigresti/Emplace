@@ -32,6 +32,42 @@ describe('estados de la reserva', () => {
       );
     });
 
+    describe('activación antes de hora', () => {
+      it('se activa desde 60 minutos antes, inclusive', () => {
+        expect(pendiente.activar(ctx('2026-10-30T22:00:00.000Z'), true)).toBe('ACTIVA');
+      });
+
+      it('no se activa antes de los 60 minutos previos', () => {
+        expect(() => pendiente.activar(ctx('2026-10-30T21:59:59.000Z'), true)).toThrow(
+          expect.objectContaining({ status: 409 }),
+        );
+      });
+
+      it('sin el pedido explícito, antes de los 30 minutos no se activa', () => {
+        expect(() => pendiente.activar(ctx('2026-10-30T22:29:59.000Z'))).toThrow(
+          expect.objectContaining({ status: 409 }),
+        );
+        expect(pendiente.activar(ctx('2026-10-30T22:29:59.000Z'), true)).toBe('ACTIVA');
+      });
+
+      it('con el pedido explícito, la ventana normal también activa', () => {
+        expect(pendiente.activar(ctx('2026-10-30T22:45:00.000Z'), true)).toBe('ACTIVA');
+        expect(pendiente.activar(ctx('2026-10-30T23:15:00.000Z'), true)).toBe('ACTIVA');
+      });
+
+      it('pasada la tolerancia no se activa', () => {
+        expect(() => pendiente.activar(ctx('2026-10-30T23:15:01.000Z'), true)).toThrow(
+          expect.objectContaining({ status: 409 }),
+        );
+      });
+
+      it('el mensaje de la ventana menciona los 60 minutos', () => {
+        expect(() => pendiente.activar(ctx('2026-10-30T21:00:00.000Z'), true)).toThrow(
+          expect.objectContaining({ message: expect.stringContaining('desde 60 minutos antes') }),
+        );
+      });
+    });
+
     it('se cancela antes del inicio', () => {
       expect(pendiente.cancelar(ctx('2026-10-30T22:59:59.000Z'))).toBe('CANCELADA');
     });
@@ -92,6 +128,10 @@ describe('estados de la reserva', () => {
     it.each(['activar', 'cancelar', 'vencer'] as const)('no admite %s', (transicion) => {
       expect(() => activa[transicion](momento)).toThrow(expect.objectContaining({ status: 409 }));
     });
+
+    it('no admite activar antes de hora', () => {
+      expect(() => activa.activar(momento, true)).toThrow(expect.objectContaining({ status: 409 }));
+    });
   });
 
   const finales: EstadoReserva[] = ['CANCELADA', 'VENCIDA', 'FINALIZADA'];
@@ -104,6 +144,12 @@ describe('estados de la reserva', () => {
     const estado = estadoDeReserva(nombre);
     expect(estado.nombre).toBe(nombre);
     expect(() => estado[transicion](ctx('2026-10-30T22:45:00.000Z'))).toThrow(
+      expect.objectContaining({ status: 409 }),
+    );
+  });
+
+  it.each(finales)('%s no admite activar antes de hora', (nombre) => {
+    expect(() => estadoDeReserva(nombre).activar(ctx('2026-10-30T22:45:00.000Z'), true)).toThrow(
       expect.objectContaining({ status: 409 }),
     );
   });

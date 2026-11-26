@@ -1,5 +1,6 @@
 import { Router, type Request } from 'express';
 import {
+  activarReservaSchema,
   cerrarMesaSchema,
   consultaFranjasSchema,
   consultaReservasPanelSchema,
@@ -72,12 +73,15 @@ reservasPanelRouter.post(
   '/:id/activar',
   requierePermiso('reserva.activar'),
   validarParams(idParamSchema),
+  validar(activarReservaSchema),
   async (req, res) => {
+    const { antesDeHora } = req.body as { antesDeHora?: boolean };
     res.json(
       await reservaService.activar(
         req.tenant!.restauranteId,
         sucursalDeTrabajo(req),
         req.params.id as string,
+        antesDeHora ?? false,
       ),
     );
   },
