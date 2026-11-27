@@ -79,7 +79,7 @@ typography:
     lineHeight: "1.06"
     letterSpacing: "-0.01em"
   texto-clasico:
-    fontFamily: "Lora, Georgia, serif"
+    fontFamily: "Urbanist Variable, ui-sans-serif, system-ui, sans-serif"
     fontSize: "17px"
     fontWeight: 400
     lineHeight: "28px"
@@ -224,8 +224,8 @@ Todo a mano y en su lugar. Papel gris cálido de fondo, tarjetas blancas encima,
 
 Toda la app usa el **registro Clásico**: papel, tinta y dorado. Cambia la tipografía según quién mira:
 
-- **La landing pública** (`/`) es la versión editorial: Cormorant Garamond y Lora, héroe con foto y modelos 3D (ver "Registro Clásico").
-- **El comensal** es "La mesa puesta" en el celular: Urbanist, tarjetas blancas con la foto arriba y densidad cómoda de 44 px. La carta y la ficha del plato siguen al pie de la letra el diseño de Claude Design (hoja dorada clara, Cormorant Garamond y Lora) y muestran la espera promedio del plato cuando hay pedidos suficientes.
+- **La landing pública** (`/`) es la versión editorial: títulos en Cormorant Garamond, texto en Urbanist, héroe con foto y modelos 3D (ver "Registro Clásico").
+- **El comensal** es "La mesa puesta" en el celular: Urbanist, tarjetas blancas con la foto arriba y densidad cómoda de 44 px. La carta y la ficha del plato siguen los lineamientos de la landing (hoja dorada clara, títulos en Cormorant Garamond y texto en Urbanist) y muestran la espera promedio del plato cuando hay pedidos suficientes.
 - **El restaurante** (panel, cocina y salón) sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte en Urbanist y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
 Tema claro único, sin modo oscuro.
@@ -237,7 +237,7 @@ Tema claro único, sin modo oscuro.
 
 **Key Characteristics:**
 - Un solo acento, el Dorado Hondo, en todas las pantallas.
-- Urbanist en el panel y el comensal, hoy de 400 a 600 (700–800 pendiente, para los títulos del comensal). Cormorant Garamond y Lora en la landing, la carta y la ficha del plato.
+- Dos fuentes en toda la app: Urbanist para todo el texto, de 400 a 600 (700–800 pendiente, para los títulos del comensal), y Cormorant Garamond solo para los títulos y botones de la landing, la carta y la ficha del plato.
 - Tres densidades: compacta (36 px) en escritorio, comensal (44 px) en el celular, táctil (48 px) en cocina y salón.
 - Estados siempre con tono, ícono y texto; el OK es azul.
 - Una sola sombra, solo para lo que flota.
@@ -294,20 +294,21 @@ Los valores de `@theme` fuera de `.tema-staff`: Verde Albahaca #16756b (hondo #1
 
 ## Registro Clásico (landing pública)
 
-La landing (`/`) es la versión más editorial del sistema: papel, tinta, el dorado para lo que se toca y dos serifs. Se apoya en el sistema "Classical" del diseño de Claude Design. Los radios propios son `radius-clasico` (4 px) y `radius-hero` (20 px).
+La landing (`/`) es la versión más editorial del sistema: papel, tinta, el dorado para lo que se toca y una serif para los títulos. La carta y la ficha del plato siguen los mismos lineamientos tipográficos. Se apoya en el sistema "Classical" del diseño de Claude Design. Los radios propios son `radius-clasico` (4 px) y `radius-hero` (20 px).
 
 ### Tipografía
-- **Títulos:** Cormorant Garamond. Display a 84 px en escritorio y 52 px en celular, siempre en peso 400; los títulos de ficha y botones, en 600. Cormorant se queda en 600 como máximo, porque es fina.
-- **Texto:** Lora, 15,5 a 17 px con interlineado de 28 px. Las etiquetas de sección van en Lora de 13 px, mayúsculas y 0,08 em de tracking, en Dorado Hondo.
-- Se cargan con `@fontsource` (pesos 400 y 600); la pila de respaldo es Georgia.
-- `/inicio` del comensal reusa el buscador de la landing con Urbanist (clase `tipografia-app`).
+- **Títulos y botones:** Cormorant Garamond, siempre en peso 400: display a 84 px en escritorio y 52 px en celular, títulos de sección, nombres de platos, modelos y restaurantes, y el texto de los botones. Se carga solo el peso 400 con `@fontsource`; la pila de respaldo es Georgia.
+- **Texto:** Urbanist, 16 a 17 px con interlineado de 28 px. Las etiquetas de sección van en Urbanist 600 de 12 px, mayúsculas y 0,12 em de tracking, en Dorado Hondo.
+- `/inicio` del comensal reusa el buscador de la landing todo en Urbanist, títulos incluidos (clase `tipografia-app`).
+
+**The Two Fonts Rule.** La app usa como máximo dos familias: Urbanist y Cormorant Garamond. Una tercera fuente, aunque sea para un solo elemento, diluye la identidad; un énfasis nuevo se resuelve con tamaño, peso o color dentro de estas dos.
 
 ### Formas y componentes
-- **Botones:** esquinas de 12 px (`rounded-cuadrado`), 44 px de alto, texto en Cormorant 600 de 16 px (la acción fija de la carta y la ficha: 56 px y 18 px, como el diseño de Claude Design). Principal en Dorado Hondo con texto blanco; secundario en Papel Hondo con texto Dorado Hondo y flecha "→". Sin sombra, sin borde.
+- **Botones:** esquinas de 12 px (`rounded-cuadrado`), 44 px de alto, texto en Cormorant 400 de 16 px (la acción fija de la carta y la ficha: 56 px y 18 px, como el diseño de Claude Design). Principal en Dorado Hondo con texto blanco; secundario en Papel Hondo con texto Dorado Hondo y flecha "→". Sin sombra, sin borde.
 - **Campos y fichas:** borde de 1 px en la Línea Clásica y esquina de 4 px, fondo transparente; el campo enfocado toma borde Dorado.
 - **Héroe:** foto a la derecha con esquinas de 20 px a la izquierda en escritorio; en celular, la foto ocupa todo el fondo con un velo oscuro y el texto va en blanco.
 - **Fichas de modelos 3D:** 300 px de alto, nombre debajo en Cormorant 24 px y botón "Ver en mi mesa" dentro del recuadro. El carrusel se desliza con el dedo en celular; las flechas existen solo en escritorio. Los modelos de muestra son CC BY 4.0 y sus créditos van en el pie de la landing.
-- **Resultados de búsqueda:** sin tarjeta. Foto de la sucursal arriba, en 16:9 con esquina de 4 px; después, nombre en Cormorant, datos en Lora chico y dos botones. Sin foto, o si no carga, queda solo el texto.
+- **Resultados de búsqueda:** sin tarjeta. Foto de la sucursal arriba, en 16:9 con esquina de 4 px; después, nombre en Cormorant, datos en Urbanist chico y dos botones. Sin foto, o si no carga, queda solo el texto.
 
 ### Reglas del registro
 **The Mobile Trim Rule.** En el celular se oculta lo que no funciona con el dedo o repite otro control (flechas del carrusel, menú sin destino, el botón "Reservar mesa" de la barra cuando el héroe ya lo tiene). No se achica ni se apila: se saca.
@@ -316,7 +317,7 @@ La landing (`/`) es la versión más editorial del sistema: papel, tinta, el dor
 
 ## Typography
 
-**Alcance:** esta sección rige el panel y el comensal; la landing, la carta y la ficha del plato usan la tipografía del registro Clásico (arriba).
+**Alcance:** esta sección rige el panel y el comensal; la landing, la carta y la ficha del plato suman Cormorant Garamond para títulos y botones (registro Clásico, arriba).
 
 **Display Font:** Urbanist Variable (con ui-sans-serif, system-ui)
 **Body Font:** Urbanist Variable (con ui-sans-serif, system-ui)

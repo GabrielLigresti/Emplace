@@ -75,7 +75,6 @@
   --radius-hero: 20px;
 
   --font-titulo: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-lora: 'Lora', Georgia, 'Times New Roman', serif;
 }
 
 /* Tema del staff (panel, cocina, salón, selector de sucursal): los mismos nombres
@@ -123,8 +122,7 @@
 
 /* Inicio del comensal: reusa el buscador de la landing pero con la tipografía de la app. */
 .tipografia-app,
-.tipografia-app .font-titulo,
-.tipografia-app .font-lora {
+.tipografia-app .font-titulo {
   font-family: var(--font-sans);
 }
 

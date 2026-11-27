@@ -120,7 +120,7 @@ export function PlatoPage() {
                 {plato.categoria.nombre}
               </span>
               <div className="flex items-start justify-between gap-3">
-                <h1 className="font-titulo text-[30px] leading-[1.05] font-semibold tracking-[-0.015em] [overflow-wrap:anywhere]">
+                <h1 className="font-titulo text-[30px] leading-[1.05] font-normal tracking-[-0.015em] [overflow-wrap:anywhere]">
                   {plato.nombre}
                 </h1>
                 {plato.hayStock && plato.tiempoPromedioMin !== null && (
@@ -178,7 +178,7 @@ export function PlatoPage() {
             )}
             {recientes.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h2 className="m-0 font-titulo text-[22px] leading-[1.1] font-semibold tracking-[-0.015em]">
+                <h2 className="m-0 font-titulo text-[22px] leading-[1.1] font-normal tracking-[-0.015em]">
                   Vistos recientemente
                 </h2>
                 <div className="-mx-5 flex gap-3 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
