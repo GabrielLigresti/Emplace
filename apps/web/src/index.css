@@ -70,10 +70,10 @@
   --color-dorado-700: #7d5411;
   --color-dorado-800: #5a3b0a;
 
-  /* Cormorant Garamond y Lora se cargan en main.tsx; el resto es la pila de respaldo. */
   --radius-clasico: 4px;
   --radius-hero: 20px;
 
+  /* Cormorant Garamond (solo el peso 400) se carga en main.tsx; el resto es la pila de respaldo. */
   --font-titulo: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
 }
 
@@ -124,6 +124,15 @@
 .tipografia-app,
 .tipografia-app .font-titulo {
   font-family: var(--font-sans);
+}
+/* En Urbanist, los botones y nombres que en la landing van en Cormorant 400 recuperan el 600. */
+.tipografia-app .font-titulo:not(h1, h2) {
+  font-weight: 600;
+}
+
+/* Cormorant trae cifras de caja baja por defecto: en nombres y precios se confunden con letras. */
+.font-titulo {
+  font-variant-numeric: lining-nums;
 }
 
 /* La landing es dorada: el foco no usa el verde de la app. */

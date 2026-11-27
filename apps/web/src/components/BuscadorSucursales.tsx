@@ -7,7 +7,7 @@ import { useRecurso } from '../lib/useRecurso';
 const ESPERA_BUSQUEDA_MS = 300;
 
 const claseBotonClasico =
-  'inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-papel-hondo px-5 font-titulo text-base font-normal text-dorado-700 hover:bg-tinta-clasica/10';
+  'inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-papel-hondo px-5 font-titulo text-[18px] font-normal text-dorado-700 hover:bg-tinta-clasica/10';
 
 // Buscador de sucursales (landing e inicio del comensal): texto libre y barrio.
 // `compacto`: una sola columna, para el ancho de celular de LayoutComensal; además
@@ -48,7 +48,7 @@ export function BuscadorSucursales({ compacto = false }: { compacto?: boolean })
       : '';
 
   const claseCampo =
-    'min-h-11 w-full rounded-clasico border border-linea-clasica bg-transparent px-3.5 font-titulo text-lg font-normal text-tinta-clasica hover:border-dorado focus-visible:border-dorado';
+    'min-h-11 w-full rounded-clasico border border-linea-clasica bg-transparent px-3.5 font-sans text-[16px] text-tinta-clasica hover:border-dorado focus-visible:border-dorado';
 
   const Titulo = compacto ? 'h1' : 'h2';
 
@@ -61,7 +61,7 @@ export function BuscadorSucursales({ compacto = false }: { compacto?: boolean })
         <Titulo className="m-0 font-titulo text-[30px] leading-[1.1] font-normal md:text-[38px]">
           Buscá dónde comer
         </Titulo>
-        <p className="m-0 text-base leading-7 text-tinta-clasica/80">
+        <p className="m-0 text-[16px] leading-7 text-tinta-clasica/80">
           Un restaurante, un barrio o un plato: mirá la carta y reservá tu mesa.
         </p>
       </div>
@@ -79,7 +79,7 @@ export function BuscadorSucursales({ compacto = false }: { compacto?: boolean })
               value={texto}
               maxLength={100}
               onChange={(e) => setTexto(e.target.value)}
-              className={`${claseCampo} pl-10 text-base font-normal placeholder:text-tinta-clasica/70 [&::-webkit-search-cancel-button]:appearance-none ${texto ? 'pr-11' : ''}`}
+              className={`${claseCampo} pl-10 text-[16px] font-normal placeholder:text-tinta-clasica/70 [&::-webkit-search-cancel-button]:appearance-none ${texto ? 'pr-11' : ''}`}
             />
             {texto && (
               <button
@@ -111,7 +111,7 @@ export function BuscadorSucursales({ compacto = false }: { compacto?: boolean })
       <div className="mt-5">
         {error ? (
           <div className="flex flex-wrap items-center gap-3">
-            <p role="alert" className="m-0 text-base leading-7">
+            <p role="alert" className="m-0 text-[16px] leading-7">
               No pudimos cargar las sucursales.
             </p>
             <button type="button" onClick={recargar} className={claseBotonClasico}>
@@ -131,7 +131,7 @@ export function BuscadorSucursales({ compacto = false }: { compacto?: boolean })
                 <p className="m-0 font-titulo text-2xl leading-[1.1] font-normal">
                   No encontramos sucursales con esa búsqueda
                 </p>
-                <p className="m-0 text-base leading-7 text-tinta-clasica/80">
+                <p className="m-0 text-[16px] leading-7 text-tinta-clasica/80">
                   Probá con otro plato o elegí Todos los barrios.
                 </p>
                 <button type="button" onClick={limpiar} className={claseBotonClasico}>
@@ -191,13 +191,13 @@ function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
       <div className="flex items-center gap-2.5">
         <Link
           to={`/s/${sucursal.id}/reservar`}
-          className="inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-dorado-700 px-5 font-titulo text-base font-normal text-white hover:bg-dorado-800"
+          className="inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-dorado-700 px-5 font-titulo text-[18px] font-normal text-white hover:bg-dorado-800"
         >
           Reservar mesa
         </Link>
         <Link
           to={`/s/${sucursal.id}/menu`}
-          className="inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-papel-hondo px-5 font-titulo text-base font-normal text-dorado-700 hover:bg-tinta-clasica/10"
+          className="inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-papel-hondo px-5 font-titulo text-[18px] font-normal text-dorado-700 hover:bg-tinta-clasica/10"
         >
           Ver carta →
         </Link>

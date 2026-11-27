@@ -109,10 +109,10 @@ export function MenuSucursalPage() {
                             behavior: 'smooth',
                           });
                         }}
-                        className={`-mt-[18px] shrink-0 border-b-2 bg-transparent pt-[18px] pb-1 ${
+                        className={`-mt-[18px] inline-flex min-h-[62px] shrink-0 items-end border-b-2 bg-transparent pt-[18px] pb-1 font-sans text-[16px] leading-[1.2] ${
                           activa
-                            ? 'border-dorado font-titulo text-[28px] leading-none font-normal text-tinta-clasica'
-                            : 'border-transparent font-sans text-[16px] leading-[1.2] text-tinta-clasica/75'
+                            ? 'border-dorado font-semibold text-tinta-clasica'
+                            : 'border-transparent text-tinta-clasica/75'
                         }`}
                       >
                         {c.nombre}
@@ -144,7 +144,7 @@ export function MenuSucursalPage() {
                           </span>
                         )}
                         <span className="flex flex-1 flex-col gap-1.5 px-3 pt-2.5 pb-3">
-                          <span className="font-titulo text-[20px] leading-[1.15] font-normal">
+                          <span className="font-titulo text-[20px] leading-[1.15] font-normal [text-wrap:balance]">
                             {p.nombre}
                           </span>
                           {(!p.hayStock || p.tiempoPromedioMin !== null) && (

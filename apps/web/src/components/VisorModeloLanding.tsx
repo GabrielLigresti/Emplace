@@ -117,7 +117,7 @@ export function VisorModeloLanding({
             if (webXR) void abrirRa();
             else void visor.current?.activateAR();
           }}
-          className="absolute bottom-3 left-3 inline-flex min-h-11 items-center rounded-cuadrado bg-dorado-700 px-5 font-titulo text-base font-normal text-white hover:bg-dorado-800 disabled:opacity-70"
+          className="absolute bottom-3 left-3 inline-flex min-h-11 items-center rounded-cuadrado bg-dorado-700 px-5 font-titulo text-[18px] font-normal text-white hover:bg-dorado-800 disabled:opacity-70"
         >
           {sesion === 'abriendo' ? 'Abriendo…' : 'Ver en mi mesa'}
         </button>
@@ -137,7 +137,7 @@ export function VisorModeloLanding({
               b?.addEventListener('beforexrselect', frenarSeleccion);
             }}
             onClick={() => salir.current?.()}
-            className="min-h-12 rounded-cuadrado bg-white px-6 font-titulo text-base font-normal text-tinta-clasica"
+            className="min-h-12 rounded-cuadrado bg-white px-6 font-titulo text-[18px] font-normal text-tinta-clasica"
           >
             Salir
           </button>

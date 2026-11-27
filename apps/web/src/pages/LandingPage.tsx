@@ -7,9 +7,9 @@ import { Cargando } from '../components/Cargando';
 import { VisorModeloLanding } from '../components/VisorModeloLanding';
 
 const claseBotonPrincipal =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-cuadrado bg-dorado-700 px-6 font-titulo text-base font-normal text-white hover:bg-dorado-800';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-cuadrado bg-dorado-700 px-6 font-titulo text-[18px] font-normal text-white hover:bg-dorado-800';
 const claseBotonSecundario =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-cuadrado bg-papel-hondo px-5 font-titulo text-base font-normal text-dorado-700 hover:bg-tinta-clasica/10';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-cuadrado bg-papel-hondo px-5 font-titulo text-[18px] font-normal text-dorado-700 hover:bg-tinta-clasica/10';
 
 // Modelos 3D de la demo (CC BY 4.0, créditos en el pie y en public/modelos/CREDITOS.md).
 // Sin `src`, la ficha queda vacía y sin botón.
@@ -135,7 +135,7 @@ export function LandingPage() {
                 <h2 className="m-0 font-titulo text-[30px] leading-[1.1] font-normal tracking-[-0.01em] md:text-[38px]">
                   Mirá el plato en tu mesa antes de pedirlo
                 </h2>
-                <p className="m-0 text-base leading-7 text-tinta-clasica/80">
+                <p className="m-0 text-[16px] leading-7 text-tinta-clasica/80">
                   A tamaño real, desde el navegador. Sin instalar nada.
                 </p>
               </div>
@@ -144,7 +144,7 @@ export function LandingPage() {
             <div className="flex flex-col gap-4 px-5 pt-5 md:px-14 md:pt-14">
               {hayModelos && (
                 <div className="flex items-end justify-between gap-3">
-                  <p className="m-0 max-w-[52ch] text-base leading-7 text-tinta-clasica/80">
+                  <p className="m-0 max-w-[52ch] text-[16px] leading-7 text-tinta-clasica/80">
                     Tocá <strong className="font-semibold">Ver en mi mesa</strong> desde tu celular
                     para verlos sobre tu mesa. Arrastrá para girarlos.
                   </p>

@@ -116,11 +116,11 @@ export function PlatoPage() {
           </div>
           <div className="relative -mt-6 flex flex-col gap-4 rounded-t-3xl bg-bg px-5 pt-6 pb-40">
             <div className="flex flex-col gap-2">
-              <span className="text-[11px] leading-none tracking-widest text-dorado-700 uppercase">
+              <span className="text-[12px] leading-none font-semibold tracking-[0.12em] text-dorado-700 uppercase">
                 {plato.categoria.nombre}
               </span>
               <div className="flex items-start justify-between gap-3">
-                <h1 className="font-titulo text-[30px] leading-[1.05] font-normal tracking-[-0.015em] [overflow-wrap:anywhere]">
+                <h1 className="font-titulo text-[30px] leading-[1.05] font-normal tracking-[-0.015em] [overflow-wrap:anywhere] [text-wrap:balance]">
                   {plato.nombre}
                 </h1>
                 {plato.hayStock && plato.tiempoPromedioMin !== null && (
