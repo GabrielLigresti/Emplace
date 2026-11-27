@@ -42,14 +42,13 @@ Dos diferenciales:
 - Web responsive, sin apps nativas. Tres densidades: compacta en escritorio, táctil (48 px) en cocina y salón, comensal (44 px) en el celular.
 - Textos de interfaz en español rioplatense, en el lenguaje del restaurante y sin jerga de desarrollo: "Ver en mi mesa", "Marcar inasistencia"; nunca "RA", "no-show" ni nombres de estados del modelo.
 - Tema claro único; el modo oscuro queda como mejora futura.
-- Pendiente: logo y color propios por restaurante. Hoy el modelo no tiene dónde guardarlos; el color es fijo y el panel no muestra marca.
 
 ## Brand Commitments
 
 - El producto se llama **Emplace**; "PGIM" es solo el código interno del proyecto y no aparece en la interfaz.
 - La marca Emplace (logo en `apps/web/public/marca/`) va donde el usuario todavía no está dentro de un restaurante: la landing pública (`/`, el buscador entre restaurantes), el login, el encabezado del comensal sin sesión, la pestaña del navegador y la vista previa de los links. La landing tiene su propia dirección visual, clásica y editorial: papel, serifs y dorado (registro Clásico de `DESIGN.md`).
 - Desde que el comensal entra a una sucursal (carta, plato, reserva, mesa), manda la marca del restaurante: su nombre y la sucursal.
-- El panel no lleva la marca Emplace: va el logo del restaurante. Hasta que el modelo tenga dónde guardarlo, el panel queda sin marca.
+- El panel no lleva marca: ni Emplace ni la del restaurante.
 - Voz: clara, directa y amable, como un buen mozo; sin tecnicismos. En la landing, la promesa es "Una mesa te espera": encontrar el restaurante, ver los platos y reservar en un minuto.
 - La landing muestra, en este orden: héroe con foto de una mesa puesta, "Ver en mi mesa" con modelos 3D de muestra y el buscador de restaurantes. No lleva testimonios ni números inventados.
 
@@ -72,3 +71,9 @@ Dos diferenciales:
 - Objetivos táctiles de 44 px en el comensal y 48 px en cocina y salón.
 - Estado siempre con ícono y texto, además del color.
 - Foco visible en todos los controles.
+
+## Future Expansions
+
+Fuera del alcance actual; quedan registradas para una versión posterior.
+
+- **Marca propia del restaurante:** que cada restaurante cargue su logo y su color. El logo aparecería en la barra lateral del panel y en las pantallas del comensal dentro de la sucursal; el color reemplazaría al Dorado Hondo como acento en esas mismas superficies. Requiere sumar los campos al modelo de `Restaurante`.

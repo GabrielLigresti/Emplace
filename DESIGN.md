@@ -233,7 +233,7 @@ Tema claro único, sin modo oscuro.
 ### Marca
 - **Logo Emplace** (`public/marca/emplace-logo.png`): solo donde el usuario todavía no está dentro de un restaurante. Va a 64 px de alto en el encabezado de la landing, a 80 px centrado sobre el login y a 44 px en el encabezado del comensal sin sesión, siempre sobre papel o blanco y con `alt="Emplace"`. La pestaña y la vista previa de los links usan el favicon y `og-emplace.png`.
 - **Dentro de una sucursal** no aparece el logo Emplace: el encabezado muestra el nombre del restaurante y la sucursal, o el saludo si hay sesión.
-- **Panel:** va el logo del restaurante, no el de Emplace. Mientras el modelo no tenga dónde guardarlo, la barra lateral queda sin marca.
+- **Panel:** sin marca; la barra lateral no lleva logo.
 
 **Key Characteristics:**
 - Un solo acento, el Dorado Hondo, en todas las pantallas.
@@ -409,3 +409,10 @@ Etiqueta en píldora con ícono, texto y tono; la única fuente es `lib/estados.
 - **Don't** dejar el Naranja Aviso sin ícono y texto.
 - **Don't** poner sombra a tarjetas apoyadas.
 - **Don't** usar modo oscuro: el tema es claro único.
+
+## Future Expansions
+
+Fuera del alcance actual; no se implementan hasta que se decida la expansión.
+
+- **Logo del restaurante:** iría arriba de la barra lateral del panel y en el encabezado del comensal dentro de la sucursal, en lugar del nombre escrito. Sin logo cargado, se mantiene el comportamiento actual.
+- **Color del restaurante:** reemplazaría los tokens `accent`, `accent-hover`, `accent-ink` y `accent-soft` dentro de `.tema-staff` para ese restaurante, sin tocar la landing ni los estados. El color elegido tendría que pasar AA con texto blanco; si no, se queda el Dorado Hondo.
