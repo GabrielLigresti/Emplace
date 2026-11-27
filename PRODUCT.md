@@ -14,7 +14,7 @@ web
 
 ## Product Purpose
 
-Plataforma web de gestión para restaurantes con varias sucursales. Reúne en un solo lugar reservas por franja, salón, pedidos con cola de cocina, stock descontado por receta, pagos, fidelización y un simulador de apertura. Éxito: que cada rol complete su tarea en la superficie pensada para su dispositivo, y que el comensal decida y pida sin ayuda del mozo.
+**Emplace** es una plataforma web de gestión para restaurantes con varias sucursales. Reúne en un solo lugar reservas por franja, salón, pedidos con cola de cocina, stock descontado por receta, pagos, fidelización y un simulador de apertura. Éxito: que cada rol complete su tarea en la superficie pensada para su dispositivo, y que el comensal decida y pida sin ayuda del mozo.
 
 ## Positioning
 
@@ -34,24 +34,30 @@ Dos diferenciales:
 
 ## Capabilities and Constraints
 
-- Cada plato tiene nombre, descripción opcional, precio, categoría, foto opcional y modelo 3D opcional con la porción en gramos. Un plato sin foto o sin descripción tiene que verse completo.
+- Cada plato tiene nombre, descripción opcional, precio, categoría, foto opcional, diámetro y modelo 3D opcional con la porción en gramos. Un plato sin foto o sin descripción tiene que verse completo.
 - "Ver en mi mesa" solo aparece si el plato tiene modelo 3D. La cámara exige HTTPS.
+- El restaurante genera el modelo 3D desde el panel: escanea el plato con 4 fotos y ve el borrador sobre la mesa, como lo vería el comensal, antes de publicarlo.
+- La carta y la ficha del plato muestran la espera promedio solo cuando el plato tiene pedidos suficientes; sin datos, no se muestra nada.
+- En Reservas, el salón puede activar una mesa antes de la hora de la reserva, con confirmación.
 - Web responsive, sin apps nativas. Tres densidades: compacta en escritorio, táctil (48 px) en cocina y salón, comensal (44 px) en el celular.
 - Textos de interfaz en español rioplatense, en el lenguaje del restaurante y sin jerga de desarrollo: "Ver en mi mesa", "Marcar inasistencia"; nunca "RA", "no-show" ni nombres de estados del modelo.
 - Tema claro único; el modo oscuro queda como mejora futura.
-- Sin decidir: color propio por restaurante (hoy el color es fijo; no hay dónde guardarlo).
+- Pendiente: logo y color propios por restaurante. Hoy el modelo no tiene dónde guardarlos; el color es fijo y el panel no muestra marca.
 
 ## Brand Commitments
 
-- La landing pública (`/`, el buscador entre restaurantes) lleva la marca "PGIM" (nombre provisorio) y su propia dirección visual, clásica y editorial: papel, serifs y dorado (registro Clásico de `DESIGN.md`). Desde que el comensal entra a una sucursal (carta, plato, reserva, mesa), manda la marca del restaurante: su nombre y la sucursal. En el restaurante, "PGIM" solo aparece en el panel.
+- El producto se llama **Emplace**; "PGIM" es solo el código interno del proyecto y no aparece en la interfaz.
+- La marca Emplace (logo en `apps/web/public/marca/`) va donde el usuario todavía no está dentro de un restaurante: la landing pública (`/`, el buscador entre restaurantes), el login, el encabezado del comensal sin sesión, la pestaña del navegador y la vista previa de los links. La landing tiene su propia dirección visual, clásica y editorial: papel, serifs y dorado (registro Clásico de `DESIGN.md`).
+- Desde que el comensal entra a una sucursal (carta, plato, reserva, mesa), manda la marca del restaurante: su nombre y la sucursal.
+- El panel no lleva la marca Emplace: va el logo del restaurante. Hasta que el modelo tenga dónde guardarlo, el panel queda sin marca.
 - Voz: clara, directa y amable, como un buen mozo; sin tecnicismos. En la landing, la promesa es "Una mesa te espera": encontrar el restaurante, ver los platos y reservar en un minuto.
 - La landing muestra, en este orden: héroe con foto de una mesa puesta, "Ver en mi mesa" con modelos 3D de muestra y el buscador de restaurantes. No lleva testimonios ni números inventados.
 
 ## Evidence on Hand
 
-- Restaurante de demostración "La Parrilla Demo" con sucursales ficticias, platos de demo y fotos de Wikimedia Commons con atribución en `apps/web/public/fotos-demo/LICENCIA.md`; modelos 3D libres para la demo.
-- Las fotos de la landing son de stock en dominio público (portada en `apps/web/public/fotos-portada/`; su fuente y licencia se registran en un `LICENCIA.md` de esa carpeta). Los modelos 3D de la landing quedan vacíos hasta elegir los definitivos.
-- No hay testimonios, clientes, calificaciones de platos, tiempos de preparación ni favoritos: no se inventan ni se muestran.
+- Restaurantes ficticios de demostración: "La Parrilla Demo" en la seed de desarrollo; en la de deploy, además, "El Bodegón de Don Anselmo" y una hamburguesería, con fotos de platos y de sucursal (`apps/web/public/fotos-demo/` y `apps/web/public/fotos-deploy/`, con su fuente y licencia registradas).
+- Las fotos de la landing son de stock en dominio público (portada en `apps/web/public/fotos-portada/`, con su `LICENCIA.md`). Los modelos 3D de muestra de la landing (hamburguesa, pizza y cheesecake) son CC BY 4.0, con créditos en `apps/web/public/modelos/CREDITOS.md` y en el pie de la landing.
+- No hay testimonios, clientes, calificaciones de platos ni favoritos: no se inventan ni se muestran. Los datos que se muestran salen del uso real (como la espera promedio) y solo aparecen cuando hay suficientes.
 
 ## Product Principles
 

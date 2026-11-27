@@ -1,5 +1,5 @@
 ---
-name: PGIM
+name: Emplace
 description: Gestión de restaurantes multi-sucursal; la landing, la carta del comensal y las pantallas del restaurante sobre un mismo sistema Clásico.
 colors:
   papel: "#f3f2f2"
@@ -214,7 +214,7 @@ components:
     height: "44px"
 ---
 
-# Design System: PGIM
+# Design System: Emplace
 
 ## Overview
 
@@ -229,6 +229,11 @@ Toda la app usa el **registro Clásico**: papel, tinta y dorado. Cambia la tipog
 - **El restaurante** (panel, cocina y salón) sigue la filosofía de **"El buen mozo"**: claro, rápido y amable, con jerarquía tipográfica fuerte en Urbanist y la acción siguiente siempre escrita, porque se lee de pie, a distancia y con apuro.
 
 Tema claro único, sin modo oscuro.
+
+### Marca
+- **Logo Emplace** (`public/marca/emplace-logo.png`): solo donde el usuario todavía no está dentro de un restaurante. Va a 64 px de alto en el encabezado de la landing, a 80 px centrado sobre el login y a 44 px en el encabezado del comensal sin sesión, siempre sobre papel o blanco y con `alt="Emplace"`. La pestaña y la vista previa de los links usan el favicon y `og-emplace.png`.
+- **Dentro de una sucursal** no aparece el logo Emplace: el encabezado muestra el nombre del restaurante y la sucursal, o el saludo si hay sesión.
+- **Panel:** va el logo del restaurante, no el de Emplace. Mientras el modelo no tenga dónde guardarlo, la barra lateral queda sin marca.
 
 **Key Characteristics:**
 - Un solo acento, el Dorado Hondo, en todas las pantallas.
@@ -301,7 +306,7 @@ La landing (`/`) es la versión más editorial del sistema: papel, tinta, el dor
 - **Botones:** esquinas de 12 px (`rounded-cuadrado`), 44 px de alto, texto en Cormorant 600 de 16 px (la acción fija de la carta y la ficha: 56 px y 18 px, como el diseño de Claude Design). Principal en Dorado Hondo con texto blanco; secundario en Papel Hondo con texto Dorado Hondo y flecha "→". Sin sombra, sin borde.
 - **Campos y fichas:** borde de 1 px en la Línea Clásica y esquina de 4 px, fondo transparente; el campo enfocado toma borde Dorado.
 - **Héroe:** foto a la derecha con esquinas de 20 px a la izquierda en escritorio; en celular, la foto ocupa todo el fondo con un velo oscuro y el texto va en blanco.
-- **Fichas de modelos 3D:** 300 px de alto, nombre debajo en Cormorant 24 px y botón "Ver en mi mesa" dentro del recuadro. El carrusel se desliza con el dedo en celular; las flechas existen solo en escritorio.
+- **Fichas de modelos 3D:** 300 px de alto, nombre debajo en Cormorant 24 px y botón "Ver en mi mesa" dentro del recuadro. El carrusel se desliza con el dedo en celular; las flechas existen solo en escritorio. Los modelos de muestra son CC BY 4.0 y sus créditos van en el pie de la landing.
 - **Resultados de búsqueda:** sin tarjeta. Foto de la sucursal arriba, en 16:9 con esquina de 4 px; después, nombre en Cormorant, datos en Lora chico y dos botones. Sin foto, o si no carga, queda solo el texto.
 
 ### Reglas del registro
