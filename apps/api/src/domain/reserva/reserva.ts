@@ -43,7 +43,7 @@ export function puedeActivarse(ctx: ContextoReserva, antesDeHora = false): boole
 
 // Mientras no haya cierre de mesa (Hito 4), una reserva activa se da por
 // terminada al final de su franja de 1 h.
-const DURACION_FRANJA_MIN = 60;
+export const DURACION_FRANJA_MIN = 60;
 
 // Si la reserva todavía compromete la mesa: una pendiente hasta el fin de la
 // tolerancia (después vence) y una activa mientras dura su franja o la
