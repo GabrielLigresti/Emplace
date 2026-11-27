@@ -132,7 +132,7 @@
 
 /* Cormorant trae cifras de caja baja por defecto: en nombres y precios se confunden con letras. */
 .font-titulo {
-  font-variant-numeric: lining-nums;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 /* La landing es dorada: el foco no usa el verde de la app. */

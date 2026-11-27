@@ -188,7 +188,7 @@ function TarjetaResultado({ r }: { r: ResultadoBusqueda }) {
           </p>
         )}
       </div>
-      <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5">
         <Link
           to={`/s/${sucursal.id}/reservar`}
           className="inline-flex min-h-11 items-center justify-center rounded-cuadrado bg-dorado-700 px-5 font-titulo text-[18px] font-normal text-white hover:bg-dorado-800"
