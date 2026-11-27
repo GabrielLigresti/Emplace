@@ -46,7 +46,7 @@ Dos diferenciales:
 ## Brand Commitments
 
 - El producto se llama **Emplace**; "PGIM" es solo el código interno del proyecto y no aparece en la interfaz.
-- La marca Emplace (logo en `apps/web/public/marca/`) va donde el usuario todavía no está dentro de un restaurante: la landing pública (`/`, el buscador entre restaurantes), el login, el encabezado del comensal sin sesión, la pestaña del navegador y la vista previa de los links. La landing tiene su propia dirección visual, clásica y editorial: papel, serifs y dorado (registro Clásico de `DESIGN.md`).
+- La marca Emplace (logo en `apps/web/public/marca/`) va donde el usuario todavía no está dentro de un restaurante: la landing pública (`/`, el buscador entre restaurantes), el login, el encabezado del comensal sin sesión, la pestaña del navegador y la vista previa de los links. La landing tiene su propia dirección visual, clásica y editorial: papel, una serif para los títulos y dorado (registro Clásico de `DESIGN.md`).
 - Desde que el comensal entra a una sucursal (carta, plato, reserva, mesa), manda la marca del restaurante: su nombre y la sucursal.
 - El panel no lleva marca: ni Emplace ni la del restaurante.
 - Voz: clara, directa y amable, como un buen mozo; sin tecnicismos. En la landing, la promesa es "Una mesa te espera": encontrar el restaurante, ver los platos y reservar en un minuto.
