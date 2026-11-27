@@ -27,7 +27,7 @@ const CUENTA = { a: '/cuenta', texto: 'Mi cuenta', icono: UserRound };
 
 // Acción principal fija de la carta y la ficha (botón de 56 px del diseño).
 export const claseAccionClasica =
-  'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-semibold text-white hover:bg-dorado-800';
+  'inline-flex min-h-14 flex-1 items-center justify-center rounded-[12px] bg-dorado-700 px-4 font-titulo text-[18px] leading-[1.2] font-normal text-white hover:bg-dorado-800';
 
 // Título de las pantallas del comensal.
 export function TituloComensal({ children }: { children: ReactNode }) {
@@ -134,7 +134,7 @@ export function LayoutComensal({
       <main
         className={
           clasico
-            ? 'mx-auto max-w-[480px] bg-bg font-lora'
+            ? 'mx-auto max-w-[480px] bg-bg font-sans'
             : `mx-auto max-w-[480px] px-4 pt-5 ${esComensal ? (accionFija ? 'pb-40' : 'pb-24') : accionFija ? 'pb-24' : 'pb-8'}`
         }
       >

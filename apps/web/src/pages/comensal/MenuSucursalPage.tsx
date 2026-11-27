@@ -55,7 +55,7 @@ export function MenuSucursalPage() {
           <div className="flex flex-col gap-3.5 px-5 pt-[22px] pb-3.5">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="font-titulo text-[34px] leading-none font-semibold tracking-[-0.01em]">
+                <h1 className="font-titulo text-[34px] leading-none font-normal tracking-[-0.01em]">
                   Carta
                 </h1>
                 <p className="mt-1 text-[13px] leading-[18px] text-tinta-clasica/70">
@@ -75,7 +75,7 @@ export function MenuSucursalPage() {
                   }}
                   placeholder="Buscar en la carta"
                   aria-label="Buscar en la carta"
-                  className="min-w-0 flex-1 border-0 bg-transparent font-lora text-[16px] leading-6 text-tinta-clasica outline-none placeholder:text-tinta-clasica/65 [&::-webkit-search-cancel-button]:appearance-none"
+                  className="min-w-0 flex-1 border-0 bg-transparent font-sans text-[16px] leading-6 text-tinta-clasica outline-none placeholder:text-tinta-clasica/65 [&::-webkit-search-cancel-button]:appearance-none"
                 />
               </label>
             )}
@@ -109,10 +109,10 @@ export function MenuSucursalPage() {
                             behavior: 'smooth',
                           });
                         }}
-                        className={`-mt-[18px] shrink-0 border-b-2 bg-transparent pt-[18px] pb-1 ${
+                        className={`-mt-[18px] inline-flex min-h-[62px] shrink-0 items-end border-b-2 bg-transparent pt-[18px] pb-1 font-sans text-[16px] leading-[1.2] ${
                           activa
-                            ? 'border-dorado font-titulo text-[28px] leading-none font-semibold text-tinta-clasica'
-                            : 'border-transparent font-lora text-[16px] leading-[1.2] text-tinta-clasica/75'
+                            ? 'border-dorado font-semibold text-tinta-clasica'
+                            : 'border-transparent text-tinta-clasica/75'
                         }`}
                       >
                         {c.nombre}
@@ -144,7 +144,7 @@ export function MenuSucursalPage() {
                           </span>
                         )}
                         <span className="flex flex-1 flex-col gap-1.5 px-3 pt-2.5 pb-3">
-                          <span className="font-titulo text-[17px] leading-[1.15] font-semibold">
+                          <span className="font-titulo text-[20px] leading-[1.15] font-normal [text-wrap:balance]">
                             {p.nombre}
                           </span>
                           {(!p.hayStock || p.tiempoPromedioMin !== null) && (
